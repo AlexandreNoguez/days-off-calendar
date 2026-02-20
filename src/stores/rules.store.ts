@@ -3,6 +3,7 @@ import { persist } from "zustand/middleware";
 import type { RuleConfig } from "../domain/types/rules";
 import type { RuleId } from "../domain/types/ids";
 import { STORAGE_KEYS } from "./persistence";
+import { createDefaultRules } from "../domain/defaults/defaultRules";
 
 type RulesState = {
   rules: RuleConfig[];
@@ -15,6 +16,7 @@ type RulesState = {
       ruleId: RuleId,
       paramsPatch: Record<string, unknown>,
     ) => void;
+    setRuleParams: (ruleId: RuleId, params: Record<string, unknown>) => void;
     resetToDefaultRules: () => void;
     // seeds
     seedDefaults: (rules: RuleConfig[]) => void;
@@ -46,9 +48,15 @@ export const useRulesStore = create<RulesState>()(
             ),
           }),
 
+        setRuleParams: (ruleId, params) =>
+          set({
+            rules: get().rules.map((r) =>
+              r.id === ruleId ? { ...r, params } : r,
+            ),
+          }),
+
         resetToDefaultRules: () => {
-          // We'll plug domain/defaultRules.ts here in the next step.
-          set({ rules: [] });
+          set({ rules: createDefaultRules() });
         },
 
         // seeds
