@@ -36,8 +36,9 @@ export function AppShellContainer() {
   const navItems: NavItem[] = useMemo(
     () => [
       { label: "Setup", to: "/wizard/setup" },
-      { label: "Employees", to: "/wizard/employees" },
-      { label: "Rules", to: "/wizard/rules" },
+      { label: "Cadastros · Colaboradores", to: "/cadastros/employees" },
+      { label: "Cadastros · Cargos", to: "/cadastros/roles" },
+      { label: "Cadastros · Rules", to: "/cadastros/rules" },
       { label: "Schedule", to: "/wizard/schedule" },
       { label: "Export", to: "/wizard/export" },
     ],

@@ -48,9 +48,13 @@ type Props = {
   onEditEmployee: (employeeId: EmployeeId) => void;
   onDeleteEmployee: (employeeId: EmployeeId) => void;
   onRestoreEmployeesDefaults: () => void;
+  visibleSections?: Array<"roles" | "employees">;
 };
 
 export function EmployeesPageView(props: Props) {
+  const visibleSections = props.visibleSections ?? ["roles", "employees"];
+  const showRoles = visibleSections.includes("roles");
+  const showEmployees = visibleSections.includes("employees");
   const {
     register: registerRole,
     formState: { errors: roleErrors },
@@ -73,13 +77,15 @@ export function EmployeesPageView(props: Props) {
         </Typography>
       </Box>
 
-      <Box>
-        <Button variant="outlined" onClick={props.onRestoreEmployeesDefaults}>
-          Restaurar defaults de Employees
-        </Button>
-      </Box>
+      {showRoles && showEmployees && (
+        <Box>
+          <Button variant="outlined" onClick={props.onRestoreEmployeesDefaults}>
+            Restaurar defaults de Employees
+          </Button>
+        </Box>
+      )}
 
-      <Paper variant="outlined" sx={{ p: 2 }}>
+      {showRoles && <Paper variant="outlined" sx={{ p: 2 }}>
         <Typography variant="h6" gutterBottom>
           Cargos
         </Typography>
@@ -138,9 +144,9 @@ export function EmployeesPageView(props: Props) {
             </Paper>
           ))}
         </Stack>
-      </Paper>
+      </Paper>}
 
-      <Paper variant="outlined" sx={{ p: 2 }}>
+      {showEmployees && <Paper variant="outlined" sx={{ p: 2 }}>
         <Typography variant="h6" gutterBottom>
           Colaboradores
         </Typography>
@@ -273,7 +279,7 @@ export function EmployeesPageView(props: Props) {
             )}
           </TableBody>
         </Table>
-      </Paper>
+      </Paper>}
     </Stack>
   );
 }

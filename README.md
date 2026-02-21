@@ -128,7 +128,7 @@ Stack: **React + Vite + TypeScript + MUI + Zustand + React Router + RHF + Zod + 
 
 - [x] Projeto React + Vite + TS criado
 - [x] Estrutura inicial de pastas (app/features/stores/domain/shared)
-- [x] Router com rotas do wizard (setup/employees/rules/schedule/export)
+- [x] Router com wizard de planejamento (setup/schedule/export) + menu lateral de cadastros em 3 entradas
 - [x] AppShell base com layout agradável
 - [x] Ajustes de tipagem e exports dos containers (erros 2305 resolvidos)
 
@@ -183,6 +183,14 @@ Stack: **React + Vite + TypeScript + MUI + Zustand + React Router + RHF + Zod + 
 - [x] Editor de parâmetros (JSON no MVP)
 - [x] Validação de regras (HARD/SOFT)
 - [x] Botão para restaurar defaults de Rules (seed)
+
+
+### Cadastros no menu lateral
+
+- [x] Cadastros · Colaboradores (`/cadastros/employees`)
+- [x] Cadastros · Cargos (`/cadastros/roles`)
+- [x] Cadastros · Rules (`/cadastros/rules`)
+- [x] Reuso das telas existentes com foco de espaço por seção
 
 ### Step 5 — Schedule
 
