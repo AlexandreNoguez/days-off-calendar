@@ -45,130 +45,129 @@ function passthrough(input: Record<string, unknown>): Record<string, unknown> {
   return input;
 }
 
-export const ruleFormRegistry: Partial<Record<DefaultRuleKey, RuleFormSchema>> =
-  {
-    fixed_off_sunday_tales: {
-      fields: [
-        {
-          type: "select",
-          key: "employeeId",
-          label: "Employee with fixed Sunday off",
-          source: "employees",
-          required: true,
-        },
-      ],
-      defaults: { employeeId: "" },
-      parser: passthrough,
-      serializer: passthrough,
-    },
+export const ruleFormRegistry: Partial<Record<DefaultRuleKey, RuleFormSchema>> = {
+  fixed_off_sunday_tales: {
+    fields: [
+      {
+        type: "select",
+        key: "employeeId",
+        label: "Employee with fixed Sunday off",
+        source: "employees",
+        required: true,
+      },
+    ],
+    defaults: { employeeId: "" },
+    parser: passthrough,
+    serializer: passthrough,
+  },
 
-    cook_rotation_one_off_each_sunday: {
-      fields: [
-        {
-          type: "select",
-          key: "cookRoleId",
-          label: "Cook role",
-          source: "roles",
-          required: true,
-        },
-        {
-          type: "number",
-          key: "exactlyOffCount",
-          label: "Cooks off each Sunday",
-          min: 1,
-          max: 7,
-          step: 1,
-          required: true,
-        },
-      ],
-      defaults: { cookRoleId: "", exactlyOffCount: 1 },
-      parser: passthrough,
-      serializer: passthrough,
-    },
+  cook_rotation_one_off_each_sunday: {
+    fields: [
+      {
+        type: "select",
+        key: "cookRoleId",
+        label: "Cook role",
+        source: "roles",
+        required: true,
+      },
+      {
+        type: "number",
+        key: "exactlyOffCount",
+        label: "Cooks off each Sunday",
+        min: 1,
+        max: 7,
+        step: 1,
+        required: true,
+      },
+    ],
+    defaults: { cookRoleId: "", exactlyOffCount: 1 },
+    parser: passthrough,
+    serializer: passthrough,
+  },
 
-    cook_if_sunday_work_requires_week_off: {
-      fields: [
-        {
-          type: "select",
-          key: "cookRoleId",
-          label: "Cook role",
-          source: "roles",
-          required: true,
-        },
-        {
-          type: "number",
-          key: "requiredWeekdayOffCount",
-          label: "Required weekday offs",
-          min: 1,
-          max: 6,
-          step: 1,
-          required: true,
-        },
-      ],
-      defaults: { cookRoleId: "", requiredWeekdayOffCount: 1 },
-      parser: passthrough,
-      serializer: passthrough,
-    },
+  cook_if_sunday_work_requires_week_off: {
+    fields: [
+      {
+        type: "select",
+        key: "cookRoleId",
+        label: "Cook role",
+        source: "roles",
+        required: true,
+      },
+      {
+        type: "number",
+        key: "requiredWeekdayOffCount",
+        label: "Required weekday offs",
+        min: 1,
+        max: 6,
+        step: 1,
+        required: true,
+      },
+    ],
+    defaults: { cookRoleId: "", requiredWeekdayOffCount: 1 },
+    parser: passthrough,
+    serializer: passthrough,
+  },
 
-    elaine_not_same_day_josana: {
-      fields: [
-        {
-          type: "select",
-          key: "a",
-          label: "Employee A",
-          source: "employees",
-          required: true,
-        },
-        {
-          type: "select",
-          key: "b",
-          label: "Employee B",
-          source: "employees",
-          required: true,
-        },
-      ],
-      defaults: { a: "", b: "" },
-      parser: passthrough,
-      serializer: passthrough,
-    },
+  elaine_not_same_day_josana: {
+    fields: [
+      {
+        type: "select",
+        key: "a",
+        label: "Employee A",
+        source: "employees",
+        required: true,
+      },
+      {
+        type: "select",
+        key: "b",
+        label: "Employee B",
+        source: "employees",
+        required: true,
+      },
+    ],
+    defaults: { a: "", b: "" },
+    parser: passthrough,
+    serializer: passthrough,
+  },
 
-    if_josana_or_luis_off_then_elaine_must_work: {
-      fields: [
-        {
-          type: "select",
-          key: "substituteId",
-          label: "Replacement employee",
-          source: "employees",
-          required: true,
-        },
-        {
-          type: "multiselect",
-          key: "substitutedIds",
-          label: "Employees that require replacement",
-          source: "employees",
-          minItems: 1,
-          required: true,
-        },
-      ],
-      defaults: { substituteId: "", substitutedIds: [] },
-      parser: passthrough,
-      serializer: passthrough,
-    },
+  if_josana_or_luis_off_then_elaine_must_work: {
+    fields: [
+      {
+        type: "select",
+        key: "substituteId",
+        label: "Replacement employee",
+        source: "employees",
+        required: true,
+      },
+      {
+        type: "multiselect",
+        key: "substitutedIds",
+        label: "Employees that require replacement",
+        source: "employees",
+        minItems: 1,
+        required: true,
+      },
+    ],
+    defaults: { substituteId: "", substitutedIds: [] },
+    parser: passthrough,
+    serializer: passthrough,
+  },
 
-    annual_holiday_credit_one_per_person: {
-      fields: [
-        {
-          type: "number",
-          key: "creditPerYear",
-          label: "Holiday credits per year",
-          min: 0,
-          max: 10,
-          step: 1,
-          required: true,
-        },
-      ],
-      defaults: { creditPerYear: 1 },
-      parser: passthrough,
-      serializer: passthrough,
-    },
-  };
+  annual_holiday_credit_one_per_person: {
+    fields: [
+      {
+        type: "number",
+        key: "creditPerYear",
+        label: "Holiday credits per year",
+        min: 0,
+        max: 10,
+        step: 1,
+        required: true,
+      },
+    ],
+    defaults: { creditPerYear: 1 },
+    parser: passthrough,
+    serializer: passthrough,
+  },
+};

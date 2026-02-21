@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { RuleConfig } from "../domain/types/rules";
 import type { RuleId } from "../domain/types/ids";
+import { createDefaultRules } from "../domain/defaults/defaultRules";
 import { STORAGE_KEYS } from "./persistence";
 import { createDefaultRules } from "../domain/defaults/defaultRules";
 

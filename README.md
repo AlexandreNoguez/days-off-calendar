@@ -183,17 +183,17 @@ Stack: **React + Vite + TypeScript + MUI + Zustand + React Router + RHF + Zod + 
 - [x] Catálogo inicial de schema por regra (`ruleFormRegistry`)
 - [x] Formulários guiados usando dados dinâmicos de colaboradores/cargos (fase inicial)
 - [x] Editor de parâmetros (JSON no MVP, formulários guiados em evolução)
-- [x] Editor de parâmetros (JSON no MVP)
+- [x] Modo avançado JSON opcional dentro do card de regra
 - [x] Validação de regras (HARD/SOFT)
 - [x] Botão para restaurar defaults de Rules (seed)
 
 
 ### Cadastros no menu lateral
 
-- [x] Cadastros · Colaboradores (`/cadastros/employees`)
-- [x] Cadastros · Cargos (`/cadastros/roles`)
-- [x] Cadastros · Rules (`/cadastros/rules`)
-- [x] Reuso das telas existentes com foco de espaço por seção
+- [x] Entrada única `Cadastros` no menu lateral (`/cadastros`)
+- [x] Tabs com `Colaboradores | Cargos | Rules`
+- [x] Reuso das telas existentes para manter lógica de negócio
+- [x] Abas com `Tabs` responsivas para dispositivos menores
 
 ### Step 5 — Schedule
 

@@ -4,7 +4,10 @@ import { useEmployeesPage } from "../employees/useEmployeesPage";
 import { useRulesPage } from "../rules/useRulesPage";
 import { useSeedDefaults } from "../wizard/useSeedDefaults";
 
-import { CadastrosPageView, type CadastrosTab } from "./CadastrosPage.view";
+import {
+  CadastrosPageView,
+  type CadastrosTab,
+} from "./CadastrosPage.view";
 
 export function CadastrosPageContainer() {
   const [tab, setTab] = useState<CadastrosTab>("employees");

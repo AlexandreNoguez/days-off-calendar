@@ -1,13 +1,10 @@
-import { Box, Typography, Tab, Tabs } from "@mui/material";
+import { Box, Tab, Tabs, Typography } from "@mui/material";
 import type { UseFormReturn } from "react-hook-form";
 
 import { EmployeesPageView } from "../employees/EmployeesPage.view";
 import type { Employee, Role } from "../../domain/types/employees";
 import type { EmployeeId, RoleId, RuleId } from "../../domain/types/ids";
-import type {
-  EmployeeFormValues,
-  RoleFormValues,
-} from "../employees/employeeForm";
+import type { EmployeeFormValues, RoleFormValues } from "../employees/employeeForm";
 
 import { RulesPageView } from "../rules/RulesPage.view";
 import type { RuleConfig } from "../../domain/types/rules";
@@ -62,6 +59,7 @@ type Props = {
   onUpdateFormField: (ruleId: RuleId, field: string, value: unknown) => void;
   onSaveFormEdit: (ruleId: RuleId) => void;
 };
+
 export function CadastrosPageView(props: Props) {
   return (
     <Box>

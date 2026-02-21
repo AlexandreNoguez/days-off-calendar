@@ -3,7 +3,10 @@ import type { RuleId } from "../../domain/types/ids";
 import { createDefaultRules } from "../../domain/defaults/defaultRules";
 import { useRulesStore } from "../../stores/rules.store";
 import { useEmployeesStore } from "../../stores/employees.store";
-import { ruleFormRegistry, type RuleFormSchema } from "./ruleFormRegistry";
+import {
+  ruleFormRegistry,
+  type RuleFormSchema,
+} from "./ruleFormRegistry";
 
 type EditState = {
   text: string;
@@ -41,9 +44,7 @@ export function useRulesPage() {
   const employees = useEmployeesStore((s) => s.employees);
 
   const [editing, setEditing] = useState<Record<RuleId, EditState>>({});
-  const [formEditing, setFormEditing] = useState<Record<RuleId, FormEditState>>(
-    {},
-  );
+  const [formEditing, setFormEditing] = useState<Record<RuleId, FormEditState>>({});
 
   const hasRules = rules.length > 0;
 
@@ -88,7 +89,7 @@ export function useRulesPage() {
       ...prev,
       [ruleId]: {
         text,
-        error: 'Os parâmetros devem ser um objeto JSON (ex: {"x":1}).',
+        error: undefined,
       },
     }));
   }
@@ -104,7 +105,7 @@ export function useRulesPage() {
           ...prev,
           [ruleId]: {
             ...draft,
-            error: "Os parâmetros devem ser um objeto JSON (ex: {\"x\":1}).",
+            error: 'Os parâmetros devem ser um objeto JSON (ex: {"x":1}).',
           },
         }));
         return;
@@ -167,7 +168,6 @@ export function useRulesPage() {
     setRuleParams(ruleId, params);
     cancelFormEdit(ruleId);
   }
-
 
   return {
     state: {
