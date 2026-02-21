@@ -72,7 +72,7 @@ Stack: **React + Vite + TypeScript + MUI + Zustand + React Router + RHF + Zod + 
 
 ### Forms/Validação
 
-- [ ] react-hook-form + zod (planejado para Employees/Rules)
+- [x] react-hook-form + zod (implementado em Employees/Rules)
 
 ### Notificações
 
@@ -128,7 +128,7 @@ Stack: **React + Vite + TypeScript + MUI + Zustand + React Router + RHF + Zod + 
 
 - [x] Projeto React + Vite + TS criado
 - [x] Estrutura inicial de pastas (app/features/stores/domain/shared)
-- [x] Router com rotas do wizard (setup/employees/rules/schedule/export)
+- [x] Router com wizard de planejamento (setup/schedule/export) + menu lateral com entrada única de Cadastros e navegação por tabs
 - [x] AppShell base com layout agradável
 - [x] Ajustes de tipagem e exports dos containers (erros 2305 resolvidos)
 
@@ -156,7 +156,7 @@ Stack: **React + Vite + TypeScript + MUI + Zustand + React Router + RHF + Zod + 
 - [x] Hook `useWizardFlow` (navegação entre passos)
 - [x] Hook `useSeedDefaults` (carregar dados padrão)
 - [x] Ação “Carregar dados padrão” funcionando após correções de persistência
-- [ ] Step 2 (Setup calendário + feriados) — **em andamento / próximo passo**
+- [x] Step 2 (Setup calendário + feriados) — concluído
 
 ---
 
@@ -164,44 +164,57 @@ Stack: **React + Vite + TypeScript + MUI + Zustand + React Router + RHF + Zod + 
 
 ### Step 2 — Setup (mês/ano + feriados)
 
-- [ ] Criar/ajustar `plan.store.ts` (year/month/holidays) com persist
-- [ ] Criar `shared/utils/dates.ts` (getDaysOfMonth, weekday, etc.)
-- [ ] Implementar `useSetup()` (contrato pra view)
-- [ ] SetupPage.view: grid de calendário + toggles de feriado
+- [x] Criar/ajustar `plan.store.ts` (year/month/holidays) com persist
+- [x] Criar `shared/utils/dates.ts` (getDaysOfMonth, weekday, etc.)
+- [x] Implementar `useSetup()` (contrato pra view)
+- [x] SetupPage.view: grid de calendário + toggles de feriado
 
 ### Step 3 — Employees
 
-- [ ] UI de listagem e cadastro (RHF + zod)
-- [ ] Seleção de cargo (Role)
-- [ ] Checkbox “sempre folga domingo”
-- [ ] UX: DataGrid (se usar) ou tabela MUI simples
+- [x] UI de listagem e cadastro (RHF + zod)
+- [x] Seleção de cargo (Role)
+- [x] Checkbox “sempre folga domingo”
+- [x] UX: tabela MUI simples
+- [x] Botão para restaurar defaults de Employees (seed)
 
 ### Step 4 — Rules
 
-- [ ] Listagem de regras com switch enabled/disabled
-- [ ] Editor de parâmetros (se necessário)
-- [ ] Validação de regras (HARD/SOFT)
+- [x] Listagem de regras com switch enabled/disabled
+- [x] Catálogo inicial de schema por regra (`ruleFormRegistry`)
+- [x] Formulários guiados usando dados dinâmicos de colaboradores/cargos (fase inicial)
+- [x] Editor de parâmetros (JSON no MVP, formulários guiados em evolução)
+- [x] Modo avançado JSON opcional dentro do card de regra
+- [x] Validação de regras (HARD/SOFT)
+- [x] Botão para restaurar defaults de Rules (seed)
+
+
+### Cadastros no menu lateral
+
+- [x] Entrada única `Cadastros` no menu lateral (`/cadastros`)
+- [x] Tabs com `Colaboradores | Cargos | Rules`
+- [x] Reuso das telas existentes para manter lógica de negócio
+- [x] Abas com `Tabs` responsivas para dispositivos menores
 
 ### Step 5 — Schedule
 
-- [ ] Grade de escala por dia/funcionário
-- [ ] Aplicação automática de regras (gerar sugestão)
-- [ ] Validações e conflitos (exibir mensagens)
-- [ ] Undo/redo UI
+- [x] Grade de escala por dia/funcionário
+- [x] Aplicação automática de regras (gerar sugestão)
+- [x] Validações e conflitos (exibir mensagens)
+- [x] Undo/redo UI
 - [ ] Histórico de alterações (log)
 
 ### Step 6 — Export
 
-- [ ] Montar planilha XLSX final
-- [ ] Escolher lib final (SheetJS ou ExcelJS)
-- [ ] Exportar com formatação mínima
+- [x] Montar planilha XLSX final
+- [x] Escolher lib final (implementação interna OOXML sem dependência externa)
+- [x] Exportar com formatação mínima
 
 ### Extras (qualidade)
 
 - [ ] ErrorBoundary customizado no router
 - [ ] Toastify em ações importantes (seed, salvar, export)
 - [ ] Responsividade refinada no AppShell (Drawer/hamburger)
-- [ ] Botão “limpar dados” global (localStorage + reset stores)
+- [x] Botão “limpar dados” global (localStorage + reset stores)
 - [ ] Documentação de regras (HARD/SOFT) e exemplos
 
 ---

@@ -3,6 +3,7 @@ import { NavLink } from "react-router-dom";
 import {
   AppBar,
   Box,
+  Button,
   CssBaseline,
   Divider,
   Drawer,
@@ -30,6 +31,7 @@ type Props = {
   onToggleMobileDrawer: () => void;
   onCloseMobileDrawer: () => void;
   onNavItemClick: () => void;
+  onResetAll: () => void;
 
   content: React.ReactNode;
 };
@@ -74,6 +76,12 @@ export function AppShellView(props: Props) {
 
       <Box sx={{ flex: 1 }} />
 
+      <Box sx={{ p: 2 }}>
+        <Button variant="outlined" color="warning" fullWidth onClick={props.onResetAll}>
+          Iniciar próximo mês
+        </Button>
+      </Box>
+
       <Divider />
 
       <Box sx={{ p: 2 }}>
@@ -107,9 +115,13 @@ export function AppShellView(props: Props) {
             </IconButton>
           )}
 
-          <Typography variant="h6" component="div" noWrap>
+          <Typography variant="h6" component="div" noWrap sx={{ flex: 1 }}>
             {props.title}
           </Typography>
+
+          <Button color="inherit" variant="outlined" onClick={props.onResetAll}>
+            Reiniciar
+          </Button>
         </Toolbar>
       </AppBar>
 
