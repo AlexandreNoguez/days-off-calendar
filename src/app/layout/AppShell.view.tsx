@@ -119,9 +119,11 @@ export function AppShellView(props: Props) {
             {props.title}
           </Typography>
 
-          <Button color="inherit" variant="outlined" onClick={props.onResetAll}>
-            Reiniciar
-          </Button>
+          {!props.isMobile && (
+            <Button color="inherit" variant="outlined" onClick={props.onResetAll}>
+              Reiniciar
+            </Button>
+          )}
         </Toolbar>
       </AppBar>
 
@@ -134,7 +136,10 @@ export function AppShellView(props: Props) {
           ModalProps={{ keepMounted: true }}
           sx={{
             "& .MuiDrawer-paper": {
-              width: DRAWER_WIDTH,
+              width: {
+                xs: "min(86vw, 320px)",
+                sm: DRAWER_WIDTH,
+              },
             },
           }}
         >
@@ -162,8 +167,9 @@ export function AppShellView(props: Props) {
         component="main"
         sx={{
           flex: 1,
-          px: { xs: 2, md: 3 },
-          py: 2,
+          minWidth: 0,
+          px: { xs: 1, sm: 2, md: 3 },
+          py: { xs: 1.5, sm: 2 },
           width: "100%",
         }}
       >

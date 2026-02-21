@@ -77,10 +77,10 @@ export function EmployeesPageView(props: Props) {
         </Typography>
       </Box>
 
-      {showRoles && showEmployees && (
+      {(showRoles || showEmployees) && (
         <Box>
           <Button variant="outlined" onClick={props.onRestoreEmployeesDefaults}>
-            Restaurar defaults de Employees
+            Restaurar cargos e colaboradores padrão
           </Button>
         </Box>
       )}
