@@ -14,6 +14,7 @@ export type DefaultRuleKey =
   | "assistant_weekday_off_must_be_fixed"
   | "laundry_one_sunday_off_per_month"
   | "pot_washer_one_sunday_off_per_month"
+  | "max_six_consecutive_work_days"
   | "no_coincidence_clarice_ingrid_elaine"
   | "elaine_not_same_day_josana"
   | "elaine_not_same_day_luis"

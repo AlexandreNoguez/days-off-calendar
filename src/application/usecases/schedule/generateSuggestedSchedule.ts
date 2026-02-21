@@ -143,6 +143,35 @@ function buildSundayOffForbiddenPairs(rules: RuleConfig[]): Set<string> {
   return out;
 }
 
+function countPairConflictsOnDate(
+  assignments: ScheduleAssignments,
+  employeeId: string,
+  dateISO: DateISO,
+  forbiddenPairs: Set<string>,
+): number {
+  let conflicts = 0;
+  for (const [otherId, byDate] of Object.entries(assignments)) {
+    if (otherId === employeeId) continue;
+    if (byDate[dateISO] !== "OFF") continue;
+    if (forbiddenPairs.has(pairKey(employeeId, otherId))) conflicts += 1;
+  }
+  return conflicts;
+}
+
+function streakEndingAt(
+  assignments: ScheduleAssignments,
+  employeeId: string,
+  days: DateISO[],
+  endIndex: number,
+): number {
+  let streak = 0;
+  for (let i = endIndex; i >= 0; i -= 1) {
+    if (assignments[employeeId]?.[days[i]] === "OFF") break;
+    streak += 1;
+  }
+  return streak;
+}
+
 export function generateSuggestedSchedule(input: Input): ScheduleAssignments {
   const assignments: ScheduleAssignments = {};
 
@@ -413,6 +442,62 @@ export function generateSuggestedSchedule(input: Input): ScheduleAssignments {
         const fallbackDate = weekDays.find((d) => getWeekday(d) !== 1);
         if (fallbackDate) ensureOff(assignments, assistant.id, fallbackDate);
       });
+    });
+  }
+
+  // Global legal rule: max consecutive work days.
+  const maxConsecutiveRule = isEnabledRule(input.rules, "max_six_consecutive_work_days");
+  const maxConsecutive =
+    asNumber(maxConsecutiveRule?.params.maxConsecutiveWorkDays) ?? 6;
+
+  if (maxConsecutiveRule && maxConsecutive > 0) {
+    const forbiddenPairs = new Set<string>([
+      ...buildAssistantForbiddenPairs(input.rules),
+      ...buildSundayOffForbiddenPairs(input.rules),
+    ]);
+
+    input.employees.forEach((employee) => {
+      for (let idx = 0; idx < input.daysOfMonth.length; idx += 1) {
+        const dateISO = input.daysOfMonth[idx];
+        const isOffNow = assignments[employee.id]?.[dateISO] === "OFF";
+        if (isOffNow) continue;
+
+        let streak = streakEndingAt(assignments, employee.id, input.daysOfMonth, idx);
+        if (streak <= maxConsecutive) continue;
+
+        const windowStart = Math.max(0, idx - maxConsecutive);
+        const candidates = input.daysOfMonth
+          .slice(windowStart, idx + 1)
+          .filter((d) => assignments[employee.id]?.[d] !== "OFF");
+
+        let bestDate: DateISO | undefined;
+        let bestScore = Number.POSITIVE_INFINITY;
+
+        candidates.forEach((candidate) => {
+          const weekday = getWeekday(candidate);
+          const pairConflicts = countPairConflictsOnDate(
+            assignments,
+            employee.id,
+            candidate,
+            forbiddenPairs,
+          );
+          const sundayPenalty = weekday === 0 ? 5 : 0;
+          const score = pairConflicts * 100 + sundayPenalty;
+
+          if (score < bestScore) {
+            bestScore = score;
+            bestDate = candidate;
+          }
+        });
+
+        if (bestDate) {
+          ensureOff(assignments, employee.id, bestDate);
+          streak = streakEndingAt(assignments, employee.id, input.daysOfMonth, idx);
+          if (streak > maxConsecutive) {
+            ensureOff(assignments, employee.id, dateISO);
+          }
+        }
+      }
     });
   }
 

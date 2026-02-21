@@ -142,6 +142,18 @@ export function createDefaultRules(): RuleConfig[] {
       },
     }),
 
+    // Legal rule: max 6 consecutive work days
+    createRule({
+      key: "max_six_consecutive_work_days",
+      title: "Máximo de 6 dias consecutivos de trabalho",
+      severity: "HARD",
+      params: {
+        maxConsecutiveWorkDays: 6,
+      },
+      description:
+        "Nenhum colaborador pode trabalhar mais de 6 dias seguidos sem folga.",
+    }),
+
     // Clarice, Ingrid, Elaine cannot be OFF on the same day
     createRule({
       key: "no_coincidence_clarice_ingrid_elaine",

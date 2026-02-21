@@ -161,6 +161,38 @@ export function validateSchedule(input: Input): ValidationResult {
     }
   });
 
+  // Legal rule: max consecutive work days
+  const maxConsecutiveRule = enabledRule(input.rules, "max_six_consecutive_work_days");
+  if (maxConsecutiveRule) {
+    const maxConsecutive = numberParam(
+      maxConsecutiveRule.params,
+      "maxConsecutiveWorkDays",
+    ) ?? 6;
+
+    input.employees.forEach((employee) => {
+      let streak = 0;
+
+      input.daysOfMonth.forEach((dateISO) => {
+        const off = isOff(input.assignments, employee.id, dateISO);
+        if (off) {
+          streak = 0;
+          return;
+        }
+
+        streak += 1;
+        if (streak > maxConsecutive) {
+          addConflict(conflicts, {
+            ruleId: maxConsecutiveRule.id,
+            dateISO,
+            employeeIds: [employee.id],
+            severity: maxConsecutiveRule.severity,
+            message: `Ultrapassou ${maxConsecutive} dias consecutivos de trabalho.`,
+          });
+        }
+      });
+    });
+  }
+
   // Pair constraints and substitutions (daily checks)
   input.daysOfMonth.forEach((dateISO) => {
     const coincidenceGroup = enabledRule(input.rules, "no_coincidence_clarice_ingrid_elaine");

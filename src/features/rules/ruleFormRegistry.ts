@@ -226,6 +226,23 @@ export const ruleFormRegistry: Partial<Record<DefaultRuleKey, RuleFormSchema>> =
     serializer: passthrough,
   },
 
+  max_six_consecutive_work_days: {
+    fields: [
+      {
+        type: "number",
+        key: "maxConsecutiveWorkDays",
+        label: "Máximo de dias consecutivos",
+        min: 1,
+        max: 14,
+        step: 1,
+        required: true,
+      },
+    ],
+    defaults: { maxConsecutiveWorkDays: 6 },
+    parser: passthrough,
+    serializer: passthrough,
+  },
+
   elaine_not_same_day_josana: {
     fields: [
       {
