@@ -9,11 +9,13 @@ import { RulesPageContainer } from "../features/rules/RulesPage.container";
 import { SchedulePageContainer } from "../features/schedule/SchedulePage.container";
 import { ExportPageContainer } from "../features/export/ExportPage.container";
 import { CadastrosPageContainer } from "../features/cadastros/CadastrosPage.container";
+import { AppErrorBoundary } from "./router/AppErrorBoundary";
 
 export const router = createBrowserRouter([
   {
     path: "/",
     element: <AppShellContainer />,
+    errorElement: <AppErrorBoundary />,
     children: [
       { index: true, element: <Navigate to="/wizard/setup" replace /> },
 
