@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from "react";
 import type { DateISO, EmployeeId } from "../../domain/types/ids";
+import type { ScheduleChangeLogEntry } from "../../domain/types/schedule";
 import { getDaysOfMonth, WEEKDAY_LABELS_PT } from "../../shared/utils/dates";
 import { useEmployeesStore } from "../../stores/employees.store";
 import { usePlanStore } from "../../stores/plan.store";
@@ -25,6 +26,24 @@ type EmployeeRow = {
   offCount: number;
 };
 
+type ChangeLogRow = {
+  id: string;
+  atLabel: string;
+  message: string;
+};
+
+function buildChangeMessage(
+  entry: ScheduleChangeLogEntry,
+  employeeNameById: Record<string, string>,
+): string {
+  if (entry.type === "SET_STATUS" && entry.employeeId && entry.dateISO) {
+    const employeeName = employeeNameById[entry.employeeId] ?? entry.employeeId;
+    return `${employeeName} em ${entry.dateISO}: ${entry.prevStatus} -> ${entry.nextStatus}`;
+  }
+
+  return entry.message;
+}
+
 export function useScheduleEditor() {
   const year = usePlanStore((s) => s.year);
   const month = usePlanStore((s) => s.month);
@@ -35,6 +54,7 @@ export function useScheduleEditor() {
   const holidays = useCalendarStore((s) => s.holidaySet);
 
   const history = useScheduleStore((s) => s.history);
+  const changeLog = useScheduleStore((s) => s.changeLog);
   const setAssignments = useScheduleStore((s) => s.actions.setAssignments);
   const setStatus = useScheduleStore((s) => s.actions.setStatus);
   const toggleOff = useScheduleStore((s) => s.actions.toggleOff);
@@ -72,6 +92,19 @@ export function useScheduleEditor() {
       };
     });
   }, [employees, roles, dayColumns, assignments]);
+
+  const employeeNameById = useMemo(
+    () => Object.fromEntries(employees.map((employee) => [employee.id, employee.name])),
+    [employees],
+  );
+
+  const changeLogRows = useMemo<ChangeLogRow[]>(() => {
+    return [...changeLog].reverse().map((entry) => ({
+      id: entry.id,
+      atLabel: new Date(entry.at).toLocaleString("pt-BR"),
+      message: buildChangeMessage(entry, employeeNameById),
+    }));
+  }, [changeLog, employeeNameById]);
 
   const computedValidation = useMemo(
     () =>
@@ -153,6 +186,7 @@ export function useScheduleEditor() {
       canUndo: history.past.length > 0,
       canRedo: history.future.length > 0,
       validation: validationResult,
+      changeLogRows,
     },
     actions: {
       getCellStatus,

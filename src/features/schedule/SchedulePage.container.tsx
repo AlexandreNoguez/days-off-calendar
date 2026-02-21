@@ -15,6 +15,7 @@ export function SchedulePageContainer() {
       canUndo={schedule.state.canUndo}
       canRedo={schedule.state.canRedo}
       validation={schedule.state.validation}
+      changeLogRows={schedule.state.changeLogRows}
       getCellStatus={schedule.actions.getCellStatus}
       onSetStatus={schedule.actions.setStatus}
       onToggleOff={schedule.actions.toggleOff}
