@@ -233,7 +233,10 @@ export function RulesPageView(props: Props) {
                             m: 0,
                             p: 1.5,
                             borderRadius: 1,
-                            bgcolor: "grey.100",
+                            bgcolor: "action.hover",
+                            color: "text.primary",
+                            border: "1px solid",
+                            borderColor: "divider",
                             overflowX: "auto",
                             fontSize: 12,
                           }}

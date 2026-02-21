@@ -12,8 +12,11 @@ import {
   ListItemButton,
   ListItemText,
   Toolbar,
+  Tooltip,
   Typography,
 } from "@mui/material";
+import SunnyIcon from "@mui/icons-material/Sunny";
+import DarkModeIcon from "@mui/icons-material/DarkMode";
 
 type NavItem = {
   label: string;
@@ -121,9 +124,25 @@ export function AppShellView(props: Props) {
             {props.title}
           </Typography>
 
-          <Button color="inherit" variant="outlined" onClick={props.onToggleThemeMode}>
-            {props.themeMode === "light" ? "Dark" : "Light"}
-          </Button>
+          <Tooltip
+            title={
+              props.themeMode === "light"
+                ? "Ativar modo escuro"
+                : "Ativar modo claro"
+            }
+          >
+            <IconButton
+              color="inherit"
+              aria-label={
+                props.themeMode === "light"
+                  ? "Ativar modo escuro"
+                  : "Ativar modo claro"
+              }
+              onClick={props.onToggleThemeMode}
+            >
+              {props.themeMode === "light" ? <DarkModeIcon /> : <SunnyIcon />}
+            </IconButton>
+          </Tooltip>
 
           {!props.isMobile && (
             <Button color="inherit" variant="outlined" onClick={props.onResetAll}>
