@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import type { RuleId } from "../../domain/types/ids";
 import { createDefaultRules } from "../../domain/defaults/defaultRules";
 import { useRulesStore } from "../../stores/rules.store";
+import { ruleFormRegistry } from "./ruleFormRegistry";
 
 type EditState = {
   text: string;
@@ -104,6 +105,8 @@ export function useRulesPage() {
       orderedRules,
       hasRules,
       editing,
+      ruleFormRegistry,
+      formReadyRulesCount: Object.keys(ruleFormRegistry).length,
     },
     actions: {
       ensureDefaultRules,

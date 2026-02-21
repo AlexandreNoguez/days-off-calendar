@@ -22,6 +22,7 @@ type Props = {
   rules: RuleConfig[];
   hasRules: boolean;
   editing: Record<RuleId, EditState>;
+  formReadyRulesCount: number;
 
   onEnsureDefaultRules: () => void;
   onResetToDefaults: () => void;
@@ -44,9 +45,15 @@ export function RulesPageView(props: Props) {
       <Box>
         <Typography variant="h5">Regras</Typography>
         <Typography variant="body2" color="text.secondary">
-          Ative/desative regras e ajuste os parâmetros em JSON quando necessário.
+          Ative/desative regras e ajuste os parâmetros em JSON quando
+          necessário.
         </Typography>
       </Box>
+
+      <Alert severity="info">
+        Friendly form registry is ready for {props.formReadyRulesCount} rules in
+        this first step.
+      </Alert>
 
       <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
         <Button variant="contained" onClick={props.onEnsureDefaultRules}>
@@ -55,7 +62,11 @@ export function RulesPageView(props: Props) {
         <Button variant="outlined" onClick={props.onResetToDefaults}>
           Restaurar defaults
         </Button>
-        <Button variant="outlined" color="secondary" onClick={props.onRestoreRulesDefaults}>
+        <Button
+          variant="outlined"
+          color="secondary"
+          onClick={props.onRestoreRulesDefaults}
+        >
           Restaurar defaults (seed)
         </Button>
       </Stack>

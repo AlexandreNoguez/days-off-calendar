@@ -180,6 +180,8 @@ Stack: **React + Vite + TypeScript + MUI + Zustand + React Router + RHF + Zod + 
 ### Step 4 — Rules
 
 - [x] Listagem de regras com switch enabled/disabled
+- [x] Catálogo inicial de schema por regra (`ruleFormRegistry`)
+- [x] Editor de parâmetros (JSON no MVP, formulários guiados em evolução)
 - [x] Editor de parâmetros (JSON no MVP)
 - [x] Validação de regras (HARD/SOFT)
 - [x] Botão para restaurar defaults de Rules (seed)

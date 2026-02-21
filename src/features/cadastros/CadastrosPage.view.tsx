@@ -45,6 +45,8 @@ type Props = {
   rules: RuleConfig[];
   hasRules: boolean;
   editing: Record<RuleId, JsonEditState>;
+  formReadyRulesCount: number;
+
   onEnsureDefaultRules: () => void;
   onResetToDefaults: () => void;
   onRestoreRulesDefaults: () => void;
@@ -126,6 +128,7 @@ export function CadastrosPageView(props: Props) {
           rules={props.rules}
           hasRules={props.hasRules}
           editing={props.editing}
+          formReadyRulesCount={props.formReadyRulesCount}
           onEnsureDefaultRules={props.onEnsureDefaultRules}
           onResetToDefaults={props.onResetToDefaults}
           onRestoreRulesDefaults={props.onRestoreRulesDefaults}

@@ -36,6 +36,7 @@ export function CadastrosPageContainer() {
       rules={rulesPage.state.orderedRules}
       hasRules={rulesPage.state.hasRules}
       editing={rulesPage.state.editing}
+      formReadyRulesCount={rulesPage.state.formReadyRulesCount}
       onEnsureDefaultRules={rulesPage.actions.ensureDefaultRules}
       onResetToDefaults={rulesPage.actions.resetToDefaultRules}
       onRestoreRulesDefaults={seedDefaults.actions.seedRulesDefaults}
