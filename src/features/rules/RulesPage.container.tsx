@@ -16,6 +16,10 @@ export function RulesPageContainer() {
       formRegistry={rulesPage.state.ruleFormRegistry}
       roles={rulesPage.state.roles}
       employees={rulesPage.state.employees}
+      isCreateDialogOpen={rulesPage.state.isCreateDialogOpen}
+      createStep={rulesPage.state.createStep}
+      createError={rulesPage.state.createError}
+      createRuleDraft={rulesPage.state.createRuleDraft}
       onEnsureDefaultRules={rulesPage.actions.ensureDefaultRules}
       onResetToDefaults={rulesPage.actions.resetToDefaultRules}
       onRestoreRulesDefaults={seedDefaults.actions.seedRulesDefaults}
@@ -28,6 +32,11 @@ export function RulesPageContainer() {
       onCancelFormEdit={rulesPage.actions.cancelFormEdit}
       onUpdateFormField={rulesPage.actions.updateFormField}
       onSaveFormEdit={rulesPage.actions.saveFormEdit}
+      onOpenCreateRuleDialog={rulesPage.actions.openCreateRuleDialog}
+      onCloseCreateRuleDialog={rulesPage.actions.closeCreateRuleDialog}
+      onChangeCreateStep={rulesPage.actions.changeCreateStep}
+      onUpdateCreateRuleDraft={rulesPage.actions.updateCreateRuleDraft}
+      onCreateCustomRule={rulesPage.actions.createCustomRule}
     />
   );
 }

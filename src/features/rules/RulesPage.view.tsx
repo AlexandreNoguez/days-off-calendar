@@ -2,6 +2,7 @@ import type { Employee, Role } from "../../domain/types/employees";
 import type { RuleId } from "../../domain/types/ids";
 import type { RuleConfig } from "../../domain/types/rules";
 import type { RuleFieldSpec, RuleFormSchema } from "./ruleFormRegistry";
+import type { CustomRuleTemplate } from "./useRulesPage";
 import {
   Alert,
   Box,
@@ -9,7 +10,10 @@ import {
   Card,
   CardContent,
   Checkbox,
-  Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   FormControl,
   FormControlLabel,
   InputLabel,
@@ -17,9 +21,13 @@ import {
   OutlinedInput,
   Select,
   Stack,
+  Step,
+  StepLabel,
+  Stepper,
   Switch,
   TextField,
   Typography,
+  Chip,
 } from "@mui/material";
 
 type EditState = {
@@ -31,6 +39,15 @@ type FormEditState = {
   params: Record<string, unknown>;
 };
 
+type CreateRuleDraft = {
+  template: CustomRuleTemplate;
+  employeeAId: string;
+  employeeBId: string;
+  substituteId: string;
+  substitutedIds: string[];
+  cookRoleId: string;
+};
+
 type Props = {
   rules: RuleConfig[];
   hasRules: boolean;
@@ -40,6 +57,11 @@ type Props = {
   formRegistry: Partial<Record<RuleConfig["key"], RuleFormSchema>>;
   roles: Role[];
   employees: Employee[];
+
+  isCreateDialogOpen: boolean;
+  createStep: number;
+  createError?: string;
+  createRuleDraft: CreateRuleDraft;
 
   onEnsureDefaultRules: () => void;
   onResetToDefaults: () => void;
@@ -55,12 +77,20 @@ type Props = {
   onCancelFormEdit: (ruleId: RuleId) => void;
   onUpdateFormField: (ruleId: RuleId, field: string, value: unknown) => void;
   onSaveFormEdit: (ruleId: RuleId) => void;
+
+  onOpenCreateRuleDialog: () => void;
+  onCloseCreateRuleDialog: () => void;
+  onChangeCreateStep: (step: number) => void;
+  onUpdateCreateRuleDraft: (patch: Partial<CreateRuleDraft>) => void;
+  onCreateCustomRule: () => void;
 };
 
 type Option = {
   value: string;
   label: string;
 };
+
+const createRuleSteps = ["Tipo", "Participantes", "Condição e resultado"];
 
 function severityColor(severity: RuleConfig["severity"]): "error" | "warning" {
   return severity === "HARD" ? "error" : "warning";
@@ -81,6 +111,16 @@ function getSourceOptions(
 }
 
 export function RulesPageView(props: Props) {
+  const employeeOptions = props.employees.map((employee) => ({
+    value: employee.id,
+    label: employee.name,
+  }));
+
+  const roleOptions = props.roles.map((role) => ({ value: role.id, label: role.name }));
+
+  const canBackCreateStep = props.createStep > 0;
+  const canAdvanceCreateStep = props.createStep < createRuleSteps.length - 1;
+
   return (
     <Stack spacing={2}>
       <Box>
@@ -103,6 +143,9 @@ export function RulesPageView(props: Props) {
         </Button>
         <Button variant="outlined" color="secondary" onClick={props.onRestoreRulesDefaults}>
           Restaurar defaults (seed)
+        </Button>
+        <Button variant="contained" color="success" onClick={props.onOpenCreateRuleDialog}>
+          Nova regra personalizada
         </Button>
       </Stack>
 
@@ -379,6 +422,177 @@ export function RulesPageView(props: Props) {
           </Card>
         );
       })}
+
+      <Dialog open={props.isCreateDialogOpen} onClose={props.onCloseCreateRuleDialog} fullWidth>
+        <DialogTitle>Nova regra personalizada</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <Stepper activeStep={props.createStep} alternativeLabel>
+              {createRuleSteps.map((label) => (
+                <Step key={label}>
+                  <StepLabel>{label}</StepLabel>
+                </Step>
+              ))}
+            </Stepper>
+
+            {props.createError && <Alert severity="error">{props.createError}</Alert>}
+
+            {props.createStep === 0 && (
+              <FormControl fullWidth>
+                <InputLabel>Template de regra</InputLabel>
+                <Select
+                  label="Template de regra"
+                  value={props.createRuleDraft.template}
+                  onChange={(e) =>
+                    props.onUpdateCreateRuleDraft({
+                      template: e.target.value as CustomRuleTemplate,
+                    })
+                  }
+                >
+                  <MenuItem value="pair_cannot_both_off">Par não pode folgar junto</MenuItem>
+                  <MenuItem value="substitution_required">Substituição obrigatória</MenuItem>
+                  <MenuItem value="cook_one_off_each_sunday">1 folga de cozinheiro por domingo</MenuItem>
+                </Select>
+              </FormControl>
+            )}
+
+            {props.createStep === 1 && (
+              <>
+                {props.createRuleDraft.template === "pair_cannot_both_off" && (
+                  <Stack spacing={1.25}>
+                    <FormControl fullWidth>
+                      <InputLabel>Colaborador A</InputLabel>
+                      <Select
+                        label="Colaborador A"
+                        value={props.createRuleDraft.employeeAId}
+                        onChange={(e) =>
+                          props.onUpdateCreateRuleDraft({ employeeAId: String(e.target.value) })
+                        }
+                      >
+                        {employeeOptions.map((option) => (
+                          <MenuItem key={option.value} value={option.value}>
+                            {option.label}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+
+                    <FormControl fullWidth>
+                      <InputLabel>Colaborador B</InputLabel>
+                      <Select
+                        label="Colaborador B"
+                        value={props.createRuleDraft.employeeBId}
+                        onChange={(e) =>
+                          props.onUpdateCreateRuleDraft({ employeeBId: String(e.target.value) })
+                        }
+                      >
+                        {employeeOptions.map((option) => (
+                          <MenuItem key={option.value} value={option.value}>
+                            {option.label}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Stack>
+                )}
+
+                {props.createRuleDraft.template === "substitution_required" && (
+                  <Stack spacing={1.25}>
+                    <FormControl fullWidth>
+                      <InputLabel>Substituto</InputLabel>
+                      <Select
+                        label="Substituto"
+                        value={props.createRuleDraft.substituteId}
+                        onChange={(e) =>
+                          props.onUpdateCreateRuleDraft({ substituteId: String(e.target.value) })
+                        }
+                      >
+                        {employeeOptions.map((option) => (
+                          <MenuItem key={option.value} value={option.value}>
+                            {option.label}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+
+                    <FormControl fullWidth>
+                      <InputLabel>Substituídos</InputLabel>
+                      <Select
+                        multiple
+                        input={<OutlinedInput label="Substituídos" />}
+                        value={props.createRuleDraft.substitutedIds}
+                        onChange={(e) =>
+                          props.onUpdateCreateRuleDraft({
+                            substitutedIds:
+                              typeof e.target.value === "string"
+                                ? e.target.value.split(",")
+                                : (e.target.value as string[]),
+                          })
+                        }
+                        renderValue={(selected) =>
+                          (selected as string[])
+                            .map((id) => employeeOptions.find((option) => option.value === id)?.label ?? id)
+                            .join(", ")
+                        }
+                      >
+                        {employeeOptions.map((option) => (
+                          <MenuItem key={option.value} value={option.value}>
+                            {option.label}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Stack>
+                )}
+
+                {props.createRuleDraft.template === "cook_one_off_each_sunday" && (
+                  <FormControl fullWidth>
+                    <InputLabel>Cargo dos cozinheiros</InputLabel>
+                    <Select
+                      label="Cargo dos cozinheiros"
+                      value={props.createRuleDraft.cookRoleId}
+                      onChange={(e) =>
+                        props.onUpdateCreateRuleDraft({ cookRoleId: String(e.target.value) })
+                      }
+                    >
+                      {roleOptions.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                )}
+              </>
+            )}
+
+            {props.createStep === 2 && (
+              <Alert severity="info">
+                Revise os participantes e confirme para criar a regra personalizada com severidade HARD.
+              </Alert>
+            )}
+          </Stack>
+        </DialogContent>
+
+        <DialogActions>
+          <Button onClick={props.onCloseCreateRuleDialog}>Fechar</Button>
+          <Button
+            onClick={() => props.onChangeCreateStep(props.createStep - 1)}
+            disabled={!canBackCreateStep}
+          >
+            Voltar
+          </Button>
+          {canAdvanceCreateStep ? (
+            <Button variant="contained" onClick={() => props.onChangeCreateStep(props.createStep + 1)}>
+              Próximo
+            </Button>
+          ) : (
+            <Button variant="contained" color="success" onClick={props.onCreateCustomRule}>
+              Criar regra
+            </Button>
+          )}
+        </DialogActions>
+      </Dialog>
     </Stack>
   );
 }

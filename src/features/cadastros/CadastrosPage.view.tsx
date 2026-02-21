@@ -9,12 +9,22 @@ import type { EmployeeFormValues, RoleFormValues } from "../employees/employeeFo
 import { RulesPageView } from "../rules/RulesPage.view";
 import type { RuleConfig } from "../../domain/types/rules";
 import type { RuleFormSchema } from "../rules/ruleFormRegistry";
+import type { CustomRuleTemplate } from "../rules/useRulesPage";
 
 type EmployeeRow = Employee & { roleName: string };
 
 type JsonEditState = {
   text: string;
   error?: string;
+};
+
+type CreateRuleDraft = {
+  template: CustomRuleTemplate;
+  employeeAId: string;
+  employeeBId: string;
+  substituteId: string;
+  substitutedIds: string[];
+  cookRoleId: string;
 };
 
 export type CadastrosTab = "employees" | "roles" | "rules";
@@ -46,6 +56,10 @@ type Props = {
   formEditing: Record<RuleId, { params: Record<string, unknown> }>;
   formReadyRulesCount: number;
   formRegistry: Partial<Record<RuleConfig["key"], RuleFormSchema>>;
+  isCreateDialogOpen: boolean;
+  createStep: number;
+  createError?: string;
+  createRuleDraft: CreateRuleDraft;
   onEnsureDefaultRules: () => void;
   onResetToDefaults: () => void;
   onRestoreRulesDefaults: () => void;
@@ -58,6 +72,11 @@ type Props = {
   onCancelFormEdit: (ruleId: RuleId) => void;
   onUpdateFormField: (ruleId: RuleId, field: string, value: unknown) => void;
   onSaveFormEdit: (ruleId: RuleId) => void;
+  onOpenCreateRuleDialog: () => void;
+  onCloseCreateRuleDialog: () => void;
+  onChangeCreateStep: (step: number) => void;
+  onUpdateCreateRuleDraft: (patch: Partial<CreateRuleDraft>) => void;
+  onCreateCustomRule: () => void;
 };
 
 export function CadastrosPageView(props: Props) {
@@ -149,6 +168,15 @@ export function CadastrosPageView(props: Props) {
           onCancelFormEdit={props.onCancelFormEdit}
           onUpdateFormField={props.onUpdateFormField}
           onSaveFormEdit={props.onSaveFormEdit}
+          isCreateDialogOpen={props.isCreateDialogOpen}
+          createStep={props.createStep}
+          createError={props.createError}
+          createRuleDraft={props.createRuleDraft}
+          onOpenCreateRuleDialog={props.onOpenCreateRuleDialog}
+          onCloseCreateRuleDialog={props.onCloseCreateRuleDialog}
+          onChangeCreateStep={props.onChangeCreateStep}
+          onUpdateCreateRuleDraft={props.onUpdateCreateRuleDraft}
+          onCreateCustomRule={props.onCreateCustomRule}
         />
       )}
     </Box>

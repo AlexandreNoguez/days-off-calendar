@@ -184,6 +184,7 @@ Stack: **React + Vite + TypeScript + MUI + Zustand + React Router + RHF + Zod + 
 - [x] Formulários guiados usando dados dinâmicos de colaboradores/cargos (fase inicial)
 - [x] Editor de parâmetros (JSON no MVP, formulários guiados em evolução)
 - [x] Modo avançado JSON opcional dentro do card de regra
+- [x] Nova regra personalizada com wizard curto (templates)
 - [x] Validação de regras (HARD/SOFT)
 - [x] Botão para restaurar defaults de Rules (seed)
 
