@@ -46,6 +46,8 @@ type CreateRuleDraft = {
   substituteId: string;
   substitutedIds: string[];
   cookRoleId: string;
+  sundayOffCount: number;
+  severity: RuleConfig["severity"];
 };
 
 type Props = {
@@ -488,6 +490,22 @@ export function RulesPageView(props: Props) {
                     <MenuItem value="cook_one_off_each_sunday">1 folga de cozinheiro por domingo</MenuItem>
                   </Select>
                 </FormControl>
+
+                <FormControl fullWidth>
+                  <InputLabel>Severidade</InputLabel>
+                  <Select
+                    label="Severidade"
+                    value={props.createRuleDraft.severity}
+                    onChange={(e) =>
+                      props.onUpdateCreateRuleDraft({
+                        severity: e.target.value as RuleConfig["severity"],
+                      })
+                    }
+                  >
+                    <MenuItem value="HARD">HARD (bloqueia validade)</MenuItem>
+                    <MenuItem value="SOFT">SOFT (recomendação)</MenuItem>
+                  </Select>
+                </FormControl>
               </Stack>
             )}
 
@@ -581,29 +599,44 @@ export function RulesPageView(props: Props) {
                 )}
 
                 {props.createRuleDraft.template === "cook_one_off_each_sunday" && (
-                  <FormControl fullWidth>
-                    <InputLabel>Cargo dos cozinheiros</InputLabel>
-                    <Select
-                      label="Cargo dos cozinheiros"
-                      value={props.createRuleDraft.cookRoleId}
+                  <Stack spacing={1.25}>
+                    <FormControl fullWidth>
+                      <InputLabel>Cargo</InputLabel>
+                      <Select
+                        label="Cargo"
+                        value={props.createRuleDraft.cookRoleId}
+                        onChange={(e) =>
+                          props.onUpdateCreateRuleDraft({ cookRoleId: String(e.target.value) })
+                        }
+                      >
+                        {roleOptions.map((option) => (
+                          <MenuItem key={option.value} value={option.value}>
+                            {option.label}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+
+                    <TextField
+                      type="number"
+                      label="Quantidade de folgas no domingo"
+                      value={props.createRuleDraft.sundayOffCount}
                       onChange={(e) =>
-                        props.onUpdateCreateRuleDraft({ cookRoleId: String(e.target.value) })
+                        props.onUpdateCreateRuleDraft({
+                          sundayOffCount: Math.max(1, Number(e.target.value) || 1),
+                        })
                       }
-                    >
-                      {roleOptions.map((option) => (
-                        <MenuItem key={option.value} value={option.value}>
-                          {option.label}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
+                      slotProps={{ htmlInput: { min: 1, max: 7, step: 1 } }}
+                    />
+                  </Stack>
                 )}
               </>
             )}
 
             {props.createStep === 2 && (
               <Alert severity="info">
-                Revise os participantes e confirme para criar a regra personalizada com severidade HARD.
+                Revise os participantes e confirme para criar a regra personalizada
+                com severidade {props.createRuleDraft.severity}.
               </Alert>
             )}
           </Stack>

@@ -25,6 +25,8 @@ type CreateRuleDraft = {
   substituteId: string;
   substitutedIds: string[];
   cookRoleId: string;
+  sundayOffCount: number;
+  severity: RuleConfig["severity"];
 };
 
 export type CadastrosTab = "employees" | "roles" | "rules";

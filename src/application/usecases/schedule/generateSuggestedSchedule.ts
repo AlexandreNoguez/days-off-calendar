@@ -85,6 +85,14 @@ function buildAssistantForbiddenPairs(rules: RuleConfig[]): Set<string> {
     if (a && b) out.add(pairKey(a, b));
   });
 
+  rules.forEach((rule) => {
+    if (!rule.enabled) return;
+    if (rule.params.customTemplate !== "pair_cannot_both_off") return;
+    const a = asString(rule.params.a);
+    const b = asString(rule.params.b);
+    if (a && b) out.add(pairKey(a, b));
+  });
+
   const substitution = isEnabledRule(
     rules,
     "if_josana_or_luis_off_then_elaine_must_work",
@@ -100,6 +108,17 @@ function buildAssistantForbiddenPairs(rules: RuleConfig[]): Set<string> {
     substitutedIds.forEach((id) => out.add(pairKey(substituteId, id)));
   }
 
+  rules.forEach((rule) => {
+    if (!rule.enabled) return;
+    if (rule.params.customTemplate !== "substitution_required") return;
+    const subId = asString(rule.params.substituteId);
+    const ids = Array.isArray(rule.params.substitutedIds)
+      ? rule.params.substitutedIds.filter((id): id is string => typeof id === "string")
+      : [];
+    if (!subId) return;
+    ids.forEach((id) => out.add(pairKey(subId, id)));
+  });
+
   return out;
 }
 
@@ -112,6 +131,14 @@ function buildSundayOffForbiddenPairs(rules: RuleConfig[]): Set<string> {
     const b = asString(pairRule.params.b);
     if (a && b) out.add(pairKey(a, b));
   }
+
+  rules.forEach((rule) => {
+    if (!rule.enabled) return;
+    if (rule.params.customTemplate !== "pair_cannot_both_off") return;
+    const a = asString(rule.params.a);
+    const b = asString(rule.params.b);
+    if (a && b) out.add(pairKey(a, b));
+  });
 
   return out;
 }
@@ -211,6 +238,36 @@ export function generateSuggestedSchedule(input: Input): ScheduleAssignments {
       });
     });
   }
+
+  // Custom template: role_one_off_each_sunday
+  input.rules.forEach((rule) => {
+    if (!rule.enabled) return;
+    if (rule.params.customTemplate !== "role_one_off_each_sunday") return;
+
+    const roleId = asString(rule.params.roleId);
+    const exactlyOffCount = asNumber(rule.params.exactlyOffCount) ?? 1;
+    if (!roleId || exactlyOffCount <= 0) return;
+
+    const roleEmployees = input.employees.filter((employee) => employee.roleId === roleId);
+    if (roleEmployees.length === 0) return;
+
+    sundays.forEach((sunday, sundayIndex) => {
+      const alreadyOff = roleEmployees.filter(
+        (employee) => assignments[employee.id]?.[sunday] === "OFF",
+      );
+      const missing = Math.max(0, exactlyOffCount - alreadyOff.length);
+      if (missing === 0) return;
+
+      const candidates = roleEmployees.filter(
+        (employee) => assignments[employee.id]?.[sunday] !== "OFF",
+      );
+      for (let i = 0; i < missing; i += 1) {
+        const candidate = candidates[(sundayIndex + i) % candidates.length];
+        if (!candidate) continue;
+        ensureOff(assignments, candidate.id, sunday);
+      }
+    });
+  });
 
   // Laundry and pot washer: monthly Sunday off allocation.
   const monthlySundayTargets = [

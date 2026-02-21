@@ -38,6 +38,13 @@ function arrayParam(params: Record<string, unknown>, key: string): string[] {
   return value.filter((x): x is string => typeof x === "string");
 }
 
+function customTemplateParam(
+  params: Record<string, unknown>,
+): string | undefined {
+  const value = params.customTemplate;
+  return typeof value === "string" ? value : undefined;
+}
+
 function addConflict(
   conflicts: Conflict[],
   input: {
@@ -194,6 +201,25 @@ export function validateSchedule(input: Input): ValidationResult {
       }
     });
 
+    input.rules.forEach((rule) => {
+      if (!rule.enabled) return;
+      if (customTemplateParam(rule.params) !== "pair_cannot_both_off") return;
+
+      const a = stringParam(rule.params, "a") as EmployeeId | undefined;
+      const b = stringParam(rule.params, "b") as EmployeeId | undefined;
+      if (!a || !b) return;
+
+      if (isOff(input.assignments, a, dateISO) && isOff(input.assignments, b, dateISO)) {
+        addConflict(conflicts, {
+          ruleId: rule.id,
+          dateISO,
+          employeeIds: [a, b],
+          severity: rule.severity,
+          message: rule.title || "Folga coincidente proibida para o par da regra personalizada.",
+        });
+      }
+    });
+
     const mariaLidriel = enabledRule(input.rules, "if_maria_off_then_lidriel_must_work");
     if (mariaLidriel) {
       const ifOffId = stringParam(mariaLidriel.params, "ifOffEmployeeId") as EmployeeId | undefined;
@@ -238,6 +264,30 @@ export function validateSchedule(input: Input): ValidationResult {
         }
       }
     }
+
+    input.rules.forEach((rule) => {
+      if (!rule.enabled) return;
+      if (customTemplateParam(rule.params) !== "substitution_required") return;
+
+      const substituteId = stringParam(rule.params, "substituteId") as EmployeeId | undefined;
+      const substitutedIds = arrayParam(rule.params, "substitutedIds") as EmployeeId[];
+      if (!substituteId || substitutedIds.length === 0) return;
+
+      if (isOff(input.assignments, substituteId, dateISO)) {
+        const anySubstitutedOff = substitutedIds.some((id) =>
+          isOff(input.assignments, id, dateISO),
+        );
+        if (anySubstitutedOff) {
+          addConflict(conflicts, {
+            ruleId: rule.id,
+            dateISO,
+            employeeIds: [substituteId, ...substitutedIds],
+            severity: rule.severity,
+            message: rule.title || "Substituição obrigatória não atendida.",
+          });
+        }
+      }
+    });
   });
 
   // Cooks Sunday/week constraints
@@ -274,6 +324,34 @@ export function validateSchedule(input: Input): ValidationResult {
       }
     });
   }
+
+  input.rules.forEach((rule) => {
+    if (!rule.enabled) return;
+    if (customTemplateParam(rule.params) !== "role_one_off_each_sunday") return;
+
+    const roleId = stringParam(rule.params, "roleId");
+    const exactlyOffCount = numberParam(rule.params, "exactlyOffCount") ?? 1;
+    if (!roleId) return;
+
+    const roleEmployees = input.employees.filter((e) => e.roleId === roleId);
+    if (roleEmployees.length === 0) return;
+
+    sundays.forEach((sunday) => {
+      const offByRole = roleEmployees.filter((employee) =>
+        isOff(input.assignments, employee.id, sunday),
+      );
+
+      if (offByRole.length !== exactlyOffCount) {
+        addConflict(conflicts, {
+          ruleId: rule.id,
+          dateISO: sunday,
+          employeeIds: offByRole.map((e) => e.id),
+          severity: rule.severity,
+          message: `${rule.title}: domingo deve ter exatamente ${exactlyOffCount} folga(s).`,
+        });
+      }
+    });
+  });
 
   sundays.forEach((sunday) => {
     const weekdays = weekdaysAfterSunday(sunday, daysSet);

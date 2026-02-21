@@ -31,6 +31,8 @@ type CreateRuleDraft = {
   substituteId: string;
   substitutedIds: string[];
   cookRoleId: string;
+  sundayOffCount: number;
+  severity: RuleConfig["severity"];
 };
 
 const defaultCreateRuleDraft: CreateRuleDraft = {
@@ -40,16 +42,99 @@ const defaultCreateRuleDraft: CreateRuleDraft = {
   substituteId: "",
   substitutedIds: [],
   cookRoleId: "",
+  sundayOffCount: 1,
+  severity: "HARD",
 };
 
 function pretty(input: Record<string, unknown>): string {
   return JSON.stringify(input, null, 2);
 }
 
+const customRuleFormSchemas: Record<string, RuleFormSchema> = {
+  pair_cannot_both_off: {
+    fields: [
+      { type: "select", key: "a", label: "Colaborador A", source: "employees", required: true },
+      { type: "select", key: "b", label: "Colaborador B", source: "employees", required: true },
+    ],
+    defaults: { a: "", b: "" },
+    parser: (input) => ({
+      a: typeof input.a === "string" ? input.a : "",
+      b: typeof input.b === "string" ? input.b : "",
+    }),
+    serializer: (input) => ({
+      customTemplate: "pair_cannot_both_off",
+      a: input.a,
+      b: input.b,
+    }),
+  },
+  substitution_required: {
+    fields: [
+      {
+        type: "select",
+        key: "substituteId",
+        label: "Substituto",
+        source: "employees",
+        required: true,
+      },
+      {
+        type: "multiselect",
+        key: "substitutedIds",
+        label: "Substituídos",
+        source: "employees",
+        minItems: 1,
+        required: true,
+      },
+    ],
+    defaults: { substituteId: "", substitutedIds: [] },
+    parser: (input) => ({
+      substituteId: typeof input.substituteId === "string" ? input.substituteId : "",
+      substitutedIds: Array.isArray(input.substitutedIds)
+        ? input.substitutedIds.filter((x): x is string => typeof x === "string")
+        : [],
+    }),
+    serializer: (input) => ({
+      customTemplate: "substitution_required",
+      substituteId: input.substituteId,
+      substitutedIds: input.substitutedIds,
+    }),
+  },
+  role_one_off_each_sunday: {
+    fields: [
+      { type: "select", key: "roleId", label: "Cargo", source: "roles", required: true },
+      {
+        type: "number",
+        key: "exactlyOffCount",
+        label: "Folgas por domingo",
+        min: 1,
+        max: 7,
+        step: 1,
+        required: true,
+      },
+    ],
+    defaults: { roleId: "", exactlyOffCount: 1 },
+    parser: (input) => ({
+      roleId: typeof input.roleId === "string" ? input.roleId : "",
+      exactlyOffCount:
+        typeof input.exactlyOffCount === "number" && Number.isFinite(input.exactlyOffCount)
+          ? input.exactlyOffCount
+          : 1,
+    }),
+    serializer: (input) => ({
+      customTemplate: "role_one_off_each_sunday",
+      roleId: input.roleId,
+      exactlyOffCount: input.exactlyOffCount,
+    }),
+  },
+};
 
-function getRuleSchema(key: RuleConfig["key"]): RuleFormSchema | undefined {
-  if (key in ruleFormRegistry) {
-    return ruleFormRegistry[key as keyof typeof ruleFormRegistry];
+function getRuleSchema(rule: RuleConfig): RuleFormSchema | undefined {
+  if (rule.key in ruleFormRegistry) {
+    return ruleFormRegistry[rule.key as keyof typeof ruleFormRegistry];
+  }
+
+  const customTemplate = rule.params.customTemplate;
+  if (typeof customTemplate === "string" && customTemplate in customRuleFormSchemas) {
+    return customRuleFormSchemas[customTemplate];
   }
 
   return undefined;
@@ -90,10 +175,11 @@ function buildCustomRule(input: {
       id: `rule_custom_pair_${now}`,
       key: `custom_pair_${now}`,
       enabled: true,
-      severity: "HARD",
+      severity: input.draft.severity,
       title: `${nameA} e ${nameB} não podem folgar juntos`,
       description: "Regra personalizada criada a partir do template de par.",
       params: {
+        customTemplate: "pair_cannot_both_off",
         a: input.draft.employeeAId,
         b: input.draft.employeeBId,
       },
@@ -112,10 +198,11 @@ function buildCustomRule(input: {
       id: `rule_custom_substitution_${now}`,
       key: `custom_substitution_${now}`,
       enabled: true,
-      severity: "HARD",
+      severity: input.draft.severity,
       title: `Substituição obrigatória por ${substituteName}`,
       description: "Regra personalizada criada a partir do template de substituição.",
       params: {
+        customTemplate: "substitution_required",
         substituteId: input.draft.substituteId,
         substitutedIds: input.draft.substitutedIds,
       },
@@ -132,12 +219,13 @@ function buildCustomRule(input: {
     id: `rule_custom_cook_sunday_${now}`,
     key: `custom_cook_sunday_${now}`,
     enabled: true,
-    severity: "HARD",
-    title: `1 folga no domingo para ${roleName}`,
+    severity: input.draft.severity,
+    title: `${input.draft.sundayOffCount} folga(s) no domingo para ${roleName}`,
     description: "Regra personalizada criada a partir do template de domingo.",
     params: {
-      cookRoleId: input.draft.cookRoleId,
-      exactlyOffCount: 1,
+      customTemplate: "role_one_off_each_sunday",
+      roleId: input.draft.cookRoleId,
+      exactlyOffCount: input.draft.sundayOffCount,
     },
   };
 }
@@ -265,7 +353,7 @@ export function useRulesPage() {
     const rule = rules.find((r) => r.id === ruleId);
     if (!rule) return;
 
-    const schema = getRuleSchema(rule.key);
+    const schema = getRuleSchema(rule);
     const params = createFormParams(schema, rule.params);
 
     setFormEditing((prev) => ({
@@ -299,7 +387,7 @@ export function useRulesPage() {
     const draft = formEditing[ruleId];
     if (!rule || !draft) return;
 
-    const schema = getRuleSchema(rule.key);
+    const schema = getRuleSchema(rule);
     const params = schema ? schema.serializer(draft.params) : draft.params;
 
     setRuleParams(ruleId, params);
@@ -356,7 +444,8 @@ export function useRulesPage() {
       editing,
       formEditing,
       ruleFormRegistry,
-      formReadyRulesCount: Object.keys(ruleFormRegistry).length,
+      formReadyRulesCount:
+        Object.keys(ruleFormRegistry).length + Object.keys(customRuleFormSchemas).length,
       roles,
       employees,
       isCreateDialogOpen,
