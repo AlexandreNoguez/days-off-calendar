@@ -8,6 +8,7 @@ import { EmployeesPageContainer } from "../features/employees/EmployeesPage.cont
 import { RulesPageContainer } from "../features/rules/RulesPage.container";
 import { SchedulePageContainer } from "../features/schedule/SchedulePage.container";
 import { ExportPageContainer } from "../features/export/ExportPage.container";
+import { CadastrosPageContainer } from "../features/cadastros/CadastrosPage.container";
 
 export const router = createBrowserRouter([
   {
@@ -22,12 +23,13 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: <Navigate to="/wizard/setup" replace /> },
           { path: "setup", element: <SetupPageContainer /> },
-          { path: "employees", element: <EmployeesPageContainer /> },
-          { path: "rules", element: <RulesPageContainer /> },
           { path: "schedule", element: <SchedulePageContainer /> },
           { path: "export", element: <ExportPageContainer /> },
         ],
       },
+
+      { path: "cadastros", element: <Navigate to="/cadastros/employees" replace /> },
+      { path: "cadastros/:section", element: <CadastrosPageContainer /> },
 
       // Optional direct routes (same containers)
       { path: "setup", element: <SetupPageContainer /> },

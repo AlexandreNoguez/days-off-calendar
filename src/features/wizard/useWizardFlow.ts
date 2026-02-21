@@ -2,13 +2,7 @@ import { useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { type WizardStep, useAppStore } from "../../stores/app.store";
 
-const steps: WizardStep[] = [
-  "setup",
-  "employees",
-  "rules",
-  "schedule",
-  "export",
-];
+const steps: WizardStep[] = ["setup", "schedule", "export"];
 
 export function useWizardFlow() {
   const navigate = useNavigate();
@@ -17,7 +11,7 @@ export function useWizardFlow() {
 
   const currentStep = useMemo(() => {
     const match = steps.find((s) => location.pathname.includes(`/wizard/${s}`));
-    return match ?? wizardStep;
+    return match ?? (steps.includes(wizardStep) ? wizardStep : "setup");
   }, [location.pathname, wizardStep]);
 
   const currentIndex = steps.indexOf(currentStep);
