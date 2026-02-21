@@ -7,11 +7,7 @@ import type {
   ValidationStatsPerEmployee,
 } from "../../../domain/types/validation";
 import type { ScheduleAssignments } from "../../../domain/types/schedule";
-import {
-  getWeekday,
-  parseDateISO,
-  toDateISO,
-} from "../../../shared/utils/dates";
+import { getWeekday, parseDateISO, toDateISO } from "../../../shared/utils/dates";
 import { isOff } from "./validateDay";
 
 type Input = {
@@ -22,29 +18,18 @@ type Input = {
   holidays: Record<DateISO, true>;
 };
 
-function enabledRule(
-  rules: RuleConfig[],
-  key: RuleConfig["key"],
-): RuleConfig | undefined {
+function enabledRule(rules: RuleConfig[], key: RuleConfig["key"]): RuleConfig | undefined {
   return rules.find((r) => r.key === key && r.enabled);
 }
 
-function stringParam(
-  params: Record<string, unknown>,
-  key: string,
-): string | undefined {
+function stringParam(params: Record<string, unknown>, key: string): string | undefined {
   const value = params[key];
   return typeof value === "string" ? value : undefined;
 }
 
-function numberParam(
-  params: Record<string, unknown>,
-  key: string,
-): number | undefined {
+function numberParam(params: Record<string, unknown>, key: string): number | undefined {
   const value = params[key];
-  return typeof value === "number" && Number.isFinite(value)
-    ? value
-    : undefined;
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
 }
 
 function arrayParam(params: Record<string, unknown>, key: string): string[] {
@@ -69,10 +54,7 @@ function addConflict(
   });
 }
 
-function weekdaysAfterSunday(
-  dateISO: DateISO,
-  daysSet: Set<DateISO>,
-): DateISO[] {
+function weekdaysAfterSunday(dateISO: DateISO, daysSet: Set<DateISO>): DateISO[] {
   const { year, month, day } = parseDateISO(dateISO);
   const out: DateISO[] = [];
   for (let i = 1; i <= 6; i += 1) {
@@ -114,9 +96,7 @@ export function validateSchedule(input: Input): ValidationResult {
   // fixed_off_sunday_tales
   const fixedSunday = enabledRule(input.rules, "fixed_off_sunday_tales");
   if (fixedSunday) {
-    const employeeId = stringParam(fixedSunday.params, "employeeId") as
-      | EmployeeId
-      | undefined;
+    const employeeId = stringParam(fixedSunday.params, "employeeId") as EmployeeId | undefined;
     if (employeeId) {
       input.daysOfMonth.forEach((dateISO) => {
         if (getWeekday(dateISO) !== 0) return;
@@ -126,8 +106,7 @@ export function validateSchedule(input: Input): ValidationResult {
             dateISO,
             employeeIds: [employeeId],
             severity: fixedSunday.severity,
-            message:
-              "Funcionário com folga fixa de domingo está marcado como WORK.",
+            message: "Funcionário com folga fixa de domingo está marcado como WORK.",
           });
         }
       });
@@ -136,15 +115,9 @@ export function validateSchedule(input: Input): ValidationResult {
 
   // Pair constraints and substitutions (daily checks)
   input.daysOfMonth.forEach((dateISO) => {
-    const coincidenceGroup = enabledRule(
-      input.rules,
-      "no_coincidence_clarice_ingrid_elaine",
-    );
+    const coincidenceGroup = enabledRule(input.rules, "no_coincidence_clarice_ingrid_elaine");
     if (coincidenceGroup) {
-      const ids = arrayParam(
-        coincidenceGroup.params,
-        "employeeIds",
-      ) as EmployeeId[];
+      const ids = arrayParam(coincidenceGroup.params, "employeeIds") as EmployeeId[];
       const offIds = ids.filter((id) => isOff(input.assignments, id, dateISO));
       if (offIds.length > 1) {
         addConflict(conflicts, {
@@ -169,10 +142,7 @@ export function validateSchedule(input: Input): ValidationResult {
       const a = stringParam(rule.params, "a") as EmployeeId | undefined;
       const b = stringParam(rule.params, "b") as EmployeeId | undefined;
       if (!a || !b) return;
-      if (
-        isOff(input.assignments, a, dateISO) &&
-        isOff(input.assignments, b, dateISO)
-      ) {
+      if (isOff(input.assignments, a, dateISO) && isOff(input.assignments, b, dateISO)) {
         addConflict(conflicts, {
           ruleId: rule.id,
           dateISO,
@@ -183,14 +153,9 @@ export function validateSchedule(input: Input): ValidationResult {
       }
     });
 
-    const mariaLidriel = enabledRule(
-      input.rules,
-      "if_maria_off_then_lidriel_must_work",
-    );
+    const mariaLidriel = enabledRule(input.rules, "if_maria_off_then_lidriel_must_work");
     if (mariaLidriel) {
-      const ifOffId = stringParam(mariaLidriel.params, "ifOffEmployeeId") as
-        | EmployeeId
-        | undefined;
+      const ifOffId = stringParam(mariaLidriel.params, "ifOffEmployeeId") as EmployeeId | undefined;
       const mustWorkId = stringParam(
         mariaLidriel.params,
         "mustWorkEmployeeId",
@@ -212,18 +177,10 @@ export function validateSchedule(input: Input): ValidationResult {
       }
     }
 
-    const subRule = enabledRule(
-      input.rules,
-      "if_josana_or_luis_off_then_elaine_must_work",
-    );
+    const subRule = enabledRule(input.rules, "if_josana_or_luis_off_then_elaine_must_work");
     if (subRule) {
-      const substituteId = stringParam(subRule.params, "substituteId") as
-        | EmployeeId
-        | undefined;
-      const substitutedIds = arrayParam(
-        subRule.params,
-        "substitutedIds",
-      ) as EmployeeId[];
+      const substituteId = stringParam(subRule.params, "substituteId") as EmployeeId | undefined;
+      const substitutedIds = arrayParam(subRule.params, "substitutedIds") as EmployeeId[];
 
       if (substituteId && isOff(input.assignments, substituteId, dateISO)) {
         const anySubstitutedOff = substitutedIds.some((id) =>
@@ -243,22 +200,12 @@ export function validateSchedule(input: Input): ValidationResult {
   });
 
   // Cooks Sunday/week constraints
-  const sundayRule = enabledRule(
-    input.rules,
-    "cook_rotation_one_off_each_sunday",
-  );
-  const weekOffRule = enabledRule(
-    input.rules,
-    "cook_if_sunday_work_requires_week_off",
-  );
-  const noWeekOffRule = enabledRule(
-    input.rules,
-    "cook_if_sunday_off_no_week_off",
-  );
+  const sundayRule = enabledRule(input.rules, "cook_rotation_one_off_each_sunday");
+  const weekOffRule = enabledRule(input.rules, "cook_if_sunday_work_requires_week_off");
+  const noWeekOffRule = enabledRule(input.rules, "cook_if_sunday_off_no_week_off");
 
   const cookRoleId = stringParam(sundayRule?.params ?? {}, "cookRoleId");
-  const requiredSundayOff =
-    numberParam(sundayRule?.params ?? {}, "exactlyOffCount") ?? 1;
+  const requiredSundayOff = numberParam(sundayRule?.params ?? {}, "exactlyOffCount") ?? 1;
   const requiredWeekdayOff =
     numberParam(weekOffRule?.params ?? {}, "requiredWeekdayOffCount") ?? 1;
 
@@ -266,15 +213,11 @@ export function validateSchedule(input: Input): ValidationResult {
     ? input.employees.filter((e) => e.roleId === cookRoleId)
     : [];
 
-  const sundays = input.daysOfMonth.filter(
-    (dateISO) => getWeekday(dateISO) === 0,
-  );
+  const sundays = input.daysOfMonth.filter((dateISO) => getWeekday(dateISO) === 0);
 
   if (sundayRule && cooks.length > 0) {
     sundays.forEach((sunday) => {
-      const offCooks = cooks.filter((c) =>
-        isOff(input.assignments, c.id, sunday),
-      );
+      const offCooks = cooks.filter((c) => isOff(input.assignments, c.id, sunday));
       if (offCooks.length !== requiredSundayOff) {
         addConflict(conflicts, {
           ruleId: sundayRule.id,
@@ -303,8 +246,7 @@ export function validateSchedule(input: Input): ValidationResult {
           dateISO: sunday,
           employeeIds: [cook.id],
           severity: weekOffRule.severity,
-          message:
-            "Cozinheiro que trabalhou no domingo precisa folga na semana.",
+          message: "Cozinheiro que trabalhou no domingo precisa folga na semana.",
         });
       }
 
@@ -314,8 +256,7 @@ export function validateSchedule(input: Input): ValidationResult {
           dateISO: sunday,
           employeeIds: [cook.id],
           severity: noWeekOffRule.severity,
-          message:
-            "Cozinheiro que folgou no domingo não pode folgar na semana.",
+          message: "Cozinheiro que folgou no domingo não pode folgar na semana.",
         });
       }
     });

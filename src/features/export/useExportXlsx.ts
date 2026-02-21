@@ -69,12 +69,10 @@ export function useExportXlsx() {
       year,
       month,
       employeesCount: employees.length,
-      hardConflictsCount: validation.conflicts.filter(
-        (c) => c.severity === "HARD",
-      ).length,
-      softConflictsCount: validation.conflicts.filter(
-        (c) => c.severity === "SOFT",
-      ).length,
+      hardConflictsCount: validation.conflicts.filter((c) => c.severity === "HARD")
+        .length,
+      softConflictsCount: validation.conflicts.filter((c) => c.severity === "SOFT")
+        .length,
       canExport: employees.length > 0,
     },
     actions: {

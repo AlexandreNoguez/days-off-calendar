@@ -1,8 +1,10 @@
 import { RulesPageView } from "./RulesPage.view";
 import { useRulesPage } from "./useRulesPage";
+import { useSeedDefaults } from "../wizard/useSeedDefaults";
 
 export function RulesPageContainer() {
   const rulesPage = useRulesPage();
+  const seedDefaults = useSeedDefaults();
 
   return (
     <RulesPageView
@@ -11,6 +13,7 @@ export function RulesPageContainer() {
       editing={rulesPage.state.editing}
       onEnsureDefaultRules={rulesPage.actions.ensureDefaultRules}
       onResetToDefaults={rulesPage.actions.resetToDefaultRules}
+      onRestoreRulesDefaults={seedDefaults.actions.seedRulesDefaults}
       onToggleRule={rulesPage.actions.onToggleRule}
       onStartEditParams={rulesPage.actions.startEditParams}
       onCancelEditParams={rulesPage.actions.cancelEditParams}

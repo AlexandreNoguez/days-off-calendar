@@ -25,6 +25,7 @@ type Props = {
 
   onEnsureDefaultRules: () => void;
   onResetToDefaults: () => void;
+  onRestoreRulesDefaults: () => void;
 
   onToggleRule: (ruleId: RuleId, enabled: boolean) => void;
   onStartEditParams: (ruleId: RuleId) => void;
@@ -43,8 +44,7 @@ export function RulesPageView(props: Props) {
       <Box>
         <Typography variant="h5">Regras</Typography>
         <Typography variant="body2" color="text.secondary">
-          Ative/desative regras e ajuste os parâmetros em JSON quando
-          necessário.
+          Ative/desative regras e ajuste os parâmetros em JSON quando necessário.
         </Typography>
       </Box>
 
@@ -54,6 +54,9 @@ export function RulesPageView(props: Props) {
         </Button>
         <Button variant="outlined" onClick={props.onResetToDefaults}>
           Restaurar defaults
+        </Button>
+        <Button variant="outlined" color="secondary" onClick={props.onRestoreRulesDefaults}>
+          Restaurar defaults (seed)
         </Button>
       </Stack>
 

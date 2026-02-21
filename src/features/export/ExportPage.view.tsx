@@ -50,11 +50,7 @@ export function ExportPageView(props: Props) {
       )}
 
       <Box>
-        <Button
-          variant="contained"
-          onClick={props.onExport}
-          disabled={!props.canExport}
-        >
+        <Button variant="contained" onClick={props.onExport} disabled={!props.canExport}>
           Exportar XLSX
         </Button>
       </Box>

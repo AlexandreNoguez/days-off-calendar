@@ -17,9 +17,7 @@ export function useRulesPage() {
   const setRules = useRulesStore((s) => s.actions.setRules);
   const toggleRule = useRulesStore((s) => s.actions.toggleRule);
   const setRuleParams = useRulesStore((s) => s.actions.setRuleParams);
-  const resetToDefaultRules = useRulesStore(
-    (s) => s.actions.resetToDefaultRules,
-  );
+  const resetToDefaultRules = useRulesStore((s) => s.actions.resetToDefaultRules);
 
   const [editing, setEditing] = useState<Record<RuleId, EditState>>({});
 
@@ -82,7 +80,7 @@ export function useRulesPage() {
           ...prev,
           [ruleId]: {
             ...draft,
-            error: 'Os parâmetros devem ser um objeto JSON (ex: {"x":1}).',
+            error: "Os parâmetros devem ser um objeto JSON (ex: {\"x\":1}).",
           },
         }));
         return;

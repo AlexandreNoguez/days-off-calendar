@@ -47,6 +47,7 @@ type Props = {
   onDeleteRole: (roleId: RoleId) => void;
   onEditEmployee: (employeeId: EmployeeId) => void;
   onDeleteEmployee: (employeeId: EmployeeId) => void;
+  onRestoreEmployeesDefaults: () => void;
 };
 
 export function EmployeesPageView(props: Props) {
@@ -70,6 +71,12 @@ export function EmployeesPageView(props: Props) {
           Cadastre cargos e colaboradores, incluindo a regra de folga fixa aos
           domingos.
         </Typography>
+      </Box>
+
+      <Box>
+        <Button variant="outlined" onClick={props.onRestoreEmployeesDefaults}>
+          Restaurar defaults de Employees
+        </Button>
       </Box>
 
       <Paper variant="outlined" sx={{ p: 2 }}>
@@ -208,14 +215,8 @@ export function EmployeesPageView(props: Props) {
           />
 
           <Stack direction="row" spacing={1}>
-            <Button
-              type="submit"
-              variant="contained"
-              disabled={!props.canCreateEmployee}
-            >
-              {props.isEditingEmployee
-                ? "Salvar colaborador"
-                : "Adicionar colaborador"}
+            <Button type="submit" variant="contained" disabled={!props.canCreateEmployee}>
+              {props.isEditingEmployee ? "Salvar colaborador" : "Adicionar colaborador"}
             </Button>
             {props.isEditingEmployee && (
               <Button variant="outlined" onClick={props.onCancelEmployeeEdit}>
@@ -242,9 +243,7 @@ export function EmployeesPageView(props: Props) {
               <TableRow key={employee.id}>
                 <TableCell>{employee.name}</TableCell>
                 <TableCell>{employee.roleName}</TableCell>
-                <TableCell>
-                  {employee.alwaysOffSunday ? "Sim" : "Não"}
-                </TableCell>
+                <TableCell>{employee.alwaysOffSunday ? "Sim" : "Não"}</TableCell>
                 <TableCell>{employee.notes ?? "—"}</TableCell>
                 <TableCell align="right">
                   <Button

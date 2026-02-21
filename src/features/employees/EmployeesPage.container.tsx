@@ -1,8 +1,10 @@
 import { EmployeesPageView } from "./EmployeesPage.view";
 import { useEmployeesPage } from "./useEmployeesPage";
+import { useSeedDefaults } from "../wizard/useSeedDefaults";
 
 export function EmployeesPageContainer() {
   const employeesPage = useEmployeesPage();
+  const seedDefaults = useSeedDefaults();
 
   return (
     <EmployeesPageView
@@ -21,6 +23,7 @@ export function EmployeesPageContainer() {
       onDeleteRole={employeesPage.actions.deleteRole}
       onEditEmployee={employeesPage.actions.startEditEmployee}
       onDeleteEmployee={employeesPage.actions.deleteEmployee}
+      onRestoreEmployeesDefaults={seedDefaults.actions.seedEmployeesDefaults}
     />
   );
 }

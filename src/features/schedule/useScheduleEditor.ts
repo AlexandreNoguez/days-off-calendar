@@ -7,7 +7,7 @@ import { useRulesStore } from "../../stores/rules.store";
 import { useScheduleStore } from "../../stores/schedule.store";
 import { useValidationStore } from "../../stores/validation.store";
 import { useCalendarStore } from "../../stores/calendar.store";
-import { generateSuggestedSchedule } from "./generateSuggestedSchedule";
+import { generateSuggestedSchedule } from "../../application/usecases/schedule/generateSuggestedSchedule";
 import { validateSchedule } from "../../application/usecases/rules/validateSchedule";
 
 type DayColumn = {
@@ -88,10 +88,7 @@ export function useScheduleEditor() {
     setValidationResult(computedValidation);
   }, [computedValidation, setValidationResult]);
 
-  function getCellStatus(
-    employeeId: EmployeeId,
-    dateISO: DateISO,
-  ): "WORK" | "OFF" {
+  function getCellStatus(employeeId: EmployeeId, dateISO: DateISO): "WORK" | "OFF" {
     return assignments[employeeId]?.[dateISO] ?? "WORK";
   }
 

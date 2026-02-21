@@ -72,7 +72,7 @@ Stack: **React + Vite + TypeScript + MUI + Zustand + React Router + RHF + Zod + 
 
 ### Forms/Validação
 
-- [x] react-hook-form + zod (planejado para Employees/Rules)
+- [x] react-hook-form + zod (implementado em Employees/Rules)
 
 ### Notificações
 
@@ -175,12 +175,14 @@ Stack: **React + Vite + TypeScript + MUI + Zustand + React Router + RHF + Zod + 
 - [x] Seleção de cargo (Role)
 - [x] Checkbox “sempre folga domingo”
 - [x] UX: tabela MUI simples
+- [x] Botão para restaurar defaults de Employees (seed)
 
 ### Step 4 — Rules
 
 - [x] Listagem de regras com switch enabled/disabled
 - [x] Editor de parâmetros (JSON no MVP)
 - [x] Validação de regras (HARD/SOFT)
+- [x] Botão para restaurar defaults de Rules (seed)
 
 ### Step 5 — Schedule
 
@@ -201,7 +203,7 @@ Stack: **React + Vite + TypeScript + MUI + Zustand + React Router + RHF + Zod + 
 - [ ] ErrorBoundary customizado no router
 - [ ] Toastify em ações importantes (seed, salvar, export)
 - [ ] Responsividade refinada no AppShell (Drawer/hamburger)
-- [ ] Botão “limpar dados” global (localStorage + reset stores)
+- [x] Botão “limpar dados” global (localStorage + reset stores)
 - [ ] Documentação de regras (HARD/SOFT) e exemplos
 
 ---

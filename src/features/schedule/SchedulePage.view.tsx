@@ -61,12 +61,8 @@ function monthLabel(month: number): string {
 }
 
 export function SchedulePageView(props: Props) {
-  const hardConflicts = props.validation.conflicts.filter(
-    (c) => c.severity === "HARD",
-  );
-  const softConflicts = props.validation.conflicts.filter(
-    (c) => c.severity === "SOFT",
-  );
+  const hardConflicts = props.validation.conflicts.filter((c) => c.severity === "HARD");
+  const softConflicts = props.validation.conflicts.filter((c) => c.severity === "SOFT");
 
   return (
     <Stack spacing={2}>
@@ -92,22 +88,20 @@ export function SchedulePageView(props: Props) {
 
       {!props.hasEmployees && (
         <Alert severity="info">
-          Cadastre colaboradores no passo Employees para começar a montar a
-          escala.
+          Cadastre colaboradores no passo Employees para começar a montar a escala.
         </Alert>
       )}
 
       {props.hasEmployees && (
         <Alert severity="info">
-          Você pode gerar uma sugestão automática baseada nas regras ativas e
-          ajustar manualmente os casos restantes.
+          Você pode gerar uma sugestão automática baseada nas regras ativas e ajustar
+          manualmente os casos restantes.
         </Alert>
       )}
 
       {hardConflicts.length > 0 && (
         <Alert severity="error">
-          Existem conflitos HARD que precisam ser corrigidos antes da
-          exportação.
+          Existem conflitos HARD que precisam ser corrigidos antes da exportação.
         </Alert>
       )}
 
@@ -119,18 +113,10 @@ export function SchedulePageView(props: Props) {
         >
           Gerar sugestão automática
         </Button>
-        <Button
-          variant="outlined"
-          onClick={props.onUndo}
-          disabled={!props.canUndo}
-        >
+        <Button variant="outlined" onClick={props.onUndo} disabled={!props.canUndo}>
           Undo
         </Button>
-        <Button
-          variant="outlined"
-          onClick={props.onRedo}
-          disabled={!props.canRedo}
-        >
+        <Button variant="outlined" onClick={props.onRedo} disabled={!props.canRedo}>
           Redo
         </Button>
         <Button
@@ -138,13 +124,9 @@ export function SchedulePageView(props: Props) {
           onClick={props.onMarkAllAsWork}
           disabled={!props.hasEmployees}
         >
-          Marcar tudo como WORK
+          Marcar tudo como Trabalho
         </Button>
-        <Button
-          variant="outlined"
-          color="error"
-          onClick={props.onResetSchedule}
-        >
+        <Button variant="outlined" color="error" onClick={props.onResetSchedule}>
           Limpar escala
         </Button>
       </Stack>
@@ -200,7 +182,7 @@ export function SchedulePageView(props: Props) {
                   </Stack>
                 </TableCell>
               ))}
-              <TableCell align="center">Total OFF</TableCell>
+              <TableCell align="center">Total Folga</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -229,25 +211,20 @@ export function SchedulePageView(props: Props) {
                   const isOff = status === "OFF";
 
                   return (
-                    <TableCell
-                      key={`${employee.id}_${day.dateISO}`}
-                      align="center"
-                    >
-                      <Tooltip title="Clique para alternar OFF/WORK">
+                    <TableCell key={`${employee.id}_${day.dateISO}`} align="center">
+                      <Tooltip title="Clique para alternar Folga/Trabalho">
                         <Button
                           size="small"
                           variant={isOff ? "contained" : "outlined"}
                           color={isOff ? "warning" : "primary"}
-                          onClick={() =>
-                            props.onToggleOff(employee.id, day.dateISO)
-                          }
+                          onClick={() => props.onToggleOff(employee.id, day.dateISO)}
                           onContextMenu={(e) => {
                             e.preventDefault();
                             props.onSetStatus(employee.id, day.dateISO, "WORK");
                           }}
                           sx={{ minWidth: 52 }}
                         >
-                          {status}
+                          {isOff ? "Folga" : "Trabalho"}
                         </Button>
                       </Tooltip>
                     </TableCell>
