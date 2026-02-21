@@ -109,6 +109,75 @@ export const ruleFormRegistry: Partial<Record<DefaultRuleKey, RuleFormSchema>> =
     serializer: passthrough,
   },
 
+  assistant_if_sunday_off_no_week_off: {
+    fields: [
+      {
+        type: "select",
+        key: "assistantRoleId",
+        label: "Auxiliary role",
+        source: "roles",
+        required: true,
+      },
+    ],
+    defaults: { assistantRoleId: "" },
+    parser: passthrough,
+    serializer: passthrough,
+  },
+
+  assistant_if_sunday_work_requires_week_off: {
+    fields: [
+      {
+        type: "select",
+        key: "assistantRoleId",
+        label: "Auxiliary role",
+        source: "roles",
+        required: true,
+      },
+      {
+        type: "number",
+        key: "requiredWeekdayOffCount",
+        label: "Required weekday offs",
+        min: 1,
+        max: 6,
+        step: 1,
+        required: true,
+      },
+    ],
+    defaults: { assistantRoleId: "", requiredWeekdayOffCount: 1 },
+    parser: passthrough,
+    serializer: passthrough,
+  },
+
+  assistant_no_monday_off_after_sunday_off: {
+    fields: [
+      {
+        type: "select",
+        key: "assistantRoleId",
+        label: "Auxiliary role",
+        source: "roles",
+        required: true,
+      },
+    ],
+    defaults: { assistantRoleId: "" },
+    parser: passthrough,
+    serializer: passthrough,
+  },
+
+  assistant_weekday_off_must_be_fixed: {
+    fields: [
+      {
+        type: "select",
+        key: "assistantRoleId",
+        label: "Auxiliary role",
+        source: "roles",
+        required: true,
+      },
+    ],
+    defaults: { assistantRoleId: "" },
+    parser: passthrough,
+    serializer: passthrough,
+  },
+
   elaine_not_same_day_josana: {
     fields: [
       {

@@ -79,6 +79,47 @@ export function createDefaultRules(): RuleConfig[] {
       },
     }),
 
+    // Assistants: if Sunday OFF => cannot have weekday OFF in that week
+    createRule({
+      key: "assistant_if_sunday_off_no_week_off",
+      title: "Auxiliar que folga no domingo não pode folgar durante a semana",
+      severity: "HARD",
+      params: {
+        assistantRoleId: DEFAULT_ROLE_IDS.assistant,
+      },
+    }),
+
+    // Assistants: if Sunday WORK => must have 1 weekday OFF in that week
+    createRule({
+      key: "assistant_if_sunday_work_requires_week_off",
+      title: "Auxiliar que trabalha no domingo deve folgar 1 dia na semana",
+      severity: "HARD",
+      params: {
+        assistantRoleId: DEFAULT_ROLE_IDS.assistant,
+        requiredWeekdayOffCount: 1,
+      },
+    }),
+
+    // Assistants: after Sunday OFF, cannot be OFF on Monday right after
+    createRule({
+      key: "assistant_no_monday_off_after_sunday_off",
+      title: "Auxiliar: se folgou domingo, não pode folgar na segunda seguinte",
+      severity: "HARD",
+      params: {
+        assistantRoleId: DEFAULT_ROLE_IDS.assistant,
+      },
+    }),
+
+    // Assistants: weekly OFF should stay fixed on the same weekday
+    createRule({
+      key: "assistant_weekday_off_must_be_fixed",
+      title: "Auxiliar deve manter folga fixa no mesmo dia da semana",
+      severity: "HARD",
+      params: {
+        assistantRoleId: DEFAULT_ROLE_IDS.assistant,
+      },
+    }),
+
     // Clarice, Ingrid, Elaine cannot be OFF on the same day
     createRule({
       key: "no_coincidence_clarice_ingrid_elaine",

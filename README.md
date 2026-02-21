@@ -33,6 +33,11 @@ Stack: **React + Vite + TypeScript + MUI + Zustand + React Router + RHF + Zod + 
 - Cozinheiros fazem rodízio: **1 cozinheiro de folga por domingo** (aprox. 1 domingo por mês cada).
 - Se cozinheiro **folga no domingo**, **não pode folgar na semana**.
 - Se cozinheiro **trabalha no domingo**, **precisa folgar 1 dia na semana**.
+- Auxiliares:
+  - Se auxiliar **folga no domingo**, **não pode folgar na semana**.
+  - Se auxiliar **trabalha no domingo**, **precisa folgar 1 dia na semana**.
+  - A folga semanal do auxiliar deve ser **fixa no mesmo dia da semana**.
+  - A folga semanal do auxiliar **não pode cair na segunda** após domingo de folga.
 - Não pode ter folga coincidindo:
   - Clarice, Ingrid e Elaine não podem folgar no mesmo dia.
   - Elaine não pode folgar no mesmo dia de Josana e também não pode folgar no mesmo dia de Luís.
@@ -259,6 +264,18 @@ Esta seção reflete o comportamento atual do validador em
 - `if_josana_or_luis_off_then_elaine_must_work`
   - Regra: se Josana ou Luís folgarem, Elaine deve trabalhar.
   - Exemplo inválido: Josana `OFF` e Elaine `OFF` no mesmo dia.
+- `assistant_if_sunday_off_no_week_off`
+  - Regra: auxiliar que folga no domingo não pode ter folga na semana.
+  - Exemplo inválido: auxiliar `OFF` no domingo e `OFF` na quarta.
+- `assistant_if_sunday_work_requires_week_off`
+  - Regra: auxiliar que trabalha no domingo precisa folgar durante a semana.
+  - Exemplo inválido: auxiliar trabalha domingo e não folga entre segunda e sábado.
+- `assistant_no_monday_off_after_sunday_off`
+  - Regra: auxiliar que folga no domingo não pode folgar na segunda seguinte.
+  - Exemplo inválido: auxiliar `OFF` no domingo e também `OFF` na segunda.
+- `assistant_weekday_off_must_be_fixed`
+  - Regra: auxiliar deve manter folga semanal fixa no mesmo dia da semana.
+  - Exemplo inválido: uma semana folga na terça e outra na quinta.
 
 ### SOFT (aviso, não bloqueia)
 

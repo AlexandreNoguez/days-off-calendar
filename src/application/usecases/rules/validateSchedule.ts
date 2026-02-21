@@ -69,6 +69,16 @@ function weekdaysAfterSunday(dateISO: DateISO, daysSet: Set<DateISO>): DateISO[]
   return out;
 }
 
+const WEEKDAY_LABELS_SHORT_PT = [
+  "Dom",
+  "Seg",
+  "Ter",
+  "Qua",
+  "Qui",
+  "Sex",
+  "Sáb",
+] as const;
+
 export function validateSchedule(input: Input): ValidationResult {
   const conflicts: Conflict[] = [];
   const daysSet = new Set(input.daysOfMonth);
@@ -203,6 +213,10 @@ export function validateSchedule(input: Input): ValidationResult {
   const sundayRule = enabledRule(input.rules, "cook_rotation_one_off_each_sunday");
   const weekOffRule = enabledRule(input.rules, "cook_if_sunday_work_requires_week_off");
   const noWeekOffRule = enabledRule(input.rules, "cook_if_sunday_off_no_week_off");
+  const noMondayAfterSundayOffRule = enabledRule(
+    input.rules,
+    "cook_no_monday_off_after_sunday_off",
+  );
 
   const cookRoleId = stringParam(sundayRule?.params ?? {}, "cookRoleId");
   const requiredSundayOff = numberParam(sundayRule?.params ?? {}, "exactlyOffCount") ?? 1;
@@ -259,8 +273,131 @@ export function validateSchedule(input: Input): ValidationResult {
           message: "Cozinheiro que folgou no domingo não pode folgar na semana.",
         });
       }
+
+      if (noMondayAfterSundayOffRule && isSundayOff) {
+        const mondayAfterSunday = weekdays.find((d) => getWeekday(d) === 1);
+        if (mondayAfterSunday && isOff(input.assignments, cook.id, mondayAfterSunday)) {
+          addConflict(conflicts, {
+            ruleId: noMondayAfterSundayOffRule.id,
+            dateISO: mondayAfterSunday,
+            employeeIds: [cook.id],
+            severity: noMondayAfterSundayOffRule.severity,
+            message: "Se folgou domingo, não pode folgar na segunda seguinte.",
+          });
+        }
+      }
     });
   });
+
+  // Assistants Sunday/week constraints
+  const assistantWeekOffRule = enabledRule(
+    input.rules,
+    "assistant_if_sunday_work_requires_week_off",
+  );
+  const assistantNoWeekOffRule = enabledRule(
+    input.rules,
+    "assistant_if_sunday_off_no_week_off",
+  );
+  const assistantNoMondayAfterSundayOffRule = enabledRule(
+    input.rules,
+    "assistant_no_monday_off_after_sunday_off",
+  );
+  const assistantFixedWeekdayRule = enabledRule(
+    input.rules,
+    "assistant_weekday_off_must_be_fixed",
+  );
+
+  const assistantRoleId = stringParam(
+    assistantWeekOffRule?.params ??
+      assistantNoWeekOffRule?.params ??
+      assistantNoMondayAfterSundayOffRule?.params ??
+      assistantFixedWeekdayRule?.params ??
+      {},
+    "assistantRoleId",
+  );
+  const assistantRequiredWeekdayOff =
+    numberParam(assistantWeekOffRule?.params ?? {}, "requiredWeekdayOffCount") ?? 1;
+
+  const assistants = assistantRoleId
+    ? input.employees.filter((e) => e.roleId === assistantRoleId)
+    : [];
+
+  sundays.forEach((sunday) => {
+    const weekdays = weekdaysAfterSunday(sunday, daysSet);
+
+    assistants.forEach((assistant) => {
+      const weekdayOffCount = weekdays.reduce((acc, day) => {
+        return acc + (isOff(input.assignments, assistant.id, day) ? 1 : 0);
+      }, 0);
+
+      const isSundayOff = isOff(input.assignments, assistant.id, sunday);
+
+      if (
+        assistantWeekOffRule &&
+        !isSundayOff &&
+        weekdayOffCount < assistantRequiredWeekdayOff
+      ) {
+        addConflict(conflicts, {
+          ruleId: assistantWeekOffRule.id,
+          dateISO: sunday,
+          employeeIds: [assistant.id],
+          severity: assistantWeekOffRule.severity,
+          message: "Auxiliar que trabalhou no domingo precisa folga na semana.",
+        });
+      }
+
+      if (assistantNoWeekOffRule && isSundayOff && weekdayOffCount > 0) {
+        addConflict(conflicts, {
+          ruleId: assistantNoWeekOffRule.id,
+          dateISO: sunday,
+          employeeIds: [assistant.id],
+          severity: assistantNoWeekOffRule.severity,
+          message: "Auxiliar que folgou no domingo não pode folgar na semana.",
+        });
+      }
+
+      if (assistantNoMondayAfterSundayOffRule && isSundayOff) {
+        const mondayAfterSunday = weekdays.find((d) => getWeekday(d) === 1);
+        if (
+          mondayAfterSunday &&
+          isOff(input.assignments, assistant.id, mondayAfterSunday)
+        ) {
+          addConflict(conflicts, {
+            ruleId: assistantNoMondayAfterSundayOffRule.id,
+            dateISO: mondayAfterSunday,
+            employeeIds: [assistant.id],
+            severity: assistantNoMondayAfterSundayOffRule.severity,
+            message:
+              "Auxiliar que folgou no domingo não pode folgar na segunda seguinte.",
+          });
+        }
+      }
+    });
+  });
+
+  if (assistantFixedWeekdayRule) {
+    assistants.forEach((assistant) => {
+      const weekdayOffDates = input.daysOfMonth.filter((dateISO) => {
+        const weekday = getWeekday(dateISO);
+        return weekday !== 0 && isOff(input.assignments, assistant.id, dateISO);
+      });
+
+      const uniqueWeekdays = [...new Set(weekdayOffDates.map((dateISO) => getWeekday(dateISO)))];
+      if (uniqueWeekdays.length <= 1) return;
+
+      const weekdayLabels = uniqueWeekdays
+        .map((weekday) => WEEKDAY_LABELS_SHORT_PT[weekday])
+        .join(", ");
+
+      addConflict(conflicts, {
+        ruleId: assistantFixedWeekdayRule.id,
+        dateISO: weekdayOffDates[0] ?? input.daysOfMonth[0],
+        employeeIds: [assistant.id],
+        severity: assistantFixedWeekdayRule.severity,
+        message: `Auxiliar deve manter folga fixa na semana (encontrado: ${weekdayLabels}).`,
+      });
+    });
+  }
 
   return {
     conflicts,
