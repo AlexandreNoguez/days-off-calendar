@@ -13,7 +13,6 @@ export function useSeedDefaults() {
 
   const seedDefaults = () => {
     const seed = createDefaultSeed(year);
-    console.log(seed);
 
     seedEmployees({ roles: seed.roles, employees: seed.employees });
     seedRules(seed.rules);
@@ -21,5 +20,23 @@ export function useSeedDefaults() {
     setHasSavedData(true);
   };
 
-  return { actions: { seedDefaults } };
+  const seedEmployeesDefaults = () => {
+    const seed = createDefaultSeed(year);
+    seedEmployees({ roles: seed.roles, employees: seed.employees });
+    setHasSavedData(true);
+  };
+
+  const seedRulesDefaults = () => {
+    const seed = createDefaultSeed(year);
+    seedRules(seed.rules);
+    setHasSavedData(true);
+  };
+
+  return {
+    actions: {
+      seedDefaults,
+      seedEmployeesDefaults,
+      seedRulesDefaults,
+    },
+  };
 }

@@ -2,12 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { STORAGE_KEYS, clearAllPersistedData } from "./persistence";
 
-export type WizardStep =
-  | "setup"
-  | "employees"
-  | "rules"
-  | "schedule"
-  | "export";
+export type WizardStep = "setup" | "schedule" | "export";
 
 type AppState = {
   schemaVersion: number;

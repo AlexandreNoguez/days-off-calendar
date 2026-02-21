@@ -17,9 +17,11 @@ export type DefaultRuleKey =
   | "annual_holiday_credit_one_per_person"
   | "avoid_same_weekday_off";
 
+export type RuleKey = DefaultRuleKey | `custom_${string}`;
+
 export type RuleConfigBase = {
   id: RuleId;
-  key: DefaultRuleKey;
+  key: RuleKey;
   enabled: boolean;
   severity: RuleSeverity;
   title: string;
