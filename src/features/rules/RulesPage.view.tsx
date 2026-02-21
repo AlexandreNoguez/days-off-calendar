@@ -155,6 +155,13 @@ export function RulesPageView(props: Props) {
         </Alert>
       )}
 
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", lg: "1fr 1fr" },
+          gap: 2,
+        }}
+      >
       {props.rules.map((rule) => {
         const jsonEdit = props.editing[rule.id];
         const formEdit = props.formEditing[rule.id];
@@ -422,6 +429,7 @@ export function RulesPageView(props: Props) {
           </Card>
         );
       })}
+      </Box>
 
       <Dialog open={props.isCreateDialogOpen} onClose={props.onCloseCreateRuleDialog} fullWidth>
         <DialogTitle>Nova regra personalizada</DialogTitle>
@@ -438,22 +446,49 @@ export function RulesPageView(props: Props) {
             {props.createError && <Alert severity="error">{props.createError}</Alert>}
 
             {props.createStep === 0 && (
-              <FormControl fullWidth>
-                <InputLabel>Template de regra</InputLabel>
-                <Select
-                  label="Template de regra"
-                  value={props.createRuleDraft.template}
-                  onChange={(e) =>
-                    props.onUpdateCreateRuleDraft({
-                      template: e.target.value as CustomRuleTemplate,
-                    })
-                  }
-                >
-                  <MenuItem value="pair_cannot_both_off">Par não pode folgar junto</MenuItem>
-                  <MenuItem value="substitution_required">Substituição obrigatória</MenuItem>
-                  <MenuItem value="cook_one_off_each_sunday">1 folga de cozinheiro por domingo</MenuItem>
-                </Select>
-              </FormControl>
+              <Stack spacing={1.25}>
+                <Alert severity="info">
+                  Se preferir, use os atalhos de template para começar mais rápido.
+                </Alert>
+
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={1} flexWrap="wrap">
+                  <Button
+                    variant={props.createRuleDraft.template === "pair_cannot_both_off" ? "contained" : "outlined"}
+                    onClick={() => props.onUpdateCreateRuleDraft({ template: "pair_cannot_both_off" })}
+                  >
+                    Par não pode folgar junto
+                  </Button>
+                  <Button
+                    variant={props.createRuleDraft.template === "substitution_required" ? "contained" : "outlined"}
+                    onClick={() => props.onUpdateCreateRuleDraft({ template: "substitution_required" })}
+                  >
+                    Substituição obrigatória
+                  </Button>
+                  <Button
+                    variant={props.createRuleDraft.template === "cook_one_off_each_sunday" ? "contained" : "outlined"}
+                    onClick={() => props.onUpdateCreateRuleDraft({ template: "cook_one_off_each_sunday" })}
+                  >
+                    1 folga de cozinheiro por domingo
+                  </Button>
+                </Stack>
+
+                <FormControl fullWidth>
+                  <InputLabel>Template de regra</InputLabel>
+                  <Select
+                    label="Template de regra"
+                    value={props.createRuleDraft.template}
+                    onChange={(e) =>
+                      props.onUpdateCreateRuleDraft({
+                        template: e.target.value as CustomRuleTemplate,
+                      })
+                    }
+                  >
+                    <MenuItem value="pair_cannot_both_off">Par não pode folgar junto</MenuItem>
+                    <MenuItem value="substitution_required">Substituição obrigatória</MenuItem>
+                    <MenuItem value="cook_one_off_each_sunday">1 folga de cozinheiro por domingo</MenuItem>
+                  </Select>
+                </FormControl>
+              </Stack>
             )}
 
             {props.createStep === 1 && (
