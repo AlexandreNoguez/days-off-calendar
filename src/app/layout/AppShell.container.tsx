@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useMediaQuery, useTheme } from "@mui/material";
+import { toast } from "react-toastify";
 
 import { AppShellView } from "./AppShell.view";
 import { useAppStore } from "../../stores/app.store";
@@ -67,6 +68,7 @@ export function AppShellContainer() {
     navigate("/wizard/setup");
 
     if (isMobile) setMobileOpen(false);
+    toast.success("Dados limpos. Planejamento reiniciado.");
   }
 
   return (

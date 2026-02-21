@@ -8,6 +8,7 @@ import {
   ruleFormRegistry,
   type RuleFormSchema,
 } from "./ruleFormRegistry";
+import { toast } from "react-toastify";
 
 type EditState = {
   text: string;
@@ -183,8 +184,17 @@ export function useRulesPage() {
   );
 
   function ensureDefaultRules() {
-    if (hasRules) return;
+    if (hasRules) {
+      toast.info("As regras já estão carregadas.");
+      return;
+    }
     setRules(createDefaultRules());
+    toast.success("Regras padrão carregadas.");
+  }
+
+  function restoreDefaultRules() {
+    resetToDefaultRules();
+    toast.success("Regras restauradas para o padrão.");
   }
 
   function onToggleRule(ruleId: RuleId, enabled: boolean) {
@@ -238,6 +248,7 @@ export function useRulesPage() {
 
       setRuleParams(ruleId, parsed as Record<string, unknown>);
       cancelEditParams(ruleId);
+      toast.success("Parâmetros da regra atualizados.");
     } catch {
       setEditing((prev) => ({
         ...prev,
@@ -246,6 +257,7 @@ export function useRulesPage() {
           error: "JSON inválido. Revise a sintaxe antes de salvar.",
         },
       }));
+      toast.error("JSON inválido para parâmetros da regra.");
     }
   }
 
@@ -292,6 +304,7 @@ export function useRulesPage() {
 
     setRuleParams(ruleId, params);
     cancelFormEdit(ruleId);
+    toast.success("Regra atualizada com sucesso.");
   }
 
   function openCreateRuleDialog() {
@@ -326,11 +339,13 @@ export function useRulesPage() {
 
     if ("error" in builtRule) {
       setCreateError(builtRule.error);
+      toast.error(builtRule.error);
       return false;
     }
 
     setRules([...rules, builtRule]);
     closeCreateRuleDialog();
+    toast.success("Regra personalizada criada.");
     return true;
   }
 
@@ -351,7 +366,7 @@ export function useRulesPage() {
     },
     actions: {
       ensureDefaultRules,
-      resetToDefaultRules,
+      resetToDefaultRules: restoreDefaultRules,
       onToggleRule,
       startEditParams,
       cancelEditParams,

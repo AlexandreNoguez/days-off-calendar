@@ -8,6 +8,7 @@ import { useCalendarStore } from "../../stores/calendar.store";
 import { validateSchedule } from "../../application/usecases/rules/validateSchedule";
 import { buildWorkbook } from "../../application/usecases/export/buildWorkbook";
 import { downloadBytes } from "../../shared/utils/download";
+import { toast } from "react-toastify";
 
 export function useExportXlsx() {
   const year = usePlanStore((s) => s.year);
@@ -45,6 +46,14 @@ export function useExportXlsx() {
   );
 
   function exportXlsx() {
+    if (employees.length === 0) {
+      toast.info("Cadastre colaboradores antes de exportar.");
+      return;
+    }
+
+    const hardConflicts = validation.conflicts.filter((c) => c.severity === "HARD").length;
+    const softConflicts = validation.conflicts.filter((c) => c.severity === "SOFT").length;
+
     const bytes = buildWorkbook({
       year,
       month,
@@ -62,6 +71,19 @@ export function useExportXlsx() {
       mimeType:
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     });
+
+    if (hardConflicts > 0) {
+      toast.warning(
+        `Exportado com ${hardConflicts} conflito(s) HARD e ${softConflicts} SOFT.`,
+      );
+      return;
+    }
+
+    toast.success(
+      softConflicts > 0
+        ? `Planilha exportada com ${softConflicts} conflito(s) SOFT.`
+        : "Planilha exportada com sucesso.",
+    );
   }
 
   return {

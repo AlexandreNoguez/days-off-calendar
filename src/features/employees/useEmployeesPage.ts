@@ -10,6 +10,7 @@ import {
   type EmployeeFormValues,
   type RoleFormValues,
 } from "./employeeForm";
+import { toast } from "react-toastify";
 
 export function useEmployeesPage() {
   const year = usePlanStore((s) => s.year);
@@ -70,11 +71,17 @@ export function useEmployeesPage() {
     if (!parsed.success) {
       const issue = parsed.error.issues[0];
       if (issue) roleForm.setError("name", { message: issue.message });
+      toast.error("Não foi possível salvar o cargo. Revise os dados.");
       return;
     }
 
-    if (editingRoleId) updateRole(editingRoleId, { name: parsed.data.name });
-    else createRole(parsed.data.name);
+    if (editingRoleId) {
+      updateRole(editingRoleId, { name: parsed.data.name });
+      toast.success("Cargo atualizado.");
+    } else {
+      createRole(parsed.data.name);
+      toast.success("Cargo criado.");
+    }
 
     resetRoleForm();
   });
@@ -90,6 +97,7 @@ export function useEmployeesPage() {
           });
         }
       }
+      toast.error("Não foi possível salvar o colaborador. Revise os dados.");
       return;
     }
 
@@ -102,8 +110,13 @@ export function useEmployeesPage() {
       holidayOffUsed: false,
     };
 
-    if (editingEmployeeId) updateEmployee(editingEmployeeId, payload);
-    else createEmployee(payload);
+    if (editingEmployeeId) {
+      updateEmployee(editingEmployeeId, payload);
+      toast.success("Colaborador atualizado.");
+    } else {
+      createEmployee(payload);
+      toast.success("Colaborador criado.");
+    }
 
     resetEmployeeForm();
   });
@@ -129,6 +142,23 @@ export function useEmployeesPage() {
     });
   }
 
+  function removeRole(roleId: RoleId) {
+    const role = roles.find((r) => r.id === roleId);
+    const removedEmployeesCount = employees.filter((e) => e.roleId === roleId).length;
+    deleteRole(roleId);
+    toast.warning(
+      removedEmployeesCount > 0
+        ? `Cargo "${role?.name ?? roleId}" excluído com ${removedEmployeesCount} colaborador(es) removido(s).`
+        : `Cargo "${role?.name ?? roleId}" excluído.`,
+    );
+  }
+
+  function removeEmployee(employeeId: EmployeeId) {
+    const employee = employees.find((e) => e.id === employeeId);
+    deleteEmployee(employeeId);
+    toast.warning(`Colaborador "${employee?.name ?? employeeId}" excluído.`);
+  }
+
   return {
     state: {
       roles,
@@ -148,8 +178,8 @@ export function useEmployeesPage() {
       resetEmployeeForm,
       startEditRole,
       startEditEmployee,
-      deleteRole,
-      deleteEmployee,
+      deleteRole: removeRole,
+      deleteEmployee: removeEmployee,
     },
   };
 }

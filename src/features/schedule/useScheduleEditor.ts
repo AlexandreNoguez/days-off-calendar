@@ -9,6 +9,7 @@ import { useValidationStore } from "../../stores/validation.store";
 import { useCalendarStore } from "../../stores/calendar.store";
 import { generateSuggestedSchedule } from "../../application/usecases/schedule/generateSuggestedSchedule";
 import { validateSchedule } from "../../application/usecases/rules/validateSchedule";
+import { toast } from "react-toastify";
 
 type DayColumn = {
   dateISO: DateISO;
@@ -100,12 +101,45 @@ export function useScheduleEditor() {
   }
 
   function generateSuggestion() {
+    const daysOfMonth = dayColumns.map((d) => d.dateISO);
     const nextAssignments = generateSuggestedSchedule({
       employees,
       rules,
-      daysOfMonth: dayColumns.map((d) => d.dateISO),
+      daysOfMonth,
     });
+
+    const nextValidation = validateSchedule({
+      employees,
+      rules,
+      assignments: nextAssignments,
+      daysOfMonth,
+      holidays,
+    });
+
     setAssignments(nextAssignments);
+
+    const hardConflicts = nextValidation.conflicts.filter((c) => c.severity === "HARD")
+      .length;
+    const softConflicts = nextValidation.conflicts.filter((c) => c.severity === "SOFT")
+      .length;
+
+    if (hardConflicts > 0) {
+      toast.warning(
+        `Sugestão gerada com ${hardConflicts} conflito(s) HARD e ${softConflicts} SOFT.`,
+      );
+      return;
+    }
+
+    toast.success(
+      softConflicts > 0
+        ? `Sugestão gerada com ${softConflicts} conflito(s) SOFT.`
+        : "Sugestão gerada sem conflitos HARD.",
+    );
+  }
+
+  function resetScheduleWithFeedback() {
+    resetSchedule();
+    toast.success("Escala limpa.");
   }
 
   return {
@@ -128,7 +162,7 @@ export function useScheduleEditor() {
       generateSuggestion,
       undo,
       redo,
-      resetSchedule,
+      resetSchedule: resetScheduleWithFeedback,
     },
   };
 }
