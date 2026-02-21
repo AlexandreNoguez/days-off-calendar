@@ -19,6 +19,10 @@ function ensureOff(assignments: ScheduleAssignments, employeeId: string, dateISO
   assignments[employeeId] = { ...current, [dateISO]: "OFF" };
 }
 
+function isOff(assignments: ScheduleAssignments, employeeId: string, dateISO: DateISO): boolean {
+  return assignments[employeeId]?.[dateISO] === "OFF";
+}
+
 function asString(v: unknown): string | undefined {
   return typeof v === "string" ? v : undefined;
 }
@@ -172,10 +176,47 @@ function streakEndingAt(
   return streak;
 }
 
+function wouldCreateConsecutiveOff(
+  assignments: ScheduleAssignments,
+  employeeId: string,
+  dateISO: DateISO,
+  dayIndexByISO: Map<DateISO, number>,
+  daysOfMonth: DateISO[],
+): boolean {
+  const idx = dayIndexByISO.get(dateISO);
+  if (idx === undefined) return false;
+  const prev = idx > 0 ? daysOfMonth[idx - 1] : undefined;
+  const next = idx < daysOfMonth.length - 1 ? daysOfMonth[idx + 1] : undefined;
+  return (
+    (prev ? isOff(assignments, employeeId, prev) : false) ||
+    (next ? isOff(assignments, employeeId, next) : false)
+  );
+}
+
+function hasSundayOffBeforeWeekday(
+  assignments: ScheduleAssignments,
+  employeeId: string,
+  dateISO: DateISO,
+  daysSet: Set<DateISO>,
+): boolean {
+  const weekday = getWeekday(dateISO);
+  if (weekday === 0) return false;
+
+  const { year, month, day } = parseDateISO(dateISO as string);
+  for (let i = 1; i <= 6; i += 1) {
+    const prev = new Date(year, month - 1, day - i);
+    const prevISO = toDateISO(prev.getFullYear(), prev.getMonth() + 1, prev.getDate());
+    if (!daysSet.has(prevISO)) continue;
+    if (getWeekday(prevISO) === 0) return isOff(assignments, employeeId, prevISO);
+  }
+  return false;
+}
+
 export function generateSuggestedSchedule(input: Input): ScheduleAssignments {
   const assignments: ScheduleAssignments = {};
 
   const daysSet = new Set(input.daysOfMonth);
+  const dayIndexByISO = new Map(input.daysOfMonth.map((d, i) => [d, i] as const));
   const sundays = input.daysOfMonth.filter((d) => getWeekday(d) === 0);
 
   const cookRotationRule = isEnabledRule(
@@ -203,6 +244,17 @@ export function generateSuggestedSchedule(input: Input): ScheduleAssignments {
     "pot_washer_one_sunday_off_per_month",
   );
   const fixedSundayTalesRule = isEnabledRule(input.rules, "fixed_off_sunday_tales");
+  const cookNoWeekOffRule = isEnabledRule(input.rules, "cook_if_sunday_off_no_week_off");
+  const cookNoMondayRule = isEnabledRule(input.rules, "cook_no_monday_off_after_sunday_off");
+  const assistantNoWeekOffRule = isEnabledRule(
+    input.rules,
+    "assistant_if_sunday_off_no_week_off",
+  );
+  const assistantNoMondayRule = isEnabledRule(
+    input.rules,
+    "assistant_no_monday_off_after_sunday_off",
+  );
+  const noTwoConsecutiveOffRule = isEnabledRule(input.rules, "no_two_consecutive_off_days");
 
   const cookRoleId = asString(cookRotationRule?.params.cookRoleId);
   const exactlyOffCount = asNumber(cookRotationRule?.params.exactlyOffCount) ?? 1;
@@ -262,7 +314,20 @@ export function generateSuggestedSchedule(input: Input): ScheduleAssignments {
         for (let n = 0; n < requiredWeekdayOffCount; n += 1) {
           if (weekdayCandidates.length === 0) return;
           const idx = (cookIndex + sundayIndex + n) % weekdayCandidates.length;
-          ensureOff(assignments, cook.id, weekdayCandidates[idx]);
+          const candidate = weekdayCandidates[idx];
+          if (
+            noTwoConsecutiveOffRule &&
+            wouldCreateConsecutiveOff(
+              assignments,
+              cook.id,
+              candidate,
+              dayIndexByISO,
+              input.daysOfMonth,
+            )
+          ) {
+            continue;
+          }
+          ensureOff(assignments, cook.id, candidate);
         }
       });
     });
@@ -293,6 +358,18 @@ export function generateSuggestedSchedule(input: Input): ScheduleAssignments {
       for (let i = 0; i < missing; i += 1) {
         const candidate = candidates[(sundayIndex + i) % candidates.length];
         if (!candidate) continue;
+        if (
+          noTwoConsecutiveOffRule &&
+          wouldCreateConsecutiveOff(
+            assignments,
+            candidate.id,
+            sunday,
+            dayIndexByISO,
+            input.daysOfMonth,
+          )
+        ) {
+          continue;
+        }
         ensureOff(assignments, candidate.id, sunday);
       }
     });
@@ -343,6 +420,18 @@ export function generateSuggestedSchedule(input: Input): ScheduleAssignments {
         });
 
         if (!bestSunday) continue;
+        if (
+          noTwoConsecutiveOffRule &&
+          wouldCreateConsecutiveOff(
+            assignments,
+            target.employeeId,
+            bestSunday,
+            dayIndexByISO,
+            input.daysOfMonth,
+          )
+        ) {
+          continue;
+        }
         ensureOff(assignments, target.employeeId, bestSunday);
 
         const currentSet =
@@ -434,13 +523,37 @@ export function generateSuggestedSchedule(input: Input): ScheduleAssignments {
 
         const preferredDate = weekDays.find((d) => getWeekday(d) === fixedWeekday);
         if (preferredDate) {
+          if (
+            noTwoConsecutiveOffRule &&
+            wouldCreateConsecutiveOff(
+              assignments,
+              assistant.id,
+              preferredDate,
+              dayIndexByISO,
+              input.daysOfMonth,
+            )
+          ) {
+            return;
+          }
           ensureOff(assignments, assistant.id, preferredDate);
           return;
         }
 
         // End-of-month fallback keeps same-week requirement when preferred day is missing.
         const fallbackDate = weekDays.find((d) => getWeekday(d) !== 1);
-        if (fallbackDate) ensureOff(assignments, assistant.id, fallbackDate);
+        if (
+          fallbackDate &&
+          (!noTwoConsecutiveOffRule ||
+            !wouldCreateConsecutiveOff(
+              assignments,
+              assistant.id,
+              fallbackDate,
+              dayIndexByISO,
+              input.daysOfMonth,
+            ))
+        ) {
+          ensureOff(assignments, assistant.id, fallbackDate);
+        }
       });
     });
   }
@@ -468,7 +581,56 @@ export function generateSuggestedSchedule(input: Input): ScheduleAssignments {
         const windowStart = Math.max(0, idx - maxConsecutive);
         const candidates = input.daysOfMonth
           .slice(windowStart, idx + 1)
-          .filter((d) => assignments[employee.id]?.[d] !== "OFF");
+          .filter((d) => assignments[employee.id]?.[d] !== "OFF")
+          .filter((candidate) => {
+            if (
+              noTwoConsecutiveOffRule &&
+              wouldCreateConsecutiveOff(
+                assignments,
+                employee.id,
+                candidate,
+                dayIndexByISO,
+                input.daysOfMonth,
+              )
+            ) {
+              return false;
+            }
+
+            const isCook = Boolean(cookRoleId) && employee.roleId === cookRoleId;
+            const isAssistant =
+              Boolean(assistantRoleId) && employee.roleId === assistantRoleId;
+
+            if (
+              isCook &&
+              cookNoWeekOffRule &&
+              hasSundayOffBeforeWeekday(assignments, employee.id, candidate, daysSet)
+            ) {
+              return false;
+            }
+
+            if (
+              isAssistant &&
+              assistantNoWeekOffRule &&
+              hasSundayOffBeforeWeekday(assignments, employee.id, candidate, daysSet)
+            ) {
+              return false;
+            }
+
+            if (
+              getWeekday(candidate) === 1 &&
+              ((isCook && cookNoMondayRule) || (isAssistant && assistantNoMondayRule))
+            ) {
+              const prevIdx = dayIndexByISO.get(candidate);
+              if (prevIdx !== undefined && prevIdx > 0) {
+                const prevDate = input.daysOfMonth[prevIdx - 1];
+                if (getWeekday(prevDate) === 0 && isOff(assignments, employee.id, prevDate)) {
+                  return false;
+                }
+              }
+            }
+
+            return true;
+          });
 
         let bestDate: DateISO | undefined;
         let bestScore = Number.POSITIVE_INFINITY;

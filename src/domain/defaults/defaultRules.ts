@@ -154,6 +154,15 @@ export function createDefaultRules(): RuleConfig[] {
         "Nenhum colaborador pode trabalhar mais de 6 dias seguidos sem folga.",
     }),
 
+    createRule({
+      key: "no_two_consecutive_off_days",
+      title: "Não permitir 2 dias consecutivos de folga",
+      severity: "HARD",
+      params: {},
+      description:
+        "Evita duas folgas em dias seguidos para o mesmo colaborador.",
+    }),
+
     // Clarice, Ingrid, Elaine cannot be OFF on the same day
     createRule({
       key: "no_coincidence_clarice_ingrid_elaine",

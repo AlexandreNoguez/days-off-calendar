@@ -243,6 +243,13 @@ export const ruleFormRegistry: Partial<Record<DefaultRuleKey, RuleFormSchema>> =
     serializer: passthrough,
   },
 
+  no_two_consecutive_off_days: {
+    fields: [],
+    defaults: {},
+    parser: passthrough,
+    serializer: passthrough,
+  },
+
   elaine_not_same_day_josana: {
     fields: [
       {

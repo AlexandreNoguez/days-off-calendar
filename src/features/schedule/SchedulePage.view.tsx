@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { DateISO, EmployeeId } from "../../domain/types/ids";
 import type { ValidationResult } from "../../domain/types/validation";
 
@@ -6,6 +7,7 @@ import {
   Box,
   Button,
   Chip,
+  IconButton,
   Paper,
   Stack,
   Table,
@@ -16,6 +18,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
+import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 
 type DayColumn = {
   dateISO: DateISO;
@@ -68,6 +71,8 @@ function monthLabel(month: number): string {
 }
 
 export function SchedulePageView(props: Props) {
+  const [conflictsSide, setConflictsSide] = useState<"right" | "left">("right");
+
   const hardConflicts = props.validation.conflicts.filter((c) => c.severity === "HARD");
   const softConflicts = props.validation.conflicts.filter((c) => c.severity === "SOFT");
 
@@ -139,28 +144,62 @@ export function SchedulePageView(props: Props) {
       </Stack>
 
       {props.validation.conflicts.length > 0 && (
-        <Paper variant="outlined" sx={{ p: 2 }}>
-          <Typography variant="subtitle1" gutterBottom>
-            Conflitos detectados em tempo real
-          </Typography>
+        <Box
+          sx={{
+            position: { xs: "static", md: "fixed" },
+            top: { md: 82 },
+            right: { md: conflictsSide === "right" ? 16 : "auto" },
+            left: { md: conflictsSide === "left" ? 16 : "auto" },
+            width: { xs: "100%", md: 420 },
+            maxWidth: { xs: "100%", md: "calc(100vw - 24px)" },
+            zIndex: { md: 2000 },
+            transition: "all 220ms ease",
+          }}
+        >
+          <Paper
+            variant="outlined"
+            sx={{
+              p: 2,
+              boxShadow: { md: 6 },
+              maxHeight: { md: "70vh" },
+              overflowY: "auto",
+              bgcolor: "background.paper",
+            }}
+          >
+            <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
+              <Typography variant="subtitle1">Conflitos detectados em tempo real</Typography>
+              <Tooltip title="Alternar painel entre esquerda e direita">
+                <IconButton
+                  size="small"
+                  color="primary"
+                  onClick={() =>
+                    setConflictsSide((prev) => (prev === "right" ? "left" : "right"))
+                  }
+                  aria-label="Alternar posição do painel de conflitos"
+                >
+                  <SwapHorizIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </Stack>
 
-          <Stack spacing={1}>
-            {props.validation.conflicts.slice(0, 12).map((conflict) => (
-              <Alert
-                key={conflict.id}
-                severity={conflict.severity === "HARD" ? "error" : "warning"}
-              >
-                <strong>{conflict.dateISO}</strong> — {conflict.message}
-              </Alert>
-            ))}
+            <Stack spacing={1}>
+              {props.validation.conflicts.slice(0, 12).map((conflict) => (
+                <Alert
+                  key={conflict.id}
+                  severity={conflict.severity === "HARD" ? "error" : "warning"}
+                >
+                  <strong>{conflict.dateISO}</strong> — {conflict.message}
+                </Alert>
+              ))}
 
-            {props.validation.conflicts.length > 12 && (
-              <Typography variant="caption" color="text.secondary">
-                Mostrando 12 de {props.validation.conflicts.length} conflitos.
-              </Typography>
-            )}
-          </Stack>
-        </Paper>
+              {props.validation.conflicts.length > 12 && (
+                <Typography variant="caption" color="text.secondary">
+                  Mostrando 12 de {props.validation.conflicts.length} conflitos.
+                </Typography>
+              )}
+            </Stack>
+          </Paper>
+        </Box>
       )}
 
       <Paper variant="outlined" sx={{ overflow: "auto" }}>

@@ -193,6 +193,31 @@ export function validateSchedule(input: Input): ValidationResult {
     });
   }
 
+  const noTwoConsecutiveOffRule = enabledRule(
+    input.rules,
+    "no_two_consecutive_off_days",
+  );
+  if (noTwoConsecutiveOffRule) {
+    input.employees.forEach((employee) => {
+      for (let i = 1; i < input.daysOfMonth.length; i += 1) {
+        const prev = input.daysOfMonth[i - 1];
+        const current = input.daysOfMonth[i];
+        if (
+          isOff(input.assignments, employee.id, prev) &&
+          isOff(input.assignments, employee.id, current)
+        ) {
+          addConflict(conflicts, {
+            ruleId: noTwoConsecutiveOffRule.id,
+            dateISO: current,
+            employeeIds: [employee.id],
+            severity: noTwoConsecutiveOffRule.severity,
+            message: "Não pode ter 2 dias consecutivos de folga.",
+          });
+        }
+      }
+    });
+  }
+
   // Pair constraints and substitutions (daily checks)
   input.daysOfMonth.forEach((dateISO) => {
     const coincidenceGroup = enabledRule(input.rules, "no_coincidence_clarice_ingrid_elaine");
