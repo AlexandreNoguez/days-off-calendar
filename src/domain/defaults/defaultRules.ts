@@ -120,6 +120,28 @@ export function createDefaultRules(): RuleConfig[] {
       },
     }),
 
+    // Laundry: one Sunday OFF per month
+    createRule({
+      key: "laundry_one_sunday_off_per_month",
+      title: "Lavanderia tem direito a 1 folga no domingo por mês",
+      severity: "HARD",
+      params: {
+        employeeId: DEFAULT_EMPLOYEE_IDS.ingrid,
+        exactlyOffCount: 1,
+      },
+    }),
+
+    // Pot washer: one Sunday OFF per month
+    createRule({
+      key: "pot_washer_one_sunday_off_per_month",
+      title: "Paneleiro tem direito a 1 folga no domingo por mês",
+      severity: "HARD",
+      params: {
+        employeeId: DEFAULT_EMPLOYEE_IDS.fernando,
+        exactlyOffCount: 1,
+      },
+    }),
+
     // Clarice, Ingrid, Elaine cannot be OFF on the same day
     createRule({
       key: "no_coincidence_clarice_ingrid_elaine",

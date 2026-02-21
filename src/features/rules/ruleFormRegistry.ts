@@ -178,6 +178,54 @@ export const ruleFormRegistry: Partial<Record<DefaultRuleKey, RuleFormSchema>> =
     serializer: passthrough,
   },
 
+  laundry_one_sunday_off_per_month: {
+    fields: [
+      {
+        type: "select",
+        key: "employeeId",
+        label: "Laundry employee",
+        source: "employees",
+        required: true,
+      },
+      {
+        type: "number",
+        key: "exactlyOffCount",
+        label: "Sunday offs per month",
+        min: 0,
+        max: 5,
+        step: 1,
+        required: true,
+      },
+    ],
+    defaults: { employeeId: "", exactlyOffCount: 1 },
+    parser: passthrough,
+    serializer: passthrough,
+  },
+
+  pot_washer_one_sunday_off_per_month: {
+    fields: [
+      {
+        type: "select",
+        key: "employeeId",
+        label: "Pot washer employee",
+        source: "employees",
+        required: true,
+      },
+      {
+        type: "number",
+        key: "exactlyOffCount",
+        label: "Sunday offs per month",
+        min: 0,
+        max: 5,
+        step: 1,
+        required: true,
+      },
+    ],
+    defaults: { employeeId: "", exactlyOffCount: 1 },
+    parser: passthrough,
+    serializer: passthrough,
+  },
+
   elaine_not_same_day_josana: {
     fields: [
       {

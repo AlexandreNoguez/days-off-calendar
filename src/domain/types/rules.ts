@@ -12,6 +12,8 @@ export type DefaultRuleKey =
   | "assistant_if_sunday_work_requires_week_off"
   | "assistant_no_monday_off_after_sunday_off"
   | "assistant_weekday_off_must_be_fixed"
+  | "laundry_one_sunday_off_per_month"
+  | "pot_washer_one_sunday_off_per_month"
   | "no_coincidence_clarice_ingrid_elaine"
   | "elaine_not_same_day_josana"
   | "elaine_not_same_day_luis"

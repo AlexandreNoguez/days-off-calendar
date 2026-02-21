@@ -103,6 +103,19 @@ function buildAssistantForbiddenPairs(rules: RuleConfig[]): Set<string> {
   return out;
 }
 
+function buildSundayOffForbiddenPairs(rules: RuleConfig[]): Set<string> {
+  const out = new Set<string>();
+
+  const pairRule = isEnabledRule(rules, "ingrid_and_fernando_cannot_both_off");
+  if (pairRule) {
+    const a = asString(pairRule.params.a);
+    const b = asString(pairRule.params.b);
+    if (a && b) out.add(pairKey(a, b));
+  }
+
+  return out;
+}
+
 export function generateSuggestedSchedule(input: Input): ScheduleAssignments {
   const assignments: ScheduleAssignments = {};
 
@@ -124,6 +137,14 @@ export function generateSuggestedSchedule(input: Input): ScheduleAssignments {
   const assistantFixedWeekdayRule = isEnabledRule(
     input.rules,
     "assistant_weekday_off_must_be_fixed",
+  );
+  const laundryOneSundayRule = isEnabledRule(
+    input.rules,
+    "laundry_one_sunday_off_per_month",
+  );
+  const potWasherOneSundayRule = isEnabledRule(
+    input.rules,
+    "pot_washer_one_sunday_off_per_month",
   );
   const fixedSundayTalesRule = isEnabledRule(input.rules, "fixed_off_sunday_tales");
 
@@ -188,6 +209,62 @@ export function generateSuggestedSchedule(input: Input): ScheduleAssignments {
           ensureOff(assignments, cook.id, weekdayCandidates[idx]);
         }
       });
+    });
+  }
+
+  // Laundry and pot washer: monthly Sunday off allocation.
+  const monthlySundayTargets = [
+    {
+      employeeId: asString(laundryOneSundayRule?.params.employeeId),
+      count: asNumber(laundryOneSundayRule?.params.exactlyOffCount) ?? 1,
+    },
+    {
+      employeeId: asString(potWasherOneSundayRule?.params.employeeId),
+      count: asNumber(potWasherOneSundayRule?.params.exactlyOffCount) ?? 1,
+    },
+  ].filter((x): x is { employeeId: string; count: number } => Boolean(x.employeeId));
+
+  if (monthlySundayTargets.length > 0 && sundays.length > 0) {
+    const forbiddenPairs = buildSundayOffForbiddenPairs(input.rules);
+    const chosenSundaysByEmployee = new Map<string, Set<DateISO>>();
+    const loadBySunday = new Map<DateISO, number>();
+
+    monthlySundayTargets.forEach((target) => {
+      for (let n = 0; n < target.count; n += 1) {
+        let bestSunday: DateISO | undefined;
+        let bestScore = Number.POSITIVE_INFINITY;
+
+        sundays.forEach((sunday, idx) => {
+          const alreadyChosen = chosenSundaysByEmployee.get(target.employeeId);
+          if (alreadyChosen?.has(sunday)) return;
+
+          let pairPenalty = 0;
+          chosenSundaysByEmployee.forEach((otherSundays, otherEmployeeId) => {
+            if (!otherSundays.has(sunday)) return;
+            if (forbiddenPairs.has(pairKey(target.employeeId, otherEmployeeId))) {
+              pairPenalty += 1000;
+            }
+          });
+
+          const loadPenalty = loadBySunday.get(sunday) ?? 0;
+          const rotationPenalty = idx;
+          const score = pairPenalty + loadPenalty + rotationPenalty;
+
+          if (score < bestScore) {
+            bestScore = score;
+            bestSunday = sunday;
+          }
+        });
+
+        if (!bestSunday) continue;
+        ensureOff(assignments, target.employeeId, bestSunday);
+
+        const currentSet =
+          chosenSundaysByEmployee.get(target.employeeId) ?? new Set<DateISO>();
+        currentSet.add(bestSunday);
+        chosenSundaysByEmployee.set(target.employeeId, currentSet);
+        loadBySunday.set(bestSunday, (loadBySunday.get(bestSunday) ?? 0) + 1);
+      }
     });
   }
 

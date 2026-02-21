@@ -123,6 +123,37 @@ export function validateSchedule(input: Input): ValidationResult {
     }
   }
 
+  // one Sunday OFF per month rules
+  const monthlySundayRuleKeys: RuleConfig["key"][] = [
+    "laundry_one_sunday_off_per_month",
+    "pot_washer_one_sunday_off_per_month",
+  ];
+
+  monthlySundayRuleKeys.forEach((key) => {
+    const rule = enabledRule(input.rules, key);
+    if (!rule) return;
+
+    const employeeId = stringParam(rule.params, "employeeId") as EmployeeId | undefined;
+    const exactlyOffCount = numberParam(rule.params, "exactlyOffCount") ?? 1;
+    if (!employeeId) return;
+
+    const sundayOffCount = input.daysOfMonth.reduce((acc, dateISO) => {
+      if (getWeekday(dateISO) !== 0) return acc;
+      return acc + (isOff(input.assignments, employeeId, dateISO) ? 1 : 0);
+    }, 0);
+
+    if (sundayOffCount !== exactlyOffCount) {
+      const firstSunday = input.daysOfMonth.find((dateISO) => getWeekday(dateISO) === 0);
+      addConflict(conflicts, {
+        ruleId: rule.id,
+        dateISO: firstSunday ?? input.daysOfMonth[0],
+        employeeIds: [employeeId],
+        severity: rule.severity,
+        message: `Colaborador deve ter exatamente ${exactlyOffCount} folga(s) no domingo no mês.`,
+      });
+    }
+  });
+
   // Pair constraints and substitutions (daily checks)
   input.daysOfMonth.forEach((dateISO) => {
     const coincidenceGroup = enabledRule(input.rules, "no_coincidence_clarice_ingrid_elaine");
