@@ -72,9 +72,36 @@ function monthLabel(month: number): string {
 
 export function SchedulePageView(props: Props) {
   const [conflictsSide, setConflictsSide] = useState<"right" | "left">("right");
+  const [highlightedCellKey, setHighlightedCellKey] = useState<string | null>(null);
+  const [activeConflictId, setActiveConflictId] = useState<string | null>(null);
 
   const hardConflicts = props.validation.conflicts.filter((c) => c.severity === "HARD");
   const softConflicts = props.validation.conflicts.filter((c) => c.severity === "SOFT");
+  const employeeNameById = Object.fromEntries(
+    props.employeeRows.map((employee) => [employee.id, employee.name]),
+  );
+
+  function focusConflict(conflict: ValidationResult["conflicts"][number]) {
+    const employeeId = conflict.employeeIds[0];
+    if (!employeeId) return;
+
+    const cellId = `schedule-cell-${employeeId}-${conflict.dateISO}`;
+    const rowId = `schedule-row-${employeeId}`;
+    const target =
+      document.getElementById(cellId) ?? document.getElementById(rowId);
+    if (!target) return;
+
+    target.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+    setHighlightedCellKey(`${employeeId}_${conflict.dateISO}`);
+    setActiveConflictId(conflict.id);
+
+    window.setTimeout(() => {
+      setHighlightedCellKey((prev) =>
+        prev === `${employeeId}_${conflict.dateISO}` ? null : prev,
+      );
+      setActiveConflictId((prev) => (prev === conflict.id ? null : prev));
+    }, 2200);
+  }
 
   return (
     <Stack spacing={2}>
@@ -188,7 +215,29 @@ export function SchedulePageView(props: Props) {
                   key={conflict.id}
                   severity={conflict.severity === "HARD" ? "error" : "warning"}
                 >
-                  <strong>{conflict.dateISO}</strong> — {conflict.message}
+                  <Stack spacing={0.75}>
+                    <Typography variant="body2">
+                      <strong>{conflict.dateISO}</strong> — {conflict.message}
+                    </Typography>
+                    {conflict.employeeIds.length > 0 && (
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <Typography variant="caption" color="text.secondary">
+                          Colaborador:{" "}
+                          {employeeNameById[conflict.employeeIds[0]] ?? conflict.employeeIds[0]}
+                          {conflict.employeeIds.length > 1
+                            ? ` (+${conflict.employeeIds.length - 1})`
+                            : ""}
+                        </Typography>
+                        <Button
+                          size="small"
+                          variant={activeConflictId === conflict.id ? "contained" : "text"}
+                          onClick={() => focusConflict(conflict)}
+                        >
+                          Ir ao erro
+                        </Button>
+                      </Stack>
+                    )}
+                  </Stack>
                 </Alert>
               ))}
 
@@ -233,7 +282,7 @@ export function SchedulePageView(props: Props) {
           </TableHead>
           <TableBody>
             {props.employeeRows.map((employee) => (
-              <TableRow key={employee.id} hover>
+              <TableRow key={employee.id} id={`schedule-row-${employee.id}`} hover>
                 <TableCell
                   sx={{
                     position: "sticky",
@@ -257,7 +306,11 @@ export function SchedulePageView(props: Props) {
                   const isOff = status === "OFF";
 
                   return (
-                    <TableCell key={`${employee.id}_${day.dateISO}`} align="center">
+                    <TableCell
+                      key={`${employee.id}_${day.dateISO}`}
+                      id={`schedule-cell-${employee.id}-${day.dateISO}`}
+                      align="center"
+                    >
                       <Tooltip title="Clique para alternar Folga/Trabalho">
                         <Button
                           size="small"
@@ -268,7 +321,22 @@ export function SchedulePageView(props: Props) {
                             e.preventDefault();
                             props.onSetStatus(employee.id, day.dateISO, "WORK");
                           }}
-                          sx={{ minWidth: 52 }}
+                          sx={{
+                            width: 92,
+                            minWidth: 92,
+                            maxWidth: 92,
+                            height: 32,
+                            px: 0.75,
+                            ...(highlightedCellKey === `${employee.id}_${day.dateISO}` && {
+                              boxShadow: (theme) => `0 0 0 2px ${theme.palette.warning.main}`,
+                              animation: "schedulePulse 0.7s ease-in-out 3",
+                              "@keyframes schedulePulse": {
+                                "0%": { transform: "scale(1)" },
+                                "50%": { transform: "scale(1.06)" },
+                                "100%": { transform: "scale(1)" },
+                              },
+                            }),
+                          }}
                         >
                           {isOff ? "Folga" : "Trabalho"}
                         </Button>
