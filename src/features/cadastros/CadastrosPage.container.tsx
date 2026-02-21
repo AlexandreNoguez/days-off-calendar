@@ -36,7 +36,9 @@ export function CadastrosPageContainer() {
       rules={rulesPage.state.orderedRules}
       hasRules={rulesPage.state.hasRules}
       editing={rulesPage.state.editing}
+      formEditing={rulesPage.state.formEditing}
       formReadyRulesCount={rulesPage.state.formReadyRulesCount}
+      formRegistry={rulesPage.state.ruleFormRegistry}
       onEnsureDefaultRules={rulesPage.actions.ensureDefaultRules}
       onResetToDefaults={rulesPage.actions.resetToDefaultRules}
       onRestoreRulesDefaults={seedDefaults.actions.seedRulesDefaults}
@@ -45,6 +47,10 @@ export function CadastrosPageContainer() {
       onCancelEditParams={rulesPage.actions.cancelEditParams}
       onChangeParamsDraft={rulesPage.actions.changeParamsDraft}
       onSaveParams={rulesPage.actions.saveParams}
+      onStartFormEdit={rulesPage.actions.startFormEdit}
+      onCancelFormEdit={rulesPage.actions.cancelFormEdit}
+      onUpdateFormField={rulesPage.actions.updateFormField}
+      onSaveFormEdit={rulesPage.actions.saveFormEdit}
     />
   );
 }

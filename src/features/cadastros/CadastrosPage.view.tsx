@@ -11,6 +11,7 @@ import type {
 
 import { RulesPageView } from "../rules/RulesPage.view";
 import type { RuleConfig } from "../../domain/types/rules";
+import type { RuleFormSchema } from "../rules/ruleFormRegistry";
 
 type EmployeeRow = Employee & { roleName: string };
 
@@ -45,8 +46,9 @@ type Props = {
   rules: RuleConfig[];
   hasRules: boolean;
   editing: Record<RuleId, JsonEditState>;
+  formEditing: Record<RuleId, { params: Record<string, unknown> }>;
   formReadyRulesCount: number;
-
+  formRegistry: Partial<Record<RuleConfig["key"], RuleFormSchema>>;
   onEnsureDefaultRules: () => void;
   onResetToDefaults: () => void;
   onRestoreRulesDefaults: () => void;
@@ -55,6 +57,10 @@ type Props = {
   onCancelEditParams: (ruleId: RuleId) => void;
   onChangeParamsDraft: (ruleId: RuleId, text: string) => void;
   onSaveParams: (ruleId: RuleId) => void;
+  onStartFormEdit: (ruleId: RuleId) => void;
+  onCancelFormEdit: (ruleId: RuleId) => void;
+  onUpdateFormField: (ruleId: RuleId, field: string, value: unknown) => void;
+  onSaveFormEdit: (ruleId: RuleId) => void;
 };
 export function CadastrosPageView(props: Props) {
   return (
@@ -128,7 +134,11 @@ export function CadastrosPageView(props: Props) {
           rules={props.rules}
           hasRules={props.hasRules}
           editing={props.editing}
+          formEditing={props.formEditing}
           formReadyRulesCount={props.formReadyRulesCount}
+          formRegistry={props.formRegistry}
+          roles={props.roles}
+          employees={props.employees}
           onEnsureDefaultRules={props.onEnsureDefaultRules}
           onResetToDefaults={props.onResetToDefaults}
           onRestoreRulesDefaults={props.onRestoreRulesDefaults}
@@ -137,6 +147,10 @@ export function CadastrosPageView(props: Props) {
           onCancelEditParams={props.onCancelEditParams}
           onChangeParamsDraft={props.onChangeParamsDraft}
           onSaveParams={props.onSaveParams}
+          onStartFormEdit={props.onStartFormEdit}
+          onCancelFormEdit={props.onCancelFormEdit}
+          onUpdateFormField={props.onUpdateFormField}
+          onSaveFormEdit={props.onSaveFormEdit}
         />
       )}
     </Box>

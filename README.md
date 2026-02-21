@@ -181,6 +181,7 @@ Stack: **React + Vite + TypeScript + MUI + Zustand + React Router + RHF + Zod + 
 
 - [x] Listagem de regras com switch enabled/disabled
 - [x] Catálogo inicial de schema por regra (`ruleFormRegistry`)
+- [x] Formulários guiados usando dados dinâmicos de colaboradores/cargos (fase inicial)
 - [x] Editor de parâmetros (JSON no MVP, formulários guiados em evolução)
 - [x] Editor de parâmetros (JSON no MVP)
 - [x] Validação de regras (HARD/SOFT)
