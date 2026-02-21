@@ -138,35 +138,6 @@ export function SchedulePageView(props: Props) {
         </Button>
       </Stack>
 
-      <Paper variant="outlined" sx={{ p: 2 }}>
-        <Typography variant="subtitle1" gutterBottom>
-          Histórico de alterações
-        </Typography>
-
-        {props.changeLogRows.length === 0 ? (
-          <Typography variant="body2" color="text.secondary">
-            Ainda não há alterações registradas.
-          </Typography>
-        ) : (
-          <Stack spacing={1}>
-            {props.changeLogRows.slice(0, 20).map((entry) => (
-              <Box key={entry.id}>
-                <Typography variant="caption" color="text.secondary">
-                  {entry.atLabel}
-                </Typography>
-                <Typography variant="body2">{entry.message}</Typography>
-              </Box>
-            ))}
-
-            {props.changeLogRows.length > 20 && (
-              <Typography variant="caption" color="text.secondary">
-                Mostrando 20 de {props.changeLogRows.length} alterações.
-              </Typography>
-            )}
-          </Stack>
-        )}
-      </Paper>
-
       {props.validation.conflicts.length > 0 && (
         <Paper variant="outlined" sx={{ p: 2 }}>
           <Typography variant="subtitle1" gutterBottom>
@@ -288,6 +259,35 @@ export function SchedulePageView(props: Props) {
             )}
           </TableBody>
         </Table>
+      </Paper>
+
+      <Paper variant="outlined" sx={{ p: 2 }}>
+        <Typography variant="subtitle1" gutterBottom>
+          Histórico de alterações
+        </Typography>
+
+        {props.changeLogRows.length === 0 ? (
+          <Typography variant="body2" color="text.secondary">
+            Ainda não há alterações registradas.
+          </Typography>
+        ) : (
+          <Stack spacing={1}>
+            {props.changeLogRows.slice(0, 20).map((entry) => (
+              <Box key={entry.id}>
+                <Typography variant="caption" color="text.secondary">
+                  {entry.atLabel}
+                </Typography>
+                <Typography variant="body2">{entry.message}</Typography>
+              </Box>
+            ))}
+
+            {props.changeLogRows.length > 20 && (
+              <Typography variant="caption" color="text.secondary">
+                Mostrando 20 de {props.changeLogRows.length} alterações.
+              </Typography>
+            )}
+          </Stack>
+        )}
       </Paper>
     </Stack>
   );
