@@ -28,8 +28,7 @@ export const router = createBrowserRouter([
         ],
       },
 
-      { path: "cadastros", element: <Navigate to="/cadastros/employees" replace /> },
-      { path: "cadastros/:section", element: <CadastrosPageContainer /> },
+      { path: "cadastros", element: <CadastrosPageContainer /> },
 
       // Optional direct routes (same containers)
       { path: "setup", element: <SetupPageContainer /> },

@@ -128,7 +128,7 @@ Stack: **React + Vite + TypeScript + MUI + Zustand + React Router + RHF + Zod + 
 
 - [x] Projeto React + Vite + TS criado
 - [x] Estrutura inicial de pastas (app/features/stores/domain/shared)
-- [x] Router com wizard de planejamento (setup/schedule/export) + menu lateral de cadastros em 3 entradas
+- [x] Router com wizard de planejamento (setup/schedule/export) + menu lateral com entrada única de Cadastros e navegação por tabs
 - [x] AppShell base com layout agradável
 - [x] Ajustes de tipagem e exports dos containers (erros 2305 resolvidos)
 

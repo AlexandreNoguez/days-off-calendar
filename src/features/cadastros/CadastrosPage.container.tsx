@@ -1,39 +1,22 @@
-import { useMemo } from "react";
-import { Navigate, useParams } from "react-router-dom";
+import { useState } from "react";
 
 import { useEmployeesPage } from "../employees/useEmployeesPage";
 import { useRulesPage } from "../rules/useRulesPage";
 import { useSeedDefaults } from "../wizard/useSeedDefaults";
 
-import {
-  CadastrosPageView,
-  type CadastrosSection,
-} from "./CadastrosPage.view";
-
-const allowedSections: CadastrosSection[] = ["employees", "roles", "rules"];
+import { CadastrosPageView, type CadastrosTab } from "./CadastrosPage.view";
 
 export function CadastrosPageContainer() {
-  const { section } = useParams<{ section?: string }>();
-
-  const currentSection = useMemo(() => {
-    if (section && allowedSections.includes(section as CadastrosSection)) {
-      return section as CadastrosSection;
-    }
-
-    return null;
-  }, [section]);
+  const [tab, setTab] = useState<CadastrosTab>("employees");
 
   const employeesPage = useEmployeesPage();
   const rulesPage = useRulesPage();
   const seedDefaults = useSeedDefaults();
 
-  if (!currentSection) {
-    return <Navigate to="/cadastros/employees" replace />;
-  }
-
   return (
     <CadastrosPageView
-      section={currentSection}
+      tab={tab}
+      onTabChange={setTab}
       roles={employeesPage.state.roles}
       employees={employeesPage.state.employeesTable}
       canCreateEmployee={employeesPage.state.canCreateEmployee}
