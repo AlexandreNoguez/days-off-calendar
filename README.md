@@ -68,7 +68,7 @@ Stack: **React + Vite + TypeScript + MUI + Zustand + React Router + RHF + Zod + 
 ### Roteamento
 
 - [x] React Router (router central com rotas do wizard)
-- [ ] ErrorBoundary customizado no router (melhor UX para erros)
+- [x] ErrorBoundary customizado no router (melhor UX para erros)
 
 ### Forms/Validação
 
@@ -76,7 +76,7 @@ Stack: **React + Vite + TypeScript + MUI + Zustand + React Router + RHF + Zod + 
 
 ### Notificações
 
-- [ ] react-toastify (planejado para feedbacks do wizard / validações)
+- [x] react-toastify (feedbacks de seed/salvar/export/reset)
 
 ### Export XLSX
 
@@ -204,7 +204,7 @@ Stack: **React + Vite + TypeScript + MUI + Zustand + React Router + RHF + Zod + 
 - [x] Aplicação automática de regras (gerar sugestão)
 - [x] Validações e conflitos (exibir mensagens)
 - [x] Undo/redo UI
-- [ ] Histórico de alterações (log)
+- [x] Histórico de alterações (log)
 
 ### Step 6 — Export
 
@@ -214,11 +214,65 @@ Stack: **React + Vite + TypeScript + MUI + Zustand + React Router + RHF + Zod + 
 
 ### Extras (qualidade)
 
-- [ ] ErrorBoundary customizado no router
-- [ ] Toastify em ações importantes (seed, salvar, export)
-- [ ] Responsividade refinada no AppShell (Drawer/hamburger)
+- [x] ErrorBoundary customizado no router
+- [x] Toastify em ações importantes (seed, salvar, export)
+- [x] Responsividade refinada no AppShell (Drawer/hamburger)
 - [x] Botão “limpar dados” global (localStorage + reset stores)
-- [ ] Documentação de regras (HARD/SOFT) e exemplos
+- [x] Documentação de regras (HARD/SOFT) e exemplos
+
+---
+
+## 📘 Documentação de Regras (HARD/SOFT)
+
+Esta seção reflete o comportamento atual do validador em
+`src/application/usecases/rules/validateSchedule.ts`.
+
+### HARD (bloqueia validade da escala)
+
+- `fixed_off_sunday_tales`
+  - Regra: Tales deve estar `OFF` em todos os domingos.
+  - Exemplo inválido: domingo com Tales em `WORK`.
+- `cook_rotation_one_off_each_sunday`
+  - Regra: exatamente 1 cozinheiro `OFF` por domingo.
+  - Exemplo inválido: 0 ou 2+ cozinheiros `OFF` no mesmo domingo.
+- `cook_if_sunday_work_requires_week_off`
+  - Regra: cozinheiro que trabalhou domingo precisa de 1 folga entre segunda e sábado da mesma semana.
+  - Exemplo inválido: trabalhou domingo e não folgou nenhum dia útil da semana.
+- `cook_if_sunday_off_no_week_off`
+  - Regra: cozinheiro que folgou no domingo não pode folgar na semana (segunda a sábado).
+  - Exemplo inválido: folga no domingo e também na terça.
+- `no_coincidence_clarice_ingrid_elaine`
+  - Regra: Clarice, Ingrid e Elaine não podem folgar juntas no mesmo dia.
+  - Exemplo inválido: Clarice e Ingrid `OFF` no mesmo dia.
+- `elaine_not_same_day_josana`
+  - Regra: Elaine e Josana não podem folgar no mesmo dia.
+  - Exemplo inválido: ambas `OFF` na mesma data.
+- `elaine_not_same_day_luis`
+  - Regra: Elaine e Luís não podem folgar no mesmo dia.
+  - Exemplo inválido: ambos `OFF` na mesma data.
+- `ingrid_and_fernando_cannot_both_off`
+  - Regra: Ingrid e Fernando não podem folgar no mesmo dia.
+  - Exemplo inválido: Ingrid e Fernando `OFF` simultaneamente.
+- `if_maria_off_then_lidriel_must_work`
+  - Regra: se Maria folgar, Lidriel deve trabalhar.
+  - Exemplo inválido: Maria `OFF` e Lidriel `OFF` no mesmo dia.
+- `if_josana_or_luis_off_then_elaine_must_work`
+  - Regra: se Josana ou Luís folgarem, Elaine deve trabalhar.
+  - Exemplo inválido: Josana `OFF` e Elaine `OFF` no mesmo dia.
+
+### SOFT (aviso, não bloqueia)
+
+- Atualmente não há regra SOFT sendo gerada no `validateSchedule`.
+- A escala pode ser exportada com conflitos SOFT.
+
+### Regras padrão cadastradas, mas ainda não validadas
+
+- `cook_no_monday_off_after_sunday_off`
+- `annual_holiday_credit_one_per_person`
+- `avoid_same_weekday_off` (SOFT)
+
+Estas regras já existem no catálogo padrão (`src/domain/defaults/defaultRules.ts`),
+mas ainda não produzem conflitos no validador principal.
 
 ---
 
