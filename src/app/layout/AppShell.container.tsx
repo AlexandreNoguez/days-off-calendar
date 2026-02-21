@@ -11,6 +11,7 @@ import { useEmployeesStore } from "../../stores/employees.store";
 import { useRulesStore } from "../../stores/rules.store";
 import { useScheduleStore } from "../../stores/schedule.store";
 import { useValidationStore } from "../../stores/validation.store";
+import { useAppThemeMode } from "../providers/themeMode.context";
 
 type NavItem = {
   label: string;
@@ -25,6 +26,7 @@ export function AppShellContainer() {
 
   const location = useLocation();
   const navigate = useNavigate();
+  const { mode, toggleMode } = useAppThemeMode();
 
   const clearLocalStorageOnly = useAppStore((s) => s.actions.clearLocalStorageOnly);
   const resetPlan = usePlanStore((s) => s.actions.resetPlan);
@@ -82,6 +84,8 @@ export function AppShellContainer() {
       onCloseMobileDrawer={handleCloseMobileDrawer}
       onNavItemClick={handleNavItemClick}
       onResetAll={handleResetAll}
+      themeMode={mode}
+      onToggleThemeMode={toggleMode}
       content={<Outlet />}
     />
   );

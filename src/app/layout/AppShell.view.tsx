@@ -24,6 +24,7 @@ type Props = {
   title: string;
   navItems: NavItem[];
   currentPath: string;
+  themeMode: "light" | "dark";
 
   isMobile: boolean;
   mobileOpen: boolean;
@@ -32,6 +33,7 @@ type Props = {
   onCloseMobileDrawer: () => void;
   onNavItemClick: () => void;
   onResetAll: () => void;
+  onToggleThemeMode: () => void;
 
   content: React.ReactNode;
 };
@@ -118,6 +120,10 @@ export function AppShellView(props: Props) {
           <Typography variant="h6" component="div" noWrap sx={{ flex: 1 }}>
             {props.title}
           </Typography>
+
+          <Button color="inherit" variant="outlined" onClick={props.onToggleThemeMode}>
+            {props.themeMode === "light" ? "Dark" : "Light"}
+          </Button>
 
           {!props.isMobile && (
             <Button color="inherit" variant="outlined" onClick={props.onResetAll}>
