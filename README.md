@@ -1,12 +1,54 @@
-````md
-# Escala de Folgas (MVP) — Documentação do Projeto
+# Escala de Folgas — Documentação do Projeto
 
-Aplicação **frontend-only** para montar uma escala de folgas com regras (HARD/SOFT), evitar desfalques e permitir exportação para **XLSX**.
-Stack: **React + Vite + TypeScript + MUI + Zustand + React Router + RHF + Zod + Toastify + XLSX**.
+Aplicação para montar uma escala de folgas com regras (HARD/SOFT), evitar desfalques, registrar ações de usuários e permitir exportação para **XLSX**.
+
+Stack atual: **Next.js + React + TypeScript + MUI + MongoDB + Toastify**.
+
+A versão original do MVP era frontend-only com Vite/localStorage. A evolução atual migrou a base para Next.js com backend interno e persistência no MongoDB.
+
+---
+
+## 📌 Plano de evolução
+
+- [Plano de migração para Next.js + MongoDB](docs/plano-migracao-nextjs-mongodb.md)
+
+---
+
+## Configuração local
+
+Crie/edite o arquivo `.env` na raiz do projeto:
+
+```bash
+MONGODB_URI=mongodb+srv://usuario:senha@cluster.mongodb.net/?retryWrites=true&w=majority
+MONGODB_DB_NAME=escala_folga
+SESSION_SECRET=troque-este-valor-por-uma-string-grande
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=uma-senha-inicial-segura
+ADMIN_DISPLAY_NAME=Administrador
+```
+
+O arquivo `.env` real fica fora do Git. Use `.env.example` como modelo.
+
+O primeiro admin e criado automaticamente no primeiro login caso ainda nao exista usuario com `ADMIN_USERNAME`. Tambem e possivel criar manualmente:
+
+```bash
+npm run seed:admin
+```
+
+## Como rodar
+
+```bash
+npm install
+npm run dev
+```
+
+Depois acesse `http://localhost:3000`.
 
 ---
 
 ## ✅ Objetivos do MVP
+
+As seções abaixo preservam o histórico do MVP original e continuam úteis como referência das regras de negócio.
 
 - Permitir cadastrar **cargos** e **funcionários** (com flags como “sempre folga domingo”).
 - Configurar o **período (mês/ano)** e marcar **feriados**.
@@ -318,10 +360,6 @@ npm run dev
 
 ## 📌 Notas
 
-- O MVP será feito **sem backend**.
-- Os dados ficam no **localStorage** e podem ser exportados para XLSX.
+- A base atual possui backend via Next.js.
+- Os dados principais ficam no MongoDB e podem ser exportados para XLSX.
 - As regras podem evoluir para suportar mais cargos, times e calendários.
-
-```
-
-```
