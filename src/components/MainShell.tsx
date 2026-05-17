@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
 import type { PublicUser } from "../lib/types";
 import {
   AppBar,
@@ -15,25 +14,15 @@ import {
   ListItemText,
   Stack,
   Toolbar,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import LogoutIcon from "@mui/icons-material/Logout";
+import DarkModeIcon from "@mui/icons-material/DarkMode";
+import SunnyIcon from "@mui/icons-material/Sunny";
+import { useMainShell } from "./hooks/useMainShell";
 
 const DRAWER_WIDTH = 256;
-
-type NavItem = {
-  label: string;
-  href: string;
-  adminOnly?: boolean;
-};
-
-const navItems: NavItem[] = [
-  { label: "Setup", href: "/setup" },
-  { label: "Cadastros", href: "/cadastros" },
-  { label: "Escala", href: "/schedule" },
-  { label: "Exportar", href: "/export" },
-  { label: "Administrador", href: "/admin", adminOnly: true },
-];
 
 export function MainShell({
   user,
@@ -42,15 +31,7 @@ export function MainShell({
   user: PublicUser;
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
-  const router = useRouter();
-  const visibleItems = navItems.filter((item) => !item.adminOnly || user.role === "ADMIN");
-
-  async function logout() {
-    await fetch("/api/auth/logout", { method: "POST" });
-    router.replace("/login");
-    router.refresh();
-  }
+  const shell = useMainShell(user);
 
   const drawer = (
     <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
@@ -64,8 +45,8 @@ export function MainShell({
       </Toolbar>
       <Divider />
       <List sx={{ px: 1 }}>
-        {visibleItems.map((item) => {
-          const selected = pathname === item.href || pathname.startsWith(`${item.href}/`);
+        {shell.visibleItems.map((item) => {
+          const selected = shell.isSelected(item.href);
           return (
             <ListItemButton
               key={item.href}
@@ -101,7 +82,24 @@ export function MainShell({
           <Typography variant="body2" sx={{ display: { xs: "none", sm: "block" } }}>
             {user.displayName}
           </Typography>
-          <Button color="inherit" startIcon={<LogoutIcon />} onClick={logout}>
+          <Tooltip
+            title={
+              shell.themeMode.mode === "light"
+                ? "Ativar modo escuro"
+                : "Ativar modo claro"
+            }
+          >
+            <Button
+              color="inherit"
+              onClick={shell.themeMode.toggleMode}
+              startIcon={
+                shell.themeMode.mode === "light" ? <DarkModeIcon /> : <SunnyIcon />
+              }
+            >
+              {shell.themeMode.mode === "light" ? "Escuro" : "Claro"}
+            </Button>
+          </Tooltip>
+          <Button color="inherit" startIcon={<LogoutIcon />} onClick={shell.logout}>
             Sair
           </Button>
         </Toolbar>
@@ -134,12 +132,12 @@ export function MainShell({
         <Toolbar />
         <Box sx={{ display: { xs: "block", md: "none" }, mb: 2, overflowX: "auto" }}>
           <Stack direction="row" spacing={1}>
-            {visibleItems.map((item) => (
+            {shell.visibleItems.map((item) => (
               <Button
                 key={item.href}
                 component={Link}
                 href={item.href}
-                variant={pathname === item.href ? "contained" : "outlined"}
+                variant={shell.isSelected(item.href) ? "contained" : "outlined"}
                 size="small"
               >
                 {item.label}

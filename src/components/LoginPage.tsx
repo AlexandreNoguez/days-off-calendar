@@ -1,7 +1,5 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
 import {
   Alert,
   Box,
@@ -12,37 +10,10 @@ import {
   Typography,
 } from "@mui/material";
 import LoginIcon from "@mui/icons-material/Login";
+import { useLoginPage } from "./hooks/useLoginPage";
 
 export function LoginPage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [username, setUsername] = useState("admin");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  async function submit(event: React.FormEvent) {
-    event.preventDefault();
-    setLoading(true);
-    setError(null);
-
-    const response = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
-    });
-
-    setLoading(false);
-
-    if (!response.ok) {
-      const data = (await response.json().catch(() => null)) as { error?: string } | null;
-      setError(data?.error ?? "Nao foi possivel entrar.");
-      return;
-    }
-
-    router.replace(searchParams.get("next") || "/schedule");
-    router.refresh();
-  }
+  const { state, actions } = useLoginPage();
 
   return (
     <Box
@@ -56,7 +27,7 @@ export function LoginPage() {
     >
       <Paper
         component="form"
-        onSubmit={submit}
+        onSubmit={actions.submit}
         variant="outlined"
         sx={{ width: "100%", maxWidth: 420, p: 3 }}
       >
@@ -70,12 +41,12 @@ export function LoginPage() {
             </Typography>
           </Box>
 
-          {error && <Alert severity="error">{error}</Alert>}
+          {state.error && <Alert severity="error">{state.error}</Alert>}
 
           <TextField
             label="Usuario"
-            value={username}
-            onChange={(event) => setUsername(event.target.value)}
+            value={state.username}
+            onChange={(event) => actions.setUsername(event.target.value)}
             autoComplete="username"
             required
             fullWidth
@@ -84,8 +55,8 @@ export function LoginPage() {
           <TextField
             label="Senha"
             type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
+            value={state.password}
+            onChange={(event) => actions.setPassword(event.target.value)}
             autoComplete="current-password"
             required
             fullWidth
@@ -95,9 +66,9 @@ export function LoginPage() {
             type="submit"
             variant="contained"
             startIcon={<LoginIcon />}
-            disabled={loading}
+            disabled={state.loading}
           >
-            {loading ? "Entrando..." : "Entrar"}
+            {state.loading ? "Entrando..." : "Entrar"}
           </Button>
         </Stack>
       </Paper>

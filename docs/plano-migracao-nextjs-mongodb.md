@@ -231,7 +231,7 @@ Exemplos de `action`:
 - [x] Sistema lista logins e acoes do sistema.
 - [x] Admin pode filtrar por usuario.
 - [x] Admin pode filtrar por acao.
-- [ ] Admin pode filtrar por periodo.
+- [x] Admin pode filtrar por periodo.
 
 ### Usuario comum usa a escala
 
