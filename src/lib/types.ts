@@ -2,6 +2,7 @@ import type { Employee, Role } from "../domain/types/employees";
 import type { DateISO } from "../domain/types/ids";
 import type { RuleConfig } from "../domain/types/rules";
 import type {
+  AssignmentStatus,
   ScheduleAssignments,
   ScheduleChangeLogEntry,
 } from "../domain/types/schedule";
@@ -46,10 +47,83 @@ export type AppSettings = {
 };
 
 export type ScheduleDocument = {
-  id: "main";
+  id: string;
+  periodKey: string;
+  year: number;
+  month: number;
   assignments: ScheduleAssignments;
   changeLog: ScheduleChangeLogEntry[];
+  employeeSnapshots?: Record<
+    string,
+    {
+      id: string;
+      name: string;
+      roleId: string;
+      roleName: string;
+      alwaysOffSunday: boolean;
+      notes?: string;
+    }
+  >;
+  holidaysSnapshot?: Record<DateISO, true>;
+  createdAt?: string;
   updatedAt: string;
+};
+
+export type ScheduleHistoryPeriod = {
+  year: number;
+  month: number;
+  periodKey: string;
+  updatedAt: string;
+  employeeCount: number;
+  offCount: number;
+  changeCount: number;
+};
+
+export type ScheduleHistoryDay = {
+  dateISO: DateISO;
+  dayNumber: number;
+  weekday: number;
+  weekdayLabel: string;
+  isHoliday: boolean;
+};
+
+export type ScheduleHistoryEmployeeOption = {
+  id: string;
+  name: string;
+  roleId: string;
+  roleName: string;
+};
+
+export type ScheduleHistoryRow = ScheduleHistoryEmployeeOption & {
+  offCount: number;
+  workCount: number;
+  days: Array<{
+    dateISO: DateISO;
+    status: AssignmentStatus;
+    isHoliday: boolean;
+  }>;
+};
+
+export type ScheduleHistoryDto = {
+  periods: ScheduleHistoryPeriod[];
+  selectedPeriod?: {
+    year: number;
+    month: number;
+    periodKey: string;
+    updatedAt: string;
+  };
+  days: ScheduleHistoryDay[];
+  employees: ScheduleHistoryEmployeeOption[];
+  roles: Array<{ id: string; name: string }>;
+  rows: ScheduleHistoryRow[];
+  changeLog: ScheduleChangeLogEntry[];
+  summary: {
+    employeeCount: number;
+    visibleEmployeeCount: number;
+    dayCount: number;
+    offCount: number;
+    workCount: number;
+  };
 };
 
 export type AppStateDto = {

@@ -11,6 +11,18 @@ function nowISO(): string {
   return new Date().toISOString();
 }
 
+function pad2(value: number): string {
+  return String(value).padStart(2, "0");
+}
+
+export function schedulePeriodKey(year: number, month: number): string {
+  return `${year}-${pad2(month)}`;
+}
+
+export function scheduleDocumentId(year: number, month: number): string {
+  return `schedule_${year}_${pad2(month)}`;
+}
+
 function stripMongoId<T extends object>(document: T & { _id?: unknown }): T {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { _id, ...rest } = document;
@@ -25,6 +37,93 @@ async function replaceCollection<T extends { id: string }>(
   if (documents.length > 0) {
     await collection.insertMany(documents as OptionalUnlessRequiredId<T>[]);
   }
+}
+
+function buildEmployeeSnapshots(
+  employees: Employee[],
+  roles: Role[],
+): NonNullable<ScheduleDocument["employeeSnapshots"]> {
+  const roleNames = new Map(roles.map((role) => [role.id, role.name]));
+
+  return Object.fromEntries(
+    employees.map((employee) => [
+      employee.id,
+      {
+        id: employee.id,
+        name: employee.name,
+        roleId: employee.roleId,
+        roleName: roleNames.get(employee.roleId) ?? "Sem cargo",
+        alwaysOffSunday: employee.alwaysOffSunday,
+        notes: employee.notes,
+      },
+    ]),
+  );
+}
+
+async function migrateLegacyMainSchedule(input: {
+  schedules: Collection<ScheduleDocument>;
+  year: number;
+  month: number;
+  employees: Employee[];
+  roles: Role[];
+  holidays: AppSettings["holidays"];
+  updatedAt: string;
+}): Promise<void> {
+  const legacy = await input.schedules.findOne({ id: "main" });
+  if (!legacy) return;
+
+  const periodScheduleCount = await input.schedules.countDocuments({
+    id: { $ne: "main" },
+    periodKey: { $exists: true },
+  });
+  if (periodScheduleCount > 0) return;
+
+  const id = scheduleDocumentId(input.year, input.month);
+  const existingPeriod = await input.schedules.findOne({ id });
+  if (existingPeriod) return;
+
+  await input.schedules.insertOne({
+    id,
+    year: input.year,
+    month: input.month,
+    periodKey: schedulePeriodKey(input.year, input.month),
+    assignments: legacy.assignments ?? {},
+    changeLog: legacy.changeLog ?? [],
+    employeeSnapshots: buildEmployeeSnapshots(input.employees, input.roles),
+    holidaysSnapshot: input.holidays,
+    createdAt: legacy.createdAt ?? input.updatedAt,
+    updatedAt: legacy.updatedAt ?? input.updatedAt,
+  });
+}
+
+async function ensureScheduleForPeriod(input: {
+  schedules: Collection<ScheduleDocument>;
+  year: number;
+  month: number;
+  employees: Employee[];
+  roles: Role[];
+  holidays: AppSettings["holidays"];
+  updatedAt: string;
+}): Promise<ScheduleDocument> {
+  const id = scheduleDocumentId(input.year, input.month);
+  const existing = await input.schedules.findOne({ id });
+  if (existing) return existing;
+
+  const schedule: ScheduleDocument = {
+    id,
+    year: input.year,
+    month: input.month,
+    periodKey: schedulePeriodKey(input.year, input.month),
+    assignments: {},
+    changeLog: [],
+    employeeSnapshots: buildEmployeeSnapshots(input.employees, input.roles),
+    holidaysSnapshot: input.holidays,
+    createdAt: input.updatedAt,
+    updatedAt: input.updatedAt,
+  };
+
+  await input.schedules.insertOne(schedule);
+  return schedule;
 }
 
 export async function ensureDefaultAppData(): Promise<void> {
@@ -67,18 +166,32 @@ export async function ensureDefaultAppData(): Promise<void> {
     await rules.insertMany(seed.rules);
   }
 
-  await schedules.updateOne(
-    { id: "main" },
-    {
-      $setOnInsert: {
-        id: "main",
-        assignments: {},
-        changeLog: [],
-        updatedAt,
-      },
-    },
-    { upsert: true },
-  );
+  const settingsDocument = await settings.findOne({ id: "main" });
+  const activeYear = settingsDocument?.year ?? year;
+  const activeMonth = settingsDocument?.month ?? month;
+  const activeHolidays = settingsDocument?.holidays ?? {};
+  const currentRoles = (await roles.find({}).toArray()).map(stripMongoId);
+  const currentEmployees = (await employees.find({}).toArray()).map(stripMongoId);
+
+  await migrateLegacyMainSchedule({
+    schedules,
+    year: activeYear,
+    month: activeMonth,
+    employees: currentEmployees,
+    roles: currentRoles,
+    holidays: activeHolidays,
+    updatedAt,
+  });
+
+  await ensureScheduleForPeriod({
+    schedules,
+    year: activeYear,
+    month: activeMonth,
+    employees: currentEmployees,
+    roles: currentRoles,
+    holidays: activeHolidays,
+    updatedAt,
+  });
 }
 
 export async function getAppState(user: PublicUser): Promise<AppStateDto> {
@@ -86,23 +199,31 @@ export async function getAppState(user: PublicUser): Promise<AppStateDto> {
 
   const db = await getDb();
   const settings = await db.collection<AppSettings>("settings").findOne({ id: "main" });
-  const schedule = await db
-    .collection<ScheduleDocument>("schedules")
-    .findOne({ id: "main" });
-
   const roles = await db.collection<Role>("roles").find({}).toArray();
   const employees = await db.collection<Employee>("employees").find({}).toArray();
   const rules = await db.collection<RuleConfig>("rules").find({}).toArray();
+  const cleanRoles = roles.map(stripMongoId);
+  const cleanEmployees = employees.map(stripMongoId);
+  const plan = {
+    year: settings?.year ?? new Date().getFullYear(),
+    month: settings?.month ?? new Date().getMonth() + 1,
+  };
+  const schedule = await ensureScheduleForPeriod({
+    schedules: db.collection<ScheduleDocument>("schedules"),
+    year: plan.year,
+    month: plan.month,
+    employees: cleanEmployees,
+    roles: cleanRoles,
+    holidays: settings?.holidays ?? {},
+    updatedAt: nowISO(),
+  });
 
   return {
     user,
-    plan: {
-      year: settings?.year ?? new Date().getFullYear(),
-      month: settings?.month ?? new Date().getMonth() + 1,
-    },
+    plan,
     holidays: settings?.holidays ?? {},
-    roles: roles.map(stripMongoId),
-    employees: employees.map(stripMongoId),
+    roles: cleanRoles,
+    employees: cleanEmployees,
     rules: rules.map(stripMongoId),
     schedule: {
       assignments: schedule?.assignments ?? {},
@@ -147,14 +268,28 @@ export async function saveAppStatePatch(
   }
 
   if (patch.schedule) {
+    const settings = await db.collection<AppSettings>("settings").findOne({ id: "main" });
+    const roles = (await db.collection<Role>("roles").find({}).toArray()).map(stripMongoId);
+    const employees = (await db.collection<Employee>("employees").find({}).toArray()).map(stripMongoId);
+    const year = settings?.year ?? new Date().getFullYear();
+    const month = settings?.month ?? new Date().getMonth() + 1;
+
     await db.collection<ScheduleDocument>("schedules").updateOne(
-      { id: "main" },
+      { id: scheduleDocumentId(year, month) },
       {
         $set: {
-          id: "main",
+          id: scheduleDocumentId(year, month),
+          year,
+          month,
+          periodKey: schedulePeriodKey(year, month),
           assignments: patch.schedule.assignments,
           changeLog: patch.schedule.changeLog,
+          employeeSnapshots: buildEmployeeSnapshots(employees, roles),
+          holidaysSnapshot: settings?.holidays ?? {},
           updatedAt,
+        },
+        $setOnInsert: {
+          createdAt: updatedAt,
         },
       },
       { upsert: true },

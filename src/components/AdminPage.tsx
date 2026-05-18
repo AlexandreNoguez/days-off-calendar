@@ -4,9 +4,11 @@ import {
   Alert,
   Box,
   Button,
+  Checkbox,
   Chip,
   CircularProgress,
   FormControl,
+  FormControlLabel,
   InputLabel,
   MenuItem,
   Paper,
@@ -27,6 +29,23 @@ import AddIcon from "@mui/icons-material/Add";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import { useAdminPage, type AdminTab } from "./hooks/useAdminPage";
 import type { UserRole } from "../lib/types";
+
+const MONTHS = [
+  "Janeiro",
+  "Fevereiro",
+  "Marco",
+  "Abril",
+  "Maio",
+  "Junho",
+  "Julho",
+  "Agosto",
+  "Setembro",
+  "Outubro",
+  "Novembro",
+  "Dezembro",
+];
+
+const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sab"];
 
 export function AdminPage() {
   const { state, actions } = useAdminPage();
@@ -57,11 +76,18 @@ export function AdminPage() {
       >
         <Tab value="users" label="Usuarios" />
         <Tab value="logs" label="Logs" />
+        <Tab value="scheduleHistory" label="Historico da escala" />
       </Tabs>
 
-      {state.tab === "users" ? renderUsers() : renderLogs()}
+      {renderCurrentTab()}
     </Stack>
   );
+
+  function renderCurrentTab() {
+    if (state.tab === "users") return renderUsers();
+    if (state.tab === "logs") return renderLogs();
+    return renderScheduleHistory();
+  }
 
   function renderUsers() {
     return (
@@ -217,7 +243,7 @@ export function AdminPage() {
               startIcon={<RefreshIcon />}
               onClick={() => void actions.loadLogs()}
             >
-              Atualizar
+              {/* Atualizar */}
             </Button>
           </Stack>
         </Paper>
@@ -255,6 +281,271 @@ export function AdminPage() {
             </TableBody>
           </Table>
         </Paper>
+      </Stack>
+    );
+  }
+
+  function renderScheduleHistory() {
+    const history = state.scheduleHistory;
+    const tableMinWidth = `${Math.max(900, 260 + (history?.days.length ?? 0) * 86)}px`;
+
+    return (
+      <Stack spacing={2}>
+        <Paper variant="outlined" sx={{ p: 2 }}>
+          <Stack spacing={2}>
+            <Stack direction={{ xs: "column", md: "row" }} spacing={1}>
+              <TextField
+                label="Ano"
+                type="number"
+                value={state.historyYear}
+                onChange={(event) => actions.setHistoryYear(Number(event.target.value))}
+                fullWidth
+              />
+              <FormControl fullWidth>
+                <InputLabel>Mes</InputLabel>
+                <Select
+                  label="Mes"
+                  value={state.historyMonth}
+                  onChange={(event) => actions.setHistoryMonth(Number(event.target.value))}
+                >
+                  {MONTHS.map((month, index) => (
+                    <MenuItem key={month} value={index + 1}>
+                      {month}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <FormControl fullWidth>
+                <InputLabel>Colaborador</InputLabel>
+                <Select
+                  label="Colaborador"
+                  value={state.historyEmployeeId}
+                  onChange={(event) => actions.setHistoryEmployeeId(event.target.value)}
+                >
+                  <MenuItem value="">Todos</MenuItem>
+                  {history?.employees.map((employee) => (
+                    <MenuItem key={employee.id} value={employee.id}>
+                      {employee.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <FormControl fullWidth>
+                <InputLabel>Cargo</InputLabel>
+                <Select
+                  label="Cargo"
+                  value={state.historyRoleId}
+                  onChange={(event) => actions.setHistoryRoleId(event.target.value)}
+                >
+                  <MenuItem value="">Todos</MenuItem>
+                  {history?.roles.map((role) => (
+                    <MenuItem key={role.id} value={role.id}>
+                      {role.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Stack>
+
+            <Stack direction={{ xs: "column", md: "row" }} spacing={1}>
+              <FormControl fullWidth>
+                <InputLabel>Status</InputLabel>
+                <Select
+                  label="Status"
+                  value={state.historyStatus}
+                  onChange={(event) => actions.setHistoryStatus(event.target.value)}
+                >
+                  <MenuItem value="">Todos</MenuItem>
+                  <MenuItem value="OFF">Folga</MenuItem>
+                  <MenuItem value="WORK">Trabalho</MenuItem>
+                </Select>
+              </FormControl>
+              <FormControl fullWidth>
+                <InputLabel>Dia da semana</InputLabel>
+                <Select
+                  label="Dia da semana"
+                  value={state.historyWeekday}
+                  onChange={(event) => actions.setHistoryWeekday(event.target.value)}
+                >
+                  <MenuItem value="">Todos</MenuItem>
+                  {WEEKDAYS.map((weekday, index) => (
+                    <MenuItem key={weekday} value={String(index)}>
+                      {weekday}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <TextField
+                label="Buscar nome"
+                value={state.historyQuery}
+                onChange={(event) => actions.setHistoryQuery(event.target.value)}
+                fullWidth
+              />
+              <Button
+                variant="outlined"
+                startIcon={<RefreshIcon />}
+                onClick={() => void actions.loadScheduleHistory()}
+                disabled={state.scheduleHistoryLoading}
+              >
+                {/* Atualizar */}
+              </Button>
+            </Stack>
+
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={state.historyOnlySundays}
+                    onChange={(event) => actions.setHistoryOnlySundays(event.target.checked)}
+                  />
+                }
+                label="Somente domingos"
+              />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={state.historyOnlyHolidays}
+                    onChange={(event) => actions.setHistoryOnlyHolidays(event.target.checked)}
+                  />
+                }
+                label="Somente feriados"
+              />
+            </Stack>
+          </Stack>
+        </Paper>
+
+        {state.scheduleHistoryLoading && (
+          <Alert severity="info">Carregando historico da escala...</Alert>
+        )}
+
+        {history?.selectedPeriod && (
+          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+            <Chip
+              label={`Periodo: ${String(history.selectedPeriod.month).padStart(2, "0")}/${history.selectedPeriod.year}`}
+            />
+            <Chip label={`Colaboradores: ${history.summary.visibleEmployeeCount}`} />
+            <Chip label={`Dias: ${history.summary.dayCount}`} />
+            <Chip label={`Folgas: ${history.summary.offCount}`} color="warning" />
+            <Chip label={`Trabalho: ${history.summary.workCount}`} color="primary" />
+          </Stack>
+        )}
+
+        {history && history.rows.length === 0 && (
+          <Alert severity="warning">
+            Nenhuma escala encontrada para os filtros selecionados.
+          </Alert>
+        )}
+
+        {history && history.rows.length > 0 && (
+          <>
+            <Paper variant="outlined" sx={{ overflow: "auto" }}>
+              <Table size="small" sx={{ minWidth: tableMinWidth }}>
+                <TableHead>
+                  <TableRow>
+                    <TableCell
+                      sx={{ position: "sticky", left: 0, bgcolor: "background.paper" }}
+                    >
+                      Colaborador
+                    </TableCell>
+                    {history.days.map((day) => (
+                      <TableCell key={day.dateISO} align="center">
+                        <Typography variant="caption" color="text.secondary">
+                          {day.weekdayLabel}
+                        </Typography>
+                        <Typography variant="body2" fontWeight={700}>
+                          {day.dayNumber}
+                        </Typography>
+                        {day.isHoliday && (
+                          <Typography variant="caption" color="warning.main">
+                            Feriado
+                          </Typography>
+                        )}
+                      </TableCell>
+                    ))}
+                    <TableCell align="center">Folgas</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {history.rows.map((row) => (
+                    <TableRow key={row.id}>
+                      <TableCell
+                        sx={{ position: "sticky", left: 0, bgcolor: "background.paper" }}
+                      >
+                        <Typography variant="body2" fontWeight={700}>
+                          {row.name}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {row.roleName}
+                        </Typography>
+                      </TableCell>
+                      {row.days.map((day) => (
+                        <TableCell key={`${row.id}_${day.dateISO}`} align="center">
+                          <Chip
+                            size="small"
+                            label={day.status === "OFF" ? "Folga" : "Trab."}
+                            color={day.status === "OFF" ? "warning" : "primary"}
+                            variant={day.status === "OFF" ? "filled" : "outlined"}
+                          />
+                        </TableCell>
+                      ))}
+                      <TableCell align="center">
+                        <Chip
+                          label={row.offCount}
+                          size="small"
+                          color={row.offCount > 0 ? "warning" : "default"}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Paper>
+
+            <Paper variant="outlined" sx={{ overflow: "auto" }}>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Colaborador</TableCell>
+                    <TableCell>Cargo</TableCell>
+                    <TableCell align="center">Folgas</TableCell>
+                    <TableCell align="center">Trabalho</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {history.rows.map((row) => (
+                    <TableRow key={`${row.id}_summary`}>
+                      <TableCell>{row.name}</TableCell>
+                      <TableCell>{row.roleName}</TableCell>
+                      <TableCell align="center">{row.offCount}</TableCell>
+                      <TableCell align="center">{row.workCount}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Paper>
+
+            <Paper variant="outlined" sx={{ p: 2 }}>
+              <Typography variant="subtitle1" fontWeight={700} gutterBottom>
+                Alteracoes do periodo
+              </Typography>
+              <Stack spacing={1}>
+                {history.changeLog.length === 0 && (
+                  <Typography variant="body2" color="text.secondary">
+                    Sem alteracoes registradas para este periodo.
+                  </Typography>
+                )}
+                {history.changeLog.slice(0, 12).map((entry) => (
+                  <Box key={entry.id}>
+                    <Typography variant="caption" color="text.secondary">
+                      {new Date(entry.at).toLocaleString("pt-BR")}
+                    </Typography>
+                    <Typography variant="body2">{entry.message}</Typography>
+                  </Box>
+                ))}
+              </Stack>
+            </Paper>
+          </>
+        )}
       </Stack>
     );
   }
