@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { NextResponse, type NextRequest } from "next/server";
 import type { PublicUser, UserDocument, UserRole } from "../types";
 import { getOptionalEnv, getRequiredEnv } from "./env";
-import { getDb } from "./mongodb";
+import { ensureDatabaseIndexes, getDb } from "./mongodb";
 import { hashPassword, verifyPassword } from "./passwords";
 
 export const SESSION_COOKIE = "escala_session";
@@ -137,6 +137,8 @@ export function clearSessionCookie(response: NextResponse): void {
 }
 
 export async function ensureAdminUser(): Promise<void> {
+  await ensureDatabaseIndexes();
+
   const db = await getDb();
   const users = db.collection<UserDocument>("users");
 

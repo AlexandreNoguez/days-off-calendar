@@ -259,7 +259,7 @@ docs(project): update migration checklist
 
 ### Banco e infraestrutura
 
-- [ ] Criar indices necessarios no MongoDB.
+- [x] Criar indices necessarios no MongoDB.
 - [ ] Validar seed do admin em banco limpo.
 - [ ] Validar persistencia no MongoDB Atlas Free.
 

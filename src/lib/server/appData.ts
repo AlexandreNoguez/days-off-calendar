@@ -12,7 +12,7 @@ import type {
   SchedulePublication,
 } from "../types";
 import { writeAuditLog } from "./audit";
-import { getDb } from "./mongodb";
+import { ensureDatabaseIndexes, getDb } from "./mongodb";
 
 function nowISO(): string {
   return new Date().toISOString();
@@ -140,6 +140,8 @@ async function ensureScheduleForPeriod(input: {
 }
 
 export async function ensureDefaultAppData(): Promise<void> {
+  await ensureDatabaseIndexes();
+
   const db = await getDb();
   const current = new Date();
   const year = current.getFullYear();

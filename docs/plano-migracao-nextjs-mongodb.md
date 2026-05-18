@@ -291,7 +291,7 @@ Dentro de `Administrador`:
 - [x] Criar modulo de conexao MongoDB.
 - [x] Criar camada de repositorios.
 - [x] Criar seed do usuario admin.
-- [ ] Criar indices necessarios.
+- [x] Criar indices necessarios.
 - [x] Persistir colaboradores.
 - [x] Persistir cargos.
 - [x] Persistir regras.
