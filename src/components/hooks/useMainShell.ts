@@ -12,10 +12,10 @@ export type NavItem = {
 };
 
 const NAV_ITEMS: NavItem[] = [
-  { label: "Setup", href: "/setup" },
-  { label: "Cadastros", href: "/cadastros" },
+  { label: "Setup", href: "/setup", adminOnly: true },
+  { label: "Cadastros", href: "/cadastros", adminOnly: true },
   { label: "Escala", href: "/schedule" },
-  { label: "Exportar", href: "/export" },
+  { label: "Exportar", href: "/export", adminOnly: true },
   { label: "Administrador", href: "/admin", adminOnly: true },
 ];
 

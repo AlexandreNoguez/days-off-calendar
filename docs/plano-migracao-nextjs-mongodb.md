@@ -69,6 +69,7 @@ O objetivo e manter todas as regras ja definidas, preservar o fluxo validado do 
 - [x] Criar perfil `ADMIN`.
 - [x] Criar perfil `USER`.
 - [x] Permitir que qualquer usuario autenticado use a escala, conforme regra de negocio definida.
+- [x] Restringir edicoes de setup, cadastros, regras, exportacao administrativa e escala ao perfil `ADMIN`.
 - [x] Restringir criacao, edicao e desativacao de usuarios ao perfil `ADMIN`.
 - [x] Restringir tela de logs ao perfil `ADMIN`.
 - [x] Esconder menu administrativo para usuarios comuns.
@@ -241,7 +242,8 @@ Exemplos de `action`:
 
 - [x] Usuario comum faz login.
 - [x] Usuario comum nao ve menu administrativo.
-- [x] Usuario comum pode acessar fluxo de escala permitido.
+- [x] Usuario comum pode consultar a escala.
+- [x] Usuario comum nao pode editar a escala nem dados administrativos.
 - [x] Sistema registra acoes relevantes do usuario.
 
 ## Menus Propostos
@@ -315,7 +317,7 @@ Dentro de `Administrador`:
 - [x] Criar formulario de criacao de usuario.
 - [x] Criar listagem de usuarios.
 - [x] Criar ativar/desativar usuario.
-- [ ] Criar troca/reset de senha.
+- [x] Criar troca/reset de senha.
 - [x] Criar aba `Logs`.
 - [x] Criar filtros de logs.
 - [x] Bloquear acesso admin no backend para usuarios comuns.
@@ -349,8 +351,8 @@ Dentro de `Administrador`:
 - [x] Rodar build.
 - [x] Criar testes principais para validacao de regras.
 - [x] Criar teste manual guiado do fluxo completo.
-- [ ] Validar permissao admin/user.
-- [ ] Validar seed do admin em banco limpo.
+- [x] Validar permissao admin/user.
+- [x] Validar seed do admin em banco limpo.
 - [ ] Validar persistencia no MongoDB Atlas Free.
 - [x] Atualizar README.
 - [x] Documentar variaveis de ambiente.
@@ -360,12 +362,12 @@ Dentro de `Administrador`:
 
 - [x] Usar Auth.js/NextAuth ou sessao customizada? Decidido: sessao customizada assinada em cookie HTTP-only.
 - [x] Login sera por `username` ou `email`? Decidido: `username`.
-- [ ] Usuario comum pode editar tudo ou tera permissoes mais granulares no futuro?
+- [x] Usuario comum pode editar tudo ou tera permissoes mais granulares no futuro? Decidido: usuario comum consulta a escala, mas edicoes ficam restritas ao `ADMIN`.
 - [x] A escala sera unica para toda a empresa ou devera suportar multiplas unidades/equipes? Decidido agora: escala unica.
-- [ ] Precisamos migrar dados antigos do `localStorage` para MongoDB ou podemos comecar com banco limpo?
+- [x] Precisamos migrar dados antigos do `localStorage` para MongoDB ou podemos comecar com banco limpo? Decidido: comecar com banco limpo, sem migracao automatica de `localStorage`.
 - [x] Logs devem guardar somente metadados ou tambem snapshot antes/depois das alteracoes? Decidido agora: metadados.
-- [ ] O admin podera editar regras globais que afetam todos os usuarios?
-- [ ] A aplicacao tera deploy em Vercel ou outro ambiente?
+- [x] O admin podera editar regras globais que afetam todos os usuarios? Decidido: sim, apenas `ADMIN`.
+- [x] A aplicacao tera deploy em Vercel ou outro ambiente? Decidido: Vercel com MongoDB Atlas Free.
 
 ## Proposta Inicial de Implementacao
 

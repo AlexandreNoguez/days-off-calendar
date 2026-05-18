@@ -32,7 +32,13 @@ export async function PATCH(
 
   if (body.role === "ADMIN" || body.role === "USER") set.role = body.role;
   if (typeof body.active === "boolean") set.active = body.active;
-  if (typeof body.password === "string" && body.password.length >= 6) {
+  if (typeof body.password === "string" && body.password.length > 0) {
+    if (body.password.length < 6) {
+      return NextResponse.json(
+        { error: "A senha deve ter pelo menos 6 caracteres." },
+        { status: 400 },
+      );
+    }
     set.passwordHash = await hashPassword(body.password);
   }
 

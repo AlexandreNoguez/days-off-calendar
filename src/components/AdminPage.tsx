@@ -26,6 +26,7 @@ import {
   Typography,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
+import KeyIcon from "@mui/icons-material/Key";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import { useAdminPage, type AdminTab } from "./hooks/useAdminPage";
 import type { UserRole } from "../lib/types";
@@ -172,6 +173,7 @@ export function AdminPage() {
                 <TableCell>Perfil</TableCell>
                 <TableCell>Ativo</TableCell>
                 <TableCell>Ultimo login</TableCell>
+                <TableCell>Reset de senha</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -198,6 +200,28 @@ export function AdminPage() {
                     {user.lastLoginAt
                       ? new Date(user.lastLoginAt).toLocaleString("pt-BR")
                       : "-"}
+                  </TableCell>
+                  <TableCell>
+                    <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                      <TextField
+                        size="small"
+                        type="password"
+                        label="Nova senha"
+                        value={state.passwordDrafts[user.id] ?? ""}
+                        onChange={(event) =>
+                          actions.setPasswordDraft(user.id, event.target.value)
+                        }
+                      />
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={<KeyIcon />}
+                        disabled={(state.passwordDrafts[user.id] ?? "").length < 6}
+                        onClick={() => void actions.resetPassword(user.id)}
+                      >
+                        Resetar
+                      </Button>
+                    </Stack>
                   </TableCell>
                 </TableRow>
               ))}

@@ -15,8 +15,11 @@ devem ser mantidos e a checklist viva do que ainda falta.
 - Rotas da aplicacao protegidas.
 - Usuario `ADMIN` tem acesso ao menu `Administrador`.
 - Admin pode criar usuarios e ativar/desativar usuarios.
+- Admin pode resetar senha de usuarios.
 - Admin pode consultar logs por usuario, acao e periodo.
 - Usuario comum nao ve menu administrativo.
+- Usuario comum consulta a escala, mas nao pode alterar setup, cadastros,
+  regras, exportacao administrativa ou a propria escala.
 - Regras, colaboradores, cargos, plano, feriados e escala sao persistidos via backend.
 - Escala possui status de publicacao: rascunho, publicada ou fechada.
 - Escala publicada/fechada fica bloqueada para edicao ate ser reaberta.
@@ -260,15 +263,15 @@ docs(project): update migration checklist
 ### Banco e infraestrutura
 
 - [x] Criar indices necessarios no MongoDB.
-- [ ] Validar seed do admin em banco limpo.
+- [x] Validar seed do admin em banco limpo.
 - [ ] Validar persistencia no MongoDB Atlas Free.
 
 ### Admin e seguranca
 
-- [ ] Criar troca/reset de senha.
-- [ ] Decidir se usuario comum pode editar tudo ou se tera permissoes mais granulares.
-- [ ] Decidir se o admin podera editar regras globais que afetam todos os usuarios.
-- [ ] Validar permissao admin/user em teste manual.
+- [x] Criar troca/reset de senha.
+- [x] Decidir se usuario comum pode editar tudo ou se tera permissoes mais granulares.
+- [x] Decidir se o admin podera editar regras globais que afetam todos os usuarios.
+- [x] Validar permissao admin/user em teste manual.
 
 ### Auditoria
 
@@ -277,18 +280,27 @@ docs(project): update migration checklist
 
 ### Produto e entrega
 
-- [ ] Revisar decisoes pendentes com o dono do produto.
+- [x] Revisar decisoes pendentes com o dono do produto.
 - [x] Criar teste manual guiado do fluxo completo.
-- [ ] Decidir se dados antigos do `localStorage` precisam migrar para MongoDB.
-- [ ] Decidir ambiente de deploy, como Vercel ou outro.
+- [x] Decidir se dados antigos do `localStorage` precisam migrar para MongoDB.
+- [x] Decidir ambiente de deploy, como Vercel ou outro.
+
+Decisoes fechadas nesta rodada:
+
+- Usuario `USER`: pode consultar a escala, mas nao pode alterar dados. Escritas
+  em `/api/app-state` exigem `ADMIN`.
+- Regras globais: podem ser editadas pelo `ADMIN`; `USER` nao edita regras.
+- Dados antigos de `localStorage`: nao serao migrados automaticamente. A entrega
+  considera MongoDB como fonte principal e pode comecar com banco limpo.
+- Deploy inicial: Vercel com MongoDB Atlas Free.
 
 ## Proximo Passo Recomendado
 
-As primeiras validacoes automatizadas de regras ja existem e o roteiro manual de
-QA esta em `docs/teste-manual-fluxo-completo.md`. O proximo passo tecnico
-recomendado e executar esse roteiro em ambiente local, validar permissao
-admin/user e registrar as falhas encontradas antes de seguir para novas
-funcionalidades.
+As primeiras validacoes automatizadas de regras ja existem e o fluxo admin/user
+foi validado em ambiente local. O proximo passo tecnico recomendado e apontar o
+`.env` para o MongoDB Atlas Free, executar o roteiro em
+`docs/teste-manual-fluxo-completo.md` nesse ambiente e registrar qualquer falha
+antes de seguir para novas funcionalidades.
 
 Depois disso, continuar o bloco de maior valor para o cliente no roadmap de
 produto.

@@ -33,6 +33,7 @@ export function useAdminPage() {
   const [historyOnlySundays, setHistoryOnlySundays] = useState(false);
   const [historyOnlyHolidays, setHistoryOnlyHolidays] = useState(false);
   const [historyQuery, setHistoryQuery] = useState("");
+  const [passwordDrafts, setPasswordDrafts] = useState<Record<string, string>>({});
   const [draft, setDraft] = useState({
     username: "",
     displayName: "",
@@ -130,7 +131,10 @@ export function useAdminPage() {
     await loadLogs();
   }
 
-  async function patchUser(id: string, patch: Partial<PublicUser>) {
+  async function patchUser(
+    id: string,
+    patch: Partial<PublicUser> & { password?: string },
+  ) {
     const response = await fetch(`/api/admin/users/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -145,6 +149,17 @@ export function useAdminPage() {
     toast.success("Usuario atualizado.");
     await loadUsers();
     await loadLogs();
+  }
+
+  async function resetPassword(id: string) {
+    const password = passwordDrafts[id] ?? "";
+    if (password.length < 6) {
+      toast.error("Informe uma senha com pelo menos 6 caracteres.");
+      return;
+    }
+
+    await patchUser(id, { password });
+    setPasswordDrafts((prev) => ({ ...prev, [id]: "" }));
   }
 
   return {
@@ -169,6 +184,7 @@ export function useAdminPage() {
       historyOnlySundays,
       historyOnlyHolidays,
       historyQuery,
+      passwordDrafts,
       draft,
       canCreateUser:
         Boolean(draft.username) &&
@@ -190,11 +206,14 @@ export function useAdminPage() {
       setHistoryOnlySundays,
       setHistoryOnlyHolidays,
       setHistoryQuery,
+      setPasswordDraft: (id: string, value: string) =>
+        setPasswordDrafts((prev) => ({ ...prev, [id]: value })),
       setDraft,
       loadLogs,
       loadScheduleHistory,
       createUser,
       patchUser,
+      resetPassword,
     },
   };
 }

@@ -66,6 +66,18 @@ export function WorkspacePage({ section }: { section: WorkspaceSection }) {
 
   const appState = state.data;
 
+  if (!state.canManage && section !== "schedule") {
+    return (
+      <Stack spacing={2}>
+        {renderHeader("Acesso restrito", "Esta area esta disponivel apenas para administradores.")}
+        <Alert severity="info">
+          Seu perfil pode consultar a escala, mas nao pode alterar cadastros,
+          configuracoes ou exportacoes administrativas.
+        </Alert>
+      </Stack>
+    );
+  }
+
   function renderHeader(title: string, description: string) {
     return (
       <Stack spacing={1}>
@@ -109,6 +121,7 @@ export function WorkspacePage({ section }: { section: WorkspaceSection }) {
               <Select
                 label="Mes"
                 value={appState.plan.month}
+                disabled={!state.canManage}
                 onChange={(event) => actions.changeMonth(Number(event.target.value))}
               >
                 {state.months.map((month, index) => (
@@ -122,6 +135,7 @@ export function WorkspacePage({ section }: { section: WorkspaceSection }) {
               label="Ano"
               type="number"
               value={appState.plan.year}
+              disabled={!state.canManage}
               onChange={(event) => actions.changeYear(Number(event.target.value))}
               fullWidth
             />
@@ -142,6 +156,7 @@ export function WorkspacePage({ section }: { section: WorkspaceSection }) {
                 variant={cell.isHoliday ? "contained" : "outlined"}
                 color={cell.isHoliday ? "primary" : cell.weekday === 0 ? "warning" : "inherit"}
                 onClick={() => actions.toggleHoliday(cell.dateISO)}
+                disabled={!state.canManage}
                 sx={{ minHeight: 64, justifyContent: "flex-start", alignItems: "flex-start" }}
               >
                 <Stack alignItems="flex-start">
@@ -547,7 +562,9 @@ export function WorkspacePage({ section }: { section: WorkspaceSection }) {
         )}
         {state.scheduleLocked && (
           <Alert severity="info">
-            {state.publicationDescription}. Reabra a escala para fazer novas edicoes.
+            {state.canManage
+              ? `${state.publicationDescription}. Reabra a escala para fazer novas edicoes.`
+              : "Seu perfil pode consultar a escala, mas somente administradores podem editar."}
           </Alert>
         )}
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
@@ -555,7 +572,7 @@ export function WorkspacePage({ section }: { section: WorkspaceSection }) {
             variant="contained"
             startIcon={<AutoAwesomeIcon />}
             onClick={actions.generateSuggestion}
-            disabled={state.scheduleLocked}
+            disabled={state.scheduleLocked || !state.canManage}
           >
             Gerar sugestao
           </Button>
@@ -664,7 +681,7 @@ export function WorkspacePage({ section }: { section: WorkspaceSection }) {
                         color={day.isOff ? "warning" : "primary"}
                         sx={{ width: 92, minWidth: 92 }}
                         onClick={() => actions.toggleCell(row.employee.id, day.dateISO)}
-                        disabled={state.scheduleLocked}
+                        disabled={state.scheduleLocked || !state.canManage}
                       >
                         {day.isOff ? "Folga" : "Trabalho"}
                       </Button>
@@ -712,7 +729,7 @@ export function WorkspacePage({ section }: { section: WorkspaceSection }) {
         <Button
           variant="contained"
           startIcon={<DownloadIcon />}
-          disabled={!state.canExport}
+          disabled={!state.canExport || !state.canAccessExport}
           onClick={actions.exportXlsx}
         >
           Exportar XLSX

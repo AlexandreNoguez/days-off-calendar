@@ -227,8 +227,9 @@ export function useWorkspacePage() {
     notes: "",
   });
   const [ruleDraft, setRuleDraft] = useState<RuleDraft>(defaultRuleDraft);
+  const canManage = loadedState?.user.role === "ADMIN";
   const publication = loadedState?.schedule.publication ?? ({ status: "DRAFT" } as const);
-  const scheduleLocked = publication.status !== "DRAFT";
+  const scheduleLocked = publication.status !== "DRAFT" || !canManage;
 
   useEffect(() => {
     let active = true;
@@ -367,6 +368,11 @@ export function useWorkspacePage() {
   }, [loadedState]);
 
   async function savePatch(patch: AppStatePatch, successMessage?: string) {
+    if (!canManage) {
+      toast.warning("Apenas administradores podem alterar os dados da escala.");
+      return null;
+    }
+
     setSaving(true);
 
     try {
@@ -908,6 +914,7 @@ export function useWorkspacePage() {
       months: MONTHS,
       weekdayLabels: WEEKDAY_LABELS_PT,
       cadastroTab,
+      canManage,
       roleDraft,
       employeeDraft,
       ruleDraft,
@@ -917,14 +924,16 @@ export function useWorkspacePage() {
       canUndo: past.length > 0,
       canRedo: future.length > 0,
       canExport: Boolean(loadedState && loadedState.employees.length > 0),
+      canAccessExport: Boolean(canManage),
       canPublish: Boolean(
         loadedState &&
+          canManage &&
           publication.status === "DRAFT" &&
           loadedState.employees.length > 0 &&
           hardConflicts.length === 0,
       ),
-      canClose: publication.status === "PUBLISHED",
-      canReopen: publication.status !== "DRAFT",
+      canClose: Boolean(canManage && publication.status === "PUBLISHED"),
+      canReopen: Boolean(canManage && publication.status !== "DRAFT"),
       scheduleLocked,
       publication,
       publicationLabel: PUBLICATION_STATUS_LABELS[publication.status],
