@@ -348,7 +348,7 @@ Dentro de `Administrador`:
 - [x] Rodar lint.
 - [x] Rodar build.
 - [x] Criar testes principais para validacao de regras.
-- [ ] Criar teste manual guiado do fluxo completo.
+- [x] Criar teste manual guiado do fluxo completo.
 - [ ] Validar permissao admin/user.
 - [ ] Validar seed do admin em banco limpo.
 - [ ] Validar persistencia no MongoDB Atlas Free.
@@ -385,3 +385,8 @@ Ordem recomendada:
 Sempre que retomarmos o projeto, checar este arquivo primeiro e marcar os itens concluidos. A fonte de verdade do planejamento da migracao e este documento.
 
 Quando a implementacao comecar, cada etapa deve atualizar este checklist no mesmo commit ou na mesma rodada de alteracoes.
+
+O roteiro manual de QA do fluxo completo esta em
+`docs/teste-manual-fluxo-completo.md`. Ele deve ser executado antes de marcar
+validacoes de permissao, seed em banco limpo e persistencia MongoDB como
+concluidas.

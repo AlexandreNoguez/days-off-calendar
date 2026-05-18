@@ -11,6 +11,7 @@ A versão original do MVP era frontend-only com Vite/localStorage. A evolução 
 ## 📌 Plano de evolução
 
 - [Plano de migração para Next.js + MongoDB](docs/plano-migracao-nextjs-mongodb.md)
+- [Teste manual guiado do fluxo completo](docs/teste-manual-fluxo-completo.md)
 
 ---
 

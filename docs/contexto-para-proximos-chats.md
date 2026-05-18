@@ -33,6 +33,8 @@ devem ser mantidos e a checklist viva do que ainda falta.
 - `src/lib/server/*`: codigo server-side, auth, MongoDB, auditoria e ambiente.
 - `src/lib/types.ts`: contratos compartilhados entre frontend e backend.
 - `docs/plano-migracao-nextjs-mongodb.md`: planejamento principal e checklist detalhado.
+- `docs/teste-manual-fluxo-completo.md`: roteiro manual de QA para validar
+  fluxo completo, permissoes, auditoria, persistencia e exportacao.
 - `docs/roadmap-funcionalidades-gestao-folgas.md`: roadmap de valor do produto
   com 20 funcionalidades planejadas.
 
@@ -276,15 +278,17 @@ docs(project): update migration checklist
 ### Produto e entrega
 
 - [ ] Revisar decisoes pendentes com o dono do produto.
-- [ ] Criar teste manual guiado do fluxo completo.
+- [x] Criar teste manual guiado do fluxo completo.
 - [ ] Decidir se dados antigos do `localStorage` precisam migrar para MongoDB.
 - [ ] Decidir ambiente de deploy, como Vercel ou outro.
 
 ## Proximo Passo Recomendado
 
-As primeiras validacoes automatizadas de regras ja existem. O proximo passo
-tecnico recomendado e criar o teste manual guiado do fluxo completo e validar
-permissao admin/user em ambiente local.
+As primeiras validacoes automatizadas de regras ja existem e o roteiro manual de
+QA esta em `docs/teste-manual-fluxo-completo.md`. O proximo passo tecnico
+recomendado e executar esse roteiro em ambiente local, validar permissao
+admin/user e registrar as falhas encontradas antes de seguir para novas
+funcionalidades.
 
 Depois disso, continuar o bloco de maior valor para o cliente no roadmap de
 produto.
