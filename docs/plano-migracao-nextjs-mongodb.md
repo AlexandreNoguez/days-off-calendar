@@ -282,7 +282,7 @@ Dentro de `Administrador`:
 - [x] Migrar `src/application/usecases/rules`.
 - [x] Migrar `src/application/usecases/schedule`.
 - [x] Migrar `src/application/usecases/export`.
-- [ ] Criar testes ou fixtures basicas para validar regras.
+- [x] Criar testes ou fixtures basicas para validar regras.
 - [x] Conferir se a sugestao automatica gera resultado equivalente ao MVP atual.
 
 ### Fase 3 - Banco MongoDB
@@ -347,7 +347,7 @@ Dentro de `Administrador`:
 
 - [x] Rodar lint.
 - [x] Rodar build.
-- [ ] Criar testes principais para validacao de regras.
+- [x] Criar testes principais para validacao de regras.
 - [ ] Criar teste manual guiado do fluxo completo.
 - [ ] Validar permissao admin/user.
 - [ ] Validar seed do admin em banco limpo.

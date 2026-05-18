@@ -252,8 +252,8 @@ docs(project): update migration checklist
 
 - [x] Validar regra de 1 folga em feriado por pessoa ao ano.
 - [x] Implementar regra SOFT de evitar folga sempre no mesmo dia da semana.
-- [ ] Criar testes ou fixtures basicas para validar regras.
-- [ ] Criar testes principais para validacao de regras.
+- [x] Criar testes ou fixtures basicas para validar regras.
+- [x] Criar testes principais para validacao de regras.
 
 ### Banco e infraestrutura
 
@@ -282,9 +282,12 @@ docs(project): update migration checklist
 
 ## Proximo Passo Recomendado
 
-As pendencias tecnicas seguem mapeadas, mas estao pausadas por enquanto porque
-o produto ainda pode mudar. O proximo passo recomendado agora e continuar o
-bloco de maior valor para o cliente no roadmap de produto.
+As primeiras validacoes automatizadas de regras ja existem. O proximo passo
+tecnico recomendado e criar o teste manual guiado do fluxo completo e validar
+permissao admin/user em ambiente local.
+
+Depois disso, continuar o bloco de maior valor para o cliente no roadmap de
+produto.
 
 A ordem recomendada de produto e:
 
