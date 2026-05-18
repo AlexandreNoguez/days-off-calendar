@@ -1,0 +1,7 @@
+interface:
+  display_name: "Escala Folga Next.js"
+  short_description: "Contexto e padroes deste projeto Next.js"
+  default_prompt: "Use $escala-folga-nextjs antes de alterar o projeto escala-folga."
+
+policy:
+  allow_implicit_invocation: true
