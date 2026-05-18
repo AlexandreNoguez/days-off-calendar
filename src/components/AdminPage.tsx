@@ -47,6 +47,18 @@ const MONTHS = [
 
 const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sab"];
 
+const PUBLICATION_LABELS = {
+  DRAFT: "Rascunho",
+  PUBLISHED: "Publicada",
+  CLOSED: "Fechada",
+} as const;
+
+const PUBLICATION_COLORS = {
+  DRAFT: "default",
+  PUBLISHED: "success",
+  CLOSED: "secondary",
+} as const;
+
 export function AdminPage() {
   const { state, actions } = useAdminPage();
 
@@ -427,6 +439,10 @@ export function AdminPage() {
             <Chip label={`Dias: ${history.summary.dayCount}`} />
             <Chip label={`Folgas: ${history.summary.offCount}`} color="warning" />
             <Chip label={`Trabalho: ${history.summary.workCount}`} color="primary" />
+            <Chip
+              label={`Status: ${PUBLICATION_LABELS[history.selectedPeriod.publication.status]}`}
+              color={PUBLICATION_COLORS[history.selectedPeriod.publication.status]}
+            />
           </Stack>
         )}
 

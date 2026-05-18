@@ -18,6 +18,8 @@ devem ser mantidos e a checklist viva do que ainda falta.
 - Admin pode consultar logs por usuario, acao e periodo.
 - Usuario comum nao ve menu administrativo.
 - Regras, colaboradores, cargos, plano, feriados e escala sao persistidos via backend.
+- Escala possui status de publicacao: rascunho, publicada ou fechada.
+- Escala publicada/fechada fica bloqueada para edicao ate ser reaberta.
 - Dark mode restaurado e persistido no browser via `localStorage`.
 
 ## Mapa de Arquitetura
@@ -31,6 +33,8 @@ devem ser mantidos e a checklist viva do que ainda falta.
 - `src/lib/server/*`: codigo server-side, auth, MongoDB, auditoria e ambiente.
 - `src/lib/types.ts`: contratos compartilhados entre frontend e backend.
 - `docs/plano-migracao-nextjs-mongodb.md`: planejamento principal e checklist detalhado.
+- `docs/roadmap-funcionalidades-gestao-folgas.md`: roadmap de valor do produto
+  com 20 funcionalidades planejadas.
 
 ## Regra Mais Importante de Frontend
 
@@ -167,6 +171,9 @@ Usar nomes de acao consistentes:
 - `schedule.cell.updated`
 - `schedule.undo`
 - `schedule.redo`
+- `schedule.published`
+- `schedule.reopened`
+- `schedule.closed`
 - `schedule.exported`
 
 Logs devem registrar apenas metadados necessarios. Nao guardar senha, tokens ou
@@ -275,15 +282,19 @@ docs(project): update migration checklist
 
 ## Proximo Passo Recomendado
 
-O melhor proximo passo tecnico e criar testes/fixtures para o motor de regras.
-Isso reduz risco antes de adicionar mais permissoes ou fluxos administrativos.
+As pendencias tecnicas seguem mapeadas, mas estao pausadas por enquanto porque
+o produto ainda pode mudar. O proximo passo recomendado agora e continuar o
+bloco de maior valor para o cliente no roadmap de produto.
 
-Depois disso, a ordem recomendada e:
+A ordem recomendada de produto e:
 
-1. Indices MongoDB.
-2. Reset/troca de senha pelo admin.
-3. Validacao manual completa admin/user.
-4. Deploy.
+1. Finalizar publicacao de escala com revisao visual/fluxo real.
+2. Criar tela do colaborador mostrando a escala publicada.
+3. Criar solicitacao de folga com aprovacao do admin.
+4. Criar painel de justica/equilibrio.
+5. Criar cobertura minima por cargo.
+6. Criar alertas inteligentes.
+7. Criar copiar mes anterior.
 
 ## Enviar mensagem de commit
 

@@ -38,6 +38,18 @@ export type AuditLog = {
   createdAt: string;
 };
 
+export type SchedulePublicationStatus = "DRAFT" | "PUBLISHED" | "CLOSED";
+
+export type SchedulePublication = {
+  status: SchedulePublicationStatus;
+  publishedAt?: string;
+  publishedByUserId?: string;
+  publishedByUsername?: string;
+  closedAt?: string;
+  closedByUserId?: string;
+  closedByUsername?: string;
+};
+
 export type AppSettings = {
   id: "main";
   year: number;
@@ -65,6 +77,7 @@ export type ScheduleDocument = {
     }
   >;
   holidaysSnapshot?: Record<DateISO, true>;
+  publication?: SchedulePublication;
   createdAt?: string;
   updatedAt: string;
 };
@@ -74,6 +87,7 @@ export type ScheduleHistoryPeriod = {
   month: number;
   periodKey: string;
   updatedAt: string;
+  publication: SchedulePublication;
   employeeCount: number;
   offCount: number;
   changeCount: number;
@@ -111,6 +125,7 @@ export type ScheduleHistoryDto = {
     month: number;
     periodKey: string;
     updatedAt: string;
+    publication: SchedulePublication;
   };
   days: ScheduleHistoryDay[];
   employees: ScheduleHistoryEmployeeOption[];
@@ -139,6 +154,7 @@ export type AppStateDto = {
   schedule: {
     assignments: ScheduleAssignments;
     changeLog: ScheduleChangeLogEntry[];
+    publication: SchedulePublication;
   };
 };
 
@@ -151,10 +167,11 @@ export type AppStatePatch = Partial<{
   roles: Role[];
   employees: Employee[];
   rules: RuleConfig[];
-  schedule: {
+  schedule: Partial<{
     assignments: ScheduleAssignments;
     changeLog: ScheduleChangeLogEntry[];
-  };
+    publication: SchedulePublication;
+  }>;
   audit: {
     action: string;
     entityType?: string;

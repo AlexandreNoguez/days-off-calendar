@@ -3,7 +3,14 @@ import type { Collection, OptionalUnlessRequiredId } from "mongodb";
 import { createDefaultSeed } from "../../domain/defaults/defaultSeed";
 import type { Employee, Role } from "../../domain/types/employees";
 import type { RuleConfig } from "../../domain/types/rules";
-import type { AppSettings, AppStateDto, AppStatePatch, PublicUser, ScheduleDocument } from "../types";
+import type {
+  AppSettings,
+  AppStateDto,
+  AppStatePatch,
+  PublicUser,
+  ScheduleDocument,
+  SchedulePublication,
+} from "../types";
 import { writeAuditLog } from "./audit";
 import { getDb } from "./mongodb";
 
@@ -13,6 +20,10 @@ function nowISO(): string {
 
 function pad2(value: number): string {
   return String(value).padStart(2, "0");
+}
+
+function defaultSchedulePublication(): SchedulePublication {
+  return { status: "DRAFT" };
 }
 
 export function schedulePeriodKey(year: number, month: number): string {
@@ -91,6 +102,7 @@ async function migrateLegacyMainSchedule(input: {
     changeLog: legacy.changeLog ?? [],
     employeeSnapshots: buildEmployeeSnapshots(input.employees, input.roles),
     holidaysSnapshot: input.holidays,
+    publication: legacy.publication ?? defaultSchedulePublication(),
     createdAt: legacy.createdAt ?? input.updatedAt,
     updatedAt: legacy.updatedAt ?? input.updatedAt,
   });
@@ -118,6 +130,7 @@ async function ensureScheduleForPeriod(input: {
     changeLog: [],
     employeeSnapshots: buildEmployeeSnapshots(input.employees, input.roles),
     holidaysSnapshot: input.holidays,
+    publication: defaultSchedulePublication(),
     createdAt: input.updatedAt,
     updatedAt: input.updatedAt,
   };
@@ -228,6 +241,7 @@ export async function getAppState(user: PublicUser): Promise<AppStateDto> {
     schedule: {
       assignments: schedule?.assignments ?? {},
       changeLog: schedule?.changeLog ?? [],
+      publication: schedule?.publication ?? defaultSchedulePublication(),
     },
   };
 }
@@ -273,24 +287,36 @@ export async function saveAppStatePatch(
     const employees = (await db.collection<Employee>("employees").find({}).toArray()).map(stripMongoId);
     const year = settings?.year ?? new Date().getFullYear();
     const month = settings?.month ?? new Date().getMonth() + 1;
+    const id = scheduleDocumentId(year, month);
+    const set: Partial<ScheduleDocument> = {
+      id,
+      year,
+      month,
+      periodKey: schedulePeriodKey(year, month),
+      updatedAt,
+    };
+
+    if (patch.schedule.assignments) {
+      set.assignments = patch.schedule.assignments;
+      set.employeeSnapshots = buildEmployeeSnapshots(employees, roles);
+      set.holidaysSnapshot = settings?.holidays ?? {};
+    }
+
+    if (patch.schedule.changeLog) set.changeLog = patch.schedule.changeLog;
+    if (patch.schedule.publication) set.publication = patch.schedule.publication;
+
+    const setOnInsert: Partial<ScheduleDocument> = { createdAt: updatedAt };
+    if (!set.assignments) setOnInsert.assignments = {};
+    if (!set.changeLog) setOnInsert.changeLog = [];
+    if (!set.employeeSnapshots) setOnInsert.employeeSnapshots = buildEmployeeSnapshots(employees, roles);
+    if (!set.holidaysSnapshot) setOnInsert.holidaysSnapshot = settings?.holidays ?? {};
+    if (!set.publication) setOnInsert.publication = defaultSchedulePublication();
 
     await db.collection<ScheduleDocument>("schedules").updateOne(
-      { id: scheduleDocumentId(year, month) },
+      { id },
       {
-        $set: {
-          id: scheduleDocumentId(year, month),
-          year,
-          month,
-          periodKey: schedulePeriodKey(year, month),
-          assignments: patch.schedule.assignments,
-          changeLog: patch.schedule.changeLog,
-          employeeSnapshots: buildEmployeeSnapshots(employees, roles),
-          holidaysSnapshot: settings?.holidays ?? {},
-          updatedAt,
-        },
-        $setOnInsert: {
-          createdAt: updatedAt,
-        },
+        $set: set,
+        $setOnInsert: setOnInsert,
       },
       { upsert: true },
     );

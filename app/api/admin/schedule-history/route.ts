@@ -57,6 +57,10 @@ function countOffAssignments(schedule: ScheduleDocument): number {
   }, 0);
 }
 
+function schedulePublication(schedule: ScheduleDocument) {
+  return schedule.publication ?? { status: "DRAFT" as const };
+}
+
 function buildHistoryPeriods(schedules: ScheduleDocument[]): ScheduleHistoryPeriod[] {
   return schedules
     .filter((schedule) => Number.isInteger(schedule.year) && Number.isInteger(schedule.month))
@@ -65,6 +69,7 @@ function buildHistoryPeriods(schedules: ScheduleDocument[]): ScheduleHistoryPeri
       month: schedule.month,
       periodKey: schedule.periodKey ?? schedulePeriodKey(schedule.year, schedule.month),
       updatedAt: schedule.updatedAt,
+      publication: schedulePublication(schedule),
       employeeCount: Object.keys(schedule.employeeSnapshots ?? schedule.assignments).length,
       offCount: countOffAssignments(schedule),
       changeCount: schedule.changeLog?.length ?? 0,
@@ -238,6 +243,7 @@ export async function GET(request: Request) {
       month,
       periodKey: schedule.periodKey ?? schedulePeriodKey(year, month),
       updatedAt: schedule.updatedAt,
+      publication: schedulePublication(schedule),
     },
     days,
     employees: employeeOptions,

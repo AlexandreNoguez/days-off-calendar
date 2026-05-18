@@ -10,7 +10,11 @@ import type {
   ScheduleChangeLogEntry,
 } from "../../domain/types/schedule";
 import type { ValidationResult } from "../../domain/types/validation";
-import type { AppStateDto, AppStatePatch } from "../../lib/types";
+import type {
+  AppStateDto,
+  AppStatePatch,
+  SchedulePublication,
+} from "../../lib/types";
 import { createDefaultRules } from "../../domain/defaults/defaultRules";
 import { buildWorkbook } from "../../application/usecases/export/buildWorkbook";
 import { validateSchedule } from "../../application/usecases/rules/validateSchedule";
@@ -100,6 +104,12 @@ const emptyValidation: ValidationResult = {
   statsPerEmployee: {},
 };
 
+const PUBLICATION_STATUS_LABELS: Record<SchedulePublication["status"], string> = {
+  DRAFT: "Rascunho",
+  PUBLISHED: "Publicada",
+  CLOSED: "Fechada",
+};
+
 function newId(prefix: string): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
     return `${prefix}_${crypto.randomUUID()}`;
@@ -186,6 +196,22 @@ function canCreateRule(draft: RuleDraft): boolean {
   return Boolean(draft.roleId && draft.sundayOffCount > 0);
 }
 
+function publicationDescription(publication: SchedulePublication): string {
+  if (publication.status === "PUBLISHED" && publication.publishedAt) {
+    return `Publicada em ${new Date(publication.publishedAt).toLocaleString("pt-BR")}`;
+  }
+
+  if (publication.status === "CLOSED" && publication.closedAt) {
+    return `Fechada em ${new Date(publication.closedAt).toLocaleString("pt-BR")}`;
+  }
+
+  if (publication.publishedAt) {
+    return `Ultima publicacao em ${new Date(publication.publishedAt).toLocaleString("pt-BR")}`;
+  }
+
+  return "Ainda nao publicada";
+}
+
 export function useWorkspacePage() {
   const [loadedState, setLoadedState] = useState<AppStateDto | null>(null);
   const [loading, setLoading] = useState(true);
@@ -201,6 +227,8 @@ export function useWorkspacePage() {
     notes: "",
   });
   const [ruleDraft, setRuleDraft] = useState<RuleDraft>(defaultRuleDraft);
+  const publication = loadedState?.schedule.publication ?? ({ status: "DRAFT" } as const);
+  const scheduleLocked = publication.status !== "DRAFT";
 
   useEffect(() => {
     let active = true;
@@ -633,6 +661,11 @@ export function useWorkspacePage() {
     pushHistory = true,
   ) {
     if (!loadedState) return;
+    if (loadedState.schedule.publication.status !== "DRAFT") {
+      toast.warning("Reabra a escala para editar o periodo.");
+      return;
+    }
+
     const nextLog = [...loadedState.schedule.changeLog, log].slice(-300);
 
     if (pushHistory) {
@@ -651,6 +684,93 @@ export function useWorkspacePage() {
         metadata: { changedCells: log.changedCells },
       },
     });
+  }
+
+  function publishSchedule() {
+    if (!loadedState) return;
+
+    if (hardConflicts.length > 0) {
+      toast.error("Corrija os conflitos HARD antes de publicar a escala.");
+      return;
+    }
+
+    const now = new Date().toISOString();
+    const nextPublication: SchedulePublication = {
+      status: "PUBLISHED",
+      publishedAt: now,
+      publishedByUserId: loadedState.user.id,
+      publishedByUsername: loadedState.user.username,
+    };
+
+    void savePatch(
+      {
+        schedule: { publication: nextPublication },
+        audit: {
+          action: "schedule.published",
+          entityType: "schedule",
+          metadata: {
+            period: `${loadedState.plan.year}-${String(loadedState.plan.month).padStart(2, "0")}`,
+            hardConflicts: hardConflicts.length,
+            softConflicts: softConflicts.length,
+          },
+        },
+      },
+      "Escala publicada.",
+    );
+  }
+
+  function reopenSchedule() {
+    if (!loadedState || loadedState.schedule.publication.status === "DRAFT") return;
+
+    const current = loadedState.schedule.publication;
+    const nextPublication: SchedulePublication = {
+      status: "DRAFT",
+      publishedAt: current.publishedAt,
+      publishedByUserId: current.publishedByUserId,
+      publishedByUsername: current.publishedByUsername,
+    };
+
+    void savePatch(
+      {
+        schedule: { publication: nextPublication },
+        audit: {
+          action: "schedule.reopened",
+          entityType: "schedule",
+          metadata: {
+            previousStatus: current.status,
+            period: `${loadedState.plan.year}-${String(loadedState.plan.month).padStart(2, "0")}`,
+          },
+        },
+      },
+      "Escala reaberta para edicao.",
+    );
+  }
+
+  function closeSchedule() {
+    if (!loadedState || loadedState.schedule.publication.status !== "PUBLISHED") return;
+
+    const now = new Date().toISOString();
+    const nextPublication: SchedulePublication = {
+      ...loadedState.schedule.publication,
+      status: "CLOSED",
+      closedAt: now,
+      closedByUserId: loadedState.user.id,
+      closedByUsername: loadedState.user.username,
+    };
+
+    void savePatch(
+      {
+        schedule: { publication: nextPublication },
+        audit: {
+          action: "schedule.closed",
+          entityType: "schedule",
+          metadata: {
+            period: `${loadedState.plan.year}-${String(loadedState.plan.month).padStart(2, "0")}`,
+          },
+        },
+      },
+      "Escala fechada.",
+    );
   }
 
   function generateSuggestion() {
@@ -797,6 +917,18 @@ export function useWorkspacePage() {
       canUndo: past.length > 0,
       canRedo: future.length > 0,
       canExport: Boolean(loadedState && loadedState.employees.length > 0),
+      canPublish: Boolean(
+        loadedState &&
+          publication.status === "DRAFT" &&
+          loadedState.employees.length > 0 &&
+          hardConflicts.length === 0,
+      ),
+      canClose: publication.status === "PUBLISHED",
+      canReopen: publication.status !== "DRAFT",
+      scheduleLocked,
+      publication,
+      publicationLabel: PUBLICATION_STATUS_LABELS[publication.status],
+      publicationDescription: publicationDescription(publication),
       days: scheduleDays,
       setupCells,
       scheduleRows,
@@ -822,6 +954,9 @@ export function useWorkspacePage() {
       toggleRule,
       createCustomRule,
       generateSuggestion,
+      publishSchedule,
+      reopenSchedule,
+      closeSchedule,
       undo,
       redo,
       toggleCell,

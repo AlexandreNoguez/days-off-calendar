@@ -25,6 +25,7 @@ O objetivo e manter todas as regras ja definidas, preservar o fluxo validado do 
 - [x] Existe geracao automatica de escala.
 - [x] Existe validacao de regras HARD/SOFT.
 - [x] Existe editor manual da escala com undo/redo.
+- [x] Existe fluxo de publicacao/reabertura/fechamento da escala.
 - [x] Existe exportacao XLSX.
 - [x] Existe backend.
 - [x] Existe login.
@@ -119,6 +120,9 @@ Exemplos de `action`:
 - [ ] `rule.deleted`
 - [ ] `schedule.generated`
 - [ ] `schedule.cell.updated`
+- [ ] `schedule.published`
+- [ ] `schedule.reopened`
+- [ ] `schedule.closed`
 - [ ] `schedule.bulk.updated`
 - [ ] `schedule.exported`
 - [ ] `data.reset`
@@ -334,6 +338,7 @@ Dentro de `Administrador`:
 - [x] Registrar criacao/edicao/exclusao de regra.
 - [x] Registrar geracao automatica de escala.
 - [x] Registrar edicao manual de celulas.
+- [x] Registrar publicacao, reabertura e fechamento da escala.
 - [ ] Registrar alteracoes em lote.
 - [x] Registrar exportacao XLSX.
 - [ ] Registrar reset/limpeza de dados.

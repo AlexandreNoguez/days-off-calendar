@@ -29,6 +29,9 @@ import AddIcon from "@mui/icons-material/Add";
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import DeleteIcon from "@mui/icons-material/Delete";
 import DownloadIcon from "@mui/icons-material/Download";
+import LockIcon from "@mui/icons-material/Lock";
+import LockOpenIcon from "@mui/icons-material/LockOpen";
+import PublishIcon from "@mui/icons-material/Publish";
 import UndoIcon from "@mui/icons-material/Undo";
 import RedoIcon from "@mui/icons-material/Redo";
 import type { RuleConfig } from "../domain/types/rules";
@@ -38,6 +41,12 @@ import {
   type CustomRuleTemplate,
   type WorkspaceSection,
 } from "./hooks/useWorkspacePage";
+
+const publicationChipColors = {
+  DRAFT: "default",
+  PUBLISHED: "success",
+  CLOSED: "secondary",
+} as const;
 
 export function WorkspacePage({ section }: { section: WorkspaceSection }) {
   const { state, actions } = useWorkspacePage();
@@ -78,6 +87,10 @@ export function WorkspacePage({ section }: { section: WorkspaceSection }) {
           <Chip
             label={`SOFT: ${state.header.softConflictCount}`}
             color={state.header.softConflictCount > 0 ? "warning" : "default"}
+          />
+          <Chip
+            label={`Escala: ${state.publicationLabel}`}
+            color={publicationChipColors[state.publication.status]}
           />
           {state.saving && <Chip label="Salvando..." color="primary" />}
         </Stack>
@@ -532,18 +545,54 @@ export function WorkspacePage({ section }: { section: WorkspaceSection }) {
         {state.hardConflicts.length > 0 && (
           <Alert severity="error">Existem conflitos HARD pendentes na escala.</Alert>
         )}
+        {state.scheduleLocked && (
+          <Alert severity="info">
+            {state.publicationDescription}. Reabra a escala para fazer novas edicoes.
+          </Alert>
+        )}
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
           <Button
             variant="contained"
             startIcon={<AutoAwesomeIcon />}
             onClick={actions.generateSuggestion}
+            disabled={state.scheduleLocked}
           >
             Gerar sugestao
           </Button>
           <Button
+            variant="contained"
+            color="success"
+            startIcon={<PublishIcon />}
+            disabled={!state.canPublish || state.saving}
+            onClick={actions.publishSchedule}
+          >
+            Publicar
+          </Button>
+          {state.canClose && (
+            <Button
+              variant="outlined"
+              color="secondary"
+              startIcon={<LockIcon />}
+              disabled={state.saving}
+              onClick={actions.closeSchedule}
+            >
+              Fechar
+            </Button>
+          )}
+          {state.canReopen && (
+            <Button
+              variant="outlined"
+              startIcon={<LockOpenIcon />}
+              disabled={state.saving}
+              onClick={actions.reopenSchedule}
+            >
+              Reabrir
+            </Button>
+          )}
+          <Button
             variant="outlined"
             startIcon={<UndoIcon />}
-            disabled={!state.canUndo}
+            disabled={state.scheduleLocked || !state.canUndo}
             onClick={actions.undo}
           >
             Undo
@@ -551,7 +600,7 @@ export function WorkspacePage({ section }: { section: WorkspaceSection }) {
           <Button
             variant="outlined"
             startIcon={<RedoIcon />}
-            disabled={!state.canRedo}
+            disabled={state.scheduleLocked || !state.canRedo}
             onClick={actions.redo}
           >
             Redo
@@ -615,6 +664,7 @@ export function WorkspacePage({ section }: { section: WorkspaceSection }) {
                         color={day.isOff ? "warning" : "primary"}
                         sx={{ width: 92, minWidth: 92 }}
                         onClick={() => actions.toggleCell(row.employee.id, day.dateISO)}
+                        disabled={state.scheduleLocked}
                       >
                         {day.isOff ? "Folga" : "Trabalho"}
                       </Button>
