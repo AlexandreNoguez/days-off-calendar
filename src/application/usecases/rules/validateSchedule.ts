@@ -32,6 +32,11 @@ function numberParam(params: Record<string, unknown>, key: string): number | und
   return typeof value === "number" && Number.isFinite(value) ? value : undefined;
 }
 
+function booleanParam(params: Record<string, unknown>, key: string): boolean | undefined {
+  const value = params[key];
+  return typeof value === "boolean" ? value : undefined;
+}
+
 function arrayParam(params: Record<string, unknown>, key: string): string[] {
   const value = params[key];
   if (!Array.isArray(value)) return [];
@@ -109,6 +114,51 @@ export function validateSchedule(input: Input): ValidationResult {
         return [employee.id, stats];
       }),
     );
+
+  const scheduleYear = input.daysOfMonth[0]
+    ? parseDateISO(input.daysOfMonth[0]).year
+    : undefined;
+
+  const annualHolidayCreditRule = enabledRule(
+    input.rules,
+    "annual_holiday_credit_one_per_person",
+  );
+  if (annualHolidayCreditRule && scheduleYear !== undefined) {
+    const creditPerYear = Math.max(
+      0,
+      Math.floor(numberParam(annualHolidayCreditRule.params, "creditPerYear") ?? 1),
+    );
+
+    input.employees.forEach((employee) => {
+      const holidayOffDates = input.daysOfMonth.filter(
+        (dateISO) =>
+          Boolean(input.holidays[dateISO]) &&
+          isOff(input.assignments, employee.id, dateISO),
+      );
+      if (holidayOffDates.length === 0) return;
+
+      const alreadyUsedThisYear =
+        employee.holidayCreditYear === scheduleYear && employee.holidayOffUsed;
+      const remainingCredits = Math.max(
+        0,
+        creditPerYear - (alreadyUsedThisYear ? 1 : 0),
+      );
+
+      if (holidayOffDates.length <= remainingCredits) return;
+
+      const conflictDate =
+        holidayOffDates[remainingCredits] ?? holidayOffDates[0];
+      addConflict(conflicts, {
+        ruleId: annualHolidayCreditRule.id,
+        dateISO: conflictDate,
+        employeeIds: [employee.id],
+        severity: annualHolidayCreditRule.severity,
+        message: alreadyUsedThisYear
+          ? `Colaborador já usou a folga de feriado de ${scheduleYear}.`
+          : `Colaborador excedeu o limite de ${creditPerYear} folga(s) em feriado no ano.`,
+      });
+    });
+  }
 
   // fixed_off_sunday_tales
   const fixedSunday = enabledRule(input.rules, "fixed_off_sunday_tales");
@@ -561,6 +611,37 @@ export function validateSchedule(input: Input): ValidationResult {
         employeeIds: [assistant.id],
         severity: assistantFixedWeekdayRule.severity,
         message: `Auxiliar deve manter folga fixa na semana (encontrado: ${weekdayLabels}).`,
+      });
+    });
+  }
+
+  const avoidSameWeekdayRule = enabledRule(input.rules, "avoid_same_weekday_off");
+  if (avoidSameWeekdayRule) {
+    const minOccurrences = Math.max(
+      2,
+      Math.floor(numberParam(avoidSameWeekdayRule.params, "minOccurrences") ?? 3),
+    );
+    const includeSundays =
+      booleanParam(avoidSameWeekdayRule.params, "includeSundays") ?? false;
+
+    input.employees.forEach((employee) => {
+      const offDates = input.daysOfMonth.filter((dateISO) => {
+        if (!isOff(input.assignments, employee.id, dateISO)) return false;
+        return includeSundays || getWeekday(dateISO) !== 0;
+      });
+
+      if (offDates.length < minOccurrences) return;
+
+      const uniqueWeekdays = [...new Set(offDates.map((dateISO) => getWeekday(dateISO)))];
+      if (uniqueWeekdays.length !== 1) return;
+
+      const weekday = uniqueWeekdays[0];
+      addConflict(conflicts, {
+        ruleId: avoidSameWeekdayRule.id,
+        dateISO: offDates[0],
+        employeeIds: [employee.id],
+        severity: avoidSameWeekdayRule.severity,
+        message: `Folgas repetidas sempre em ${WEEKDAY_LABELS_SHORT_PT[weekday]}; tente variar o dia da semana quando possível.`,
       });
     });
   }

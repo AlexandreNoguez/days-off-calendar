@@ -201,8 +201,8 @@ Exemplos de `action`:
 - [x] Quando Josana ou Luis folgam, Elaine deve trabalhar.
 - [x] Quando Maria folga, Lidriel deve trabalhar.
 - [x] Ingrid e Fernando nao podem folgar juntos.
-- [ ] Validar regra de 1 folga em feriado por pessoa ao ano.
-- [ ] Implementar regra SOFT de evitar folga sempre no mesmo dia da semana.
+- [x] Validar regra de 1 folga em feriado por pessoa ao ano.
+- [x] Implementar regra SOFT de evitar folga sempre no mesmo dia da semana.
 
 ## Fluxos de Usuario
 
@@ -373,7 +373,7 @@ Ordem recomendada:
 - [x] Colocar MongoDB e auth.
 - [x] Migrar telas uma a uma.
 - [x] Adicionar admin e logs.
-- [ ] Refinar regras pendentes.
+- [x] Refinar regras pendentes.
 
 ## Contexto Para Continuidade
 

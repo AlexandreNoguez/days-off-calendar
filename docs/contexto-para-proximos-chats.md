@@ -243,8 +243,8 @@ docs(project): update migration checklist
 
 ### Regras e dominio
 
-- [ ] Validar regra de 1 folga em feriado por pessoa ao ano.
-- [ ] Implementar regra SOFT de evitar folga sempre no mesmo dia da semana.
+- [x] Validar regra de 1 folga em feriado por pessoa ao ano.
+- [x] Implementar regra SOFT de evitar folga sempre no mesmo dia da semana.
 - [ ] Criar testes ou fixtures basicas para validar regras.
 - [ ] Criar testes principais para validacao de regras.
 
@@ -276,13 +276,17 @@ docs(project): update migration checklist
 ## Proximo Passo Recomendado
 
 O melhor proximo passo tecnico e criar testes/fixtures para o motor de regras.
-Isso reduz risco antes de refinar regras pendentes e antes de adicionar mais
-permissoes ou fluxos administrativos.
+Isso reduz risco antes de adicionar mais permissoes ou fluxos administrativos.
 
 Depois disso, a ordem recomendada e:
 
 1. Indices MongoDB.
 2. Reset/troca de senha pelo admin.
 3. Validacao manual completa admin/user.
-4. Regras pendentes de feriado e repeticao de dia da semana.
-5. Deploy.
+4. Deploy.
+
+## Enviar mensagem de commit
+
+Ao finalizar uma tarefa já sugerir um commit message seguindo o padrão type(scope): message in english
+
+Não commitar os arquivos automaticamente pois quero revisar e testar antes de commitar

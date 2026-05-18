@@ -288,6 +288,21 @@ Esta seção reflete o comportamento atual do validador em
 - `cook_if_sunday_off_no_week_off`
   - Regra: cozinheiro que folgou no domingo não pode folgar na semana (segunda a sábado).
   - Exemplo inválido: folga no domingo e também na terça.
+- `cook_no_monday_off_after_sunday_off`
+  - Regra: cozinheiro que folgou no domingo não pode folgar na segunda seguinte.
+  - Exemplo inválido: cozinheiro `OFF` no domingo e também `OFF` na segunda.
+- `laundry_one_sunday_off_per_month`
+  - Regra: colaborador da lavanderia configurado deve ter exatamente 1 domingo de folga no mês.
+  - Exemplo inválido: nenhum domingo `OFF` ou 2+ domingos `OFF`.
+- `pot_washer_one_sunday_off_per_month`
+  - Regra: paneleiro configurado deve ter exatamente 1 domingo de folga no mês.
+  - Exemplo inválido: nenhum domingo `OFF` ou 2+ domingos `OFF`.
+- `max_six_consecutive_work_days`
+  - Regra: ninguém deve trabalhar mais de 6 dias seguidos sem folga.
+  - Exemplo inválido: 7 dias consecutivos em `WORK`.
+- `no_two_consecutive_off_days`
+  - Regra: ninguém deve ter duas folgas consecutivas.
+  - Exemplo inválido: `OFF` na terça e também na quarta.
 - `no_coincidence_clarice_ingrid_elaine`
   - Regra: Clarice, Ingrid e Elaine não podem folgar juntas no mesmo dia.
   - Exemplo inválido: Clarice e Ingrid `OFF` no mesmo dia.
@@ -318,20 +333,16 @@ Esta seção reflete o comportamento atual do validador em
 - `assistant_weekday_off_must_be_fixed`
   - Regra: auxiliar deve manter folga semanal fixa no mesmo dia da semana.
   - Exemplo inválido: uma semana folga na terça e outra na quinta.
+- `annual_holiday_credit_one_per_person`
+  - Regra: cada pessoa pode usar no máximo a quantidade configurada de folgas em feriado no ano.
+  - Exemplo inválido: 2 feriados `OFF` no mesmo ano com limite configurado em 1.
 
 ### SOFT (aviso, não bloqueia)
 
-- Atualmente não há regra SOFT sendo gerada no `validateSchedule`.
+- `avoid_same_weekday_off`
+  - Regra: avisa quando uma pessoa folga sempre no mesmo dia da semana, considerando o mínimo configurado.
+  - Exemplo com padrão atual: 3 folgas não dominicais no mês, todas na terça.
 - A escala pode ser exportada com conflitos SOFT.
-
-### Regras padrão cadastradas, mas ainda não validadas
-
-- `cook_no_monday_off_after_sunday_off`
-- `annual_holiday_credit_one_per_person`
-- `avoid_same_weekday_off` (SOFT)
-
-Estas regras já existem no catálogo padrão (`src/domain/defaults/defaultRules.ts`),
-mas ainda não produzem conflitos no validador principal.
 
 ---
 

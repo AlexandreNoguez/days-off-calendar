@@ -252,7 +252,10 @@ export function createDefaultRules(): RuleConfig[] {
       title: "Evitar folgar sempre no mesmo dia da semana",
       severity: "SOFT",
       enabled: true,
-      params: {},
+      params: {
+        minOccurrences: 3,
+        includeSundays: false,
+      },
     }),
   ];
 }

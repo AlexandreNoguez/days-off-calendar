@@ -311,4 +311,26 @@ export const ruleFormRegistry: Partial<Record<DefaultRuleKey, RuleFormSchema>> =
     parser: passthrough,
     serializer: passthrough,
   },
+
+  avoid_same_weekday_off: {
+    fields: [
+      {
+        type: "number",
+        key: "minOccurrences",
+        label: "Repetições mínimas",
+        min: 2,
+        max: 6,
+        step: 1,
+        required: true,
+      },
+      {
+        type: "boolean",
+        key: "includeSundays",
+        label: "Considerar domingos",
+      },
+    ],
+    defaults: { minOccurrences: 3, includeSundays: false },
+    parser: passthrough,
+    serializer: passthrough,
+  },
 };
