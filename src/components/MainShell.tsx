@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { PublicUser } from "../lib/types";
 import {
@@ -33,6 +34,20 @@ export function MainShell({
 }) {
   const shell = useMainShell(user);
 
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isLightMode = shell.themeMode.mode === "light";
+
+  const themeButtonTooltip = !mounted
+    ? ""
+    : isLightMode
+      ? "Ativar modo escuro"
+      : "Ativar modo claro";
+
   const drawer = (
     <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
       <Toolbar>
@@ -40,13 +55,20 @@ export function MainShell({
           <Typography variant="subtitle1" fontWeight={700}>
             Escala de Folgas
           </Typography>
-          <Chip size="small" label={user.role} color={user.role === "ADMIN" ? "primary" : "default"} />
+          <Chip
+            size="small"
+            label={user.role}
+            color={user.role === "ADMIN" ? "primary" : "default"}
+          />
         </Stack>
       </Toolbar>
+
       <Divider />
+
       <List sx={{ px: 1 }}>
         {shell.visibleItems.map((item) => {
           const selected = shell.isSelected(item.href);
+
           return (
             <ListItemButton
               key={item.href}
@@ -60,7 +82,9 @@ export function MainShell({
           );
         })}
       </List>
+
       <Box sx={{ flex: 1 }} />
+
       <Box sx={{ p: 2 }}>
         <Typography variant="caption" color="text.secondary">
           Logado como
@@ -79,26 +103,24 @@ export function MainShell({
           <Typography variant="h6" sx={{ flex: 1 }} noWrap>
             Escala de Folgas
           </Typography>
+
           <Typography variant="body2" sx={{ display: { xs: "none", sm: "block" } }}>
             {user.displayName}
           </Typography>
-          <Tooltip
-            title={
-              shell.themeMode.mode === "light"
-                ? "Ativar modo escuro"
-                : "Ativar modo claro"
-            }
-          >
-            <Button
-              color="inherit"
-              onClick={shell.themeMode.toggleMode}
-              startIcon={
-                shell.themeMode.mode === "light" ? <DarkModeIcon /> : <SunnyIcon />
-              }
-            >
-              {shell.themeMode.mode === "light" ? "Escuro" : "Claro"}
-            </Button>
+
+          <Tooltip title={themeButtonTooltip}>
+            <span>
+              <Button
+                color="inherit"
+                onClick={shell.themeMode.toggleMode}
+                disabled={!mounted}
+                aria-label={themeButtonTooltip || "Alternar tema"}
+              >
+                {!mounted ? undefined : isLightMode ? <DarkModeIcon /> : <SunnyIcon />}
+              </Button>
+            </span>
           </Tooltip>
+
           <Button color="inherit" startIcon={<LogoutIcon />} onClick={shell.logout}>
             Sair
           </Button>
