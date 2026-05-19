@@ -8,7 +8,7 @@ import { useRulesStore } from "../../stores/rules.store";
 import { useScheduleStore } from "../../stores/schedule.store";
 import { useValidationStore } from "../../stores/validation.store";
 import { useCalendarStore } from "../../stores/calendar.store";
-import { generateSuggestedSchedule } from "../../application/usecases/schedule/generateSuggestedSchedule";
+import { generateSuggestedScheduleWithReport } from "../../application/usecases/schedule/generateSuggestedSchedule";
 import { validateSchedule } from "../../application/usecases/rules/validateSchedule";
 import { toast } from "react-toastify";
 
@@ -135,11 +135,13 @@ export function useScheduleEditor() {
 
   function generateSuggestion() {
     const daysOfMonth = dayColumns.map((d) => d.dateISO);
-    const nextAssignments = generateSuggestedSchedule({
+    const suggestion = generateSuggestedScheduleWithReport({
       employees,
       rules,
       daysOfMonth,
+      holidays,
     });
+    const nextAssignments = suggestion.assignments;
 
     const nextValidation = validateSchedule({
       employees,
@@ -158,13 +160,17 @@ export function useScheduleEditor() {
 
     if (hardConflicts > 0) {
       toast.warning(
-        `Sugestão gerada com ${hardConflicts} conflito(s) HARD e ${softConflicts} SOFT.`,
+        suggestion.repairPasses > 0
+          ? `Retentativa automática aplicada ${suggestion.repairPasses} vez(es): ${suggestion.initialHardConflicts} -> ${hardConflicts} conflito(s) HARD.`
+          : `Sugestão gerada com ${hardConflicts} conflito(s) HARD e ${softConflicts} SOFT.`,
       );
       return;
     }
 
     toast.success(
-      softConflicts > 0
+      suggestion.repairPasses > 0
+        ? `Sugestão corrigida automaticamente em ${suggestion.repairPasses} retentativa(s).`
+        : softConflicts > 0
         ? `Sugestão gerada com ${softConflicts} conflito(s) SOFT.`
         : "Sugestão gerada sem conflitos HARD.",
     );

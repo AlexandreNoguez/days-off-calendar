@@ -1,14 +1,38 @@
 import type { Employee } from "../../../domain/types/employees";
 import type { RuleConfig } from "../../../domain/types/rules";
-import type { DateISO } from "../../../domain/types/ids";
+import type { DateISO, EmployeeId } from "../../../domain/types/ids";
 import type { ScheduleAssignments } from "../../../domain/types/schedule";
+import type { Conflict, ValidationResult } from "../../../domain/types/validation";
 import { getWeekday, parseDateISO, toDateISO } from "../../../shared/utils/dates";
+import { validateSchedule } from "../rules/validateSchedule";
 
 type Input = {
   employees: Employee[];
   rules: RuleConfig[];
   daysOfMonth: DateISO[];
+  holidays?: Record<DateISO, true>;
+  maxRepairPasses?: number;
 };
+
+export type SuggestedScheduleReport = {
+  assignments: ScheduleAssignments;
+  initialHardConflicts: number;
+  initialSoftConflicts: number;
+  finalHardConflicts: number;
+  finalSoftConflicts: number;
+  repairPasses: number;
+};
+
+type RepairContext = {
+  employees: Employee[];
+  rules: RuleConfig[];
+  daysOfMonth: DateISO[];
+  daysSet: Set<DateISO>;
+  dayIndexByISO: Map<DateISO, number>;
+  holidays: Record<DateISO, true>;
+};
+
+const DEFAULT_MAX_REPAIR_PASSES = 80;
 
 function isEnabledRule(rules: RuleConfig[], key: RuleConfig["key"]): RuleConfig | undefined {
   return rules.find((r) => r.key === key && r.enabled);
@@ -17,6 +41,19 @@ function isEnabledRule(rules: RuleConfig[], key: RuleConfig["key"]): RuleConfig 
 function ensureOff(assignments: ScheduleAssignments, employeeId: string, dateISO: DateISO) {
   const current = assignments[employeeId] ?? {};
   assignments[employeeId] = { ...current, [dateISO]: "OFF" };
+}
+
+function ensureWork(assignments: ScheduleAssignments, employeeId: string, dateISO: DateISO) {
+  const current = assignments[employeeId] ?? {};
+  if (current[dateISO] !== "OFF") return;
+
+  const next = { ...current };
+  delete next[dateISO];
+  if (Object.keys(next).length > 0) {
+    assignments[employeeId] = next;
+  } else {
+    delete assignments[employeeId];
+  }
 }
 
 function isOff(assignments: ScheduleAssignments, employeeId: string, dateISO: DateISO): boolean {
@@ -212,7 +249,466 @@ function hasSundayOffBeforeWeekday(
   return false;
 }
 
-export function generateSuggestedSchedule(input: Input): ScheduleAssignments {
+function cloneAssignments(assignments: ScheduleAssignments): ScheduleAssignments {
+  return Object.fromEntries(
+    Object.entries(assignments).map(([employeeId, byDate]) => [
+      employeeId,
+      { ...byDate },
+    ]),
+  ) as ScheduleAssignments;
+}
+
+function setAssignmentStatus(
+  assignments: ScheduleAssignments,
+  employeeId: EmployeeId,
+  dateISO: DateISO,
+  status: "WORK" | "OFF",
+): ScheduleAssignments {
+  const next = cloneAssignments(assignments);
+  const nextByDate = { ...(next[employeeId] ?? {}) };
+
+  if (status === "OFF") {
+    nextByDate[dateISO] = "OFF";
+    next[employeeId] = nextByDate;
+    return next;
+  }
+
+  delete nextByDate[dateISO];
+  if (Object.keys(nextByDate).length > 0) {
+    next[employeeId] = nextByDate;
+  } else {
+    delete next[employeeId];
+  }
+
+  return next;
+}
+
+function countConflicts(result: ValidationResult, severity: "HARD" | "SOFT"): number {
+  return result.conflicts.filter((conflict) => conflict.severity === severity).length;
+}
+
+function scoreValidation(result: ValidationResult): number {
+  const hardConflicts = countConflicts(result, "HARD");
+  const softConflicts = countConflicts(result, "SOFT");
+  return hardConflicts * 10_000 + softConflicts;
+}
+
+function previousDateISO(
+  dateISO: DateISO,
+  daysSet: Set<DateISO>,
+): DateISO | undefined {
+  const { year, month, day } = parseDateISO(dateISO);
+  const previous = new Date(year, month - 1, day - 1);
+  const previousISO = toDateISO(
+    previous.getFullYear(),
+    previous.getMonth() + 1,
+    previous.getDate(),
+  );
+
+  return daysSet.has(previousISO) ? previousISO : undefined;
+}
+
+function sundayOnOrBefore(dateISO: DateISO, daysSet: Set<DateISO>): DateISO | undefined {
+  if (getWeekday(dateISO) === 0) return dateISO;
+
+  const { year, month, day } = parseDateISO(dateISO);
+  for (let i = 1; i <= 6; i += 1) {
+    const previous = new Date(year, month - 1, day - i);
+    const previousISO = toDateISO(
+      previous.getFullYear(),
+      previous.getMonth() + 1,
+      previous.getDate(),
+    );
+    if (daysSet.has(previousISO) && getWeekday(previousISO) === 0) {
+      return previousISO;
+    }
+  }
+
+  return undefined;
+}
+
+function getRuleForConflict(
+  rules: RuleConfig[],
+  conflict: Conflict,
+): RuleConfig | undefined {
+  return rules.find((rule) => rule.id === conflict.ruleId);
+}
+
+function roleEmployeeIds(
+  employees: Employee[],
+  roleId: string | undefined,
+): EmployeeId[] {
+  if (!roleId) return [];
+  return employees
+    .filter((employee) => employee.roleId === roleId)
+    .map((employee) => employee.id);
+}
+
+function addCandidate(
+  candidates: ScheduleAssignments[],
+  candidate: ScheduleAssignments,
+) {
+  const key = JSON.stringify(candidate);
+  if (candidates.some((item) => JSON.stringify(item) === key)) return;
+  candidates.push(candidate);
+}
+
+function buildExactSundayCountCandidates(input: {
+  assignments: ScheduleAssignments;
+  dateISO: DateISO;
+  employeeIds: EmployeeId[];
+  expectedCount: number;
+}): ScheduleAssignments[] {
+  const candidates: ScheduleAssignments[] = [];
+  const offIds = input.employeeIds.filter((employeeId) =>
+    isOff(input.assignments, employeeId, input.dateISO),
+  );
+
+  if (offIds.length < input.expectedCount) {
+    input.employeeIds
+      .filter((employeeId) => !offIds.includes(employeeId))
+      .forEach((employeeId) => {
+        addCandidate(
+          candidates,
+          setAssignmentStatus(input.assignments, employeeId, input.dateISO, "OFF"),
+        );
+      });
+  }
+
+  if (offIds.length > input.expectedCount) {
+    offIds.forEach((employeeId) => {
+      addCandidate(
+        candidates,
+        setAssignmentStatus(input.assignments, employeeId, input.dateISO, "WORK"),
+      );
+    });
+  }
+
+  return candidates;
+}
+
+function buildWeekdayOffCandidates(
+  context: RepairContext,
+  assignments: ScheduleAssignments,
+  employeeId: EmployeeId,
+  sunday: DateISO,
+): ScheduleAssignments[] {
+  return listWeekdaysAfterSunday(sunday, context.daysSet)
+    .filter((dateISO) => !isOff(assignments, employeeId, dateISO))
+    .map((dateISO) => setAssignmentStatus(assignments, employeeId, dateISO, "OFF"));
+}
+
+function buildRepairCandidates(
+  context: RepairContext,
+  assignments: ScheduleAssignments,
+  conflict: Conflict,
+): ScheduleAssignments[] {
+  const candidates: ScheduleAssignments[] = [];
+  const rule = getRuleForConflict(context.rules, conflict);
+  const ruleKey = rule?.key;
+  const customTemplate =
+    typeof rule?.params.customTemplate === "string"
+      ? rule.params.customTemplate
+      : undefined;
+
+  if (ruleKey === "fixed_off_sunday_tales") {
+    const employeeId = asString(rule?.params.employeeId) as EmployeeId | undefined;
+    if (employeeId) {
+      addCandidate(
+        candidates,
+        setAssignmentStatus(assignments, employeeId, conflict.dateISO, "OFF"),
+      );
+    }
+    return candidates;
+  }
+
+  if (
+    ruleKey === "laundry_one_sunday_off_per_month" ||
+    ruleKey === "pot_washer_one_sunday_off_per_month"
+  ) {
+    const employeeId = asString(rule?.params.employeeId) as EmployeeId | undefined;
+    const expectedCount = asNumber(rule?.params.exactlyOffCount) ?? 1;
+    const sundays = context.daysOfMonth.filter((dateISO) => getWeekday(dateISO) === 0);
+    if (!employeeId) return candidates;
+
+    const offSundays = sundays.filter((dateISO) => isOff(assignments, employeeId, dateISO));
+    if (offSundays.length < expectedCount) {
+      sundays
+        .filter((dateISO) => !offSundays.includes(dateISO))
+        .forEach((dateISO) => {
+          addCandidate(candidates, setAssignmentStatus(assignments, employeeId, dateISO, "OFF"));
+        });
+    }
+    if (offSundays.length > expectedCount) {
+      offSundays.forEach((dateISO) => {
+        addCandidate(candidates, setAssignmentStatus(assignments, employeeId, dateISO, "WORK"));
+      });
+    }
+    return candidates;
+  }
+
+  if (ruleKey === "cook_rotation_one_off_each_sunday") {
+    const employeeIds = roleEmployeeIds(
+      context.employees,
+      asString(rule?.params.cookRoleId),
+    );
+    return buildExactSundayCountCandidates({
+      assignments,
+      dateISO: conflict.dateISO,
+      employeeIds,
+      expectedCount: asNumber(rule?.params.exactlyOffCount) ?? 1,
+    });
+  }
+
+  if (customTemplate === "role_one_off_each_sunday") {
+    const employeeIds = roleEmployeeIds(context.employees, asString(rule?.params.roleId));
+    return buildExactSundayCountCandidates({
+      assignments,
+      dateISO: conflict.dateISO,
+      employeeIds,
+      expectedCount: asNumber(rule?.params.exactlyOffCount) ?? 1,
+    });
+  }
+
+  if (
+    ruleKey === "max_six_consecutive_work_days" &&
+    conflict.employeeIds[0]
+  ) {
+    const employeeId = conflict.employeeIds[0];
+    const maxConsecutive = asNumber(rule?.params.maxConsecutiveWorkDays) ?? 6;
+    const idx = context.dayIndexByISO.get(conflict.dateISO);
+    if (idx === undefined) return candidates;
+
+    const windowStart = Math.max(0, idx - maxConsecutive);
+    context.daysOfMonth.slice(windowStart, idx + 1).forEach((dateISO) => {
+      if (!isOff(assignments, employeeId, dateISO)) {
+        addCandidate(candidates, setAssignmentStatus(assignments, employeeId, dateISO, "OFF"));
+      }
+    });
+    return candidates;
+  }
+
+  if (ruleKey === "monthly_off_count_between_4_and_5" && conflict.employeeIds[0]) {
+    const employeeId = conflict.employeeIds[0];
+    const minMonthlyOffCount = Math.max(
+      0,
+      Math.floor(asNumber(rule?.params.minMonthlyOffCount) ?? 4),
+    );
+    const maxMonthlyOffCount = Math.max(
+      minMonthlyOffCount,
+      Math.floor(asNumber(rule?.params.maxMonthlyOffCount) ?? 5),
+    );
+    const offDates = context.daysOfMonth.filter((dateISO) =>
+      isOff(assignments, employeeId, dateISO),
+    );
+
+    if (offDates.length > maxMonthlyOffCount) {
+      offDates.forEach((dateISO) => {
+        addCandidate(candidates, setAssignmentStatus(assignments, employeeId, dateISO, "WORK"));
+      });
+      return candidates;
+    }
+
+    context.daysOfMonth
+      .filter((dateISO) => !isOff(assignments, employeeId, dateISO))
+      .forEach((dateISO) => {
+        addCandidate(candidates, setAssignmentStatus(assignments, employeeId, dateISO, "OFF"));
+      });
+    return candidates;
+  }
+
+  if (ruleKey === "no_two_consecutive_off_days" && conflict.employeeIds[0]) {
+    const employeeId = conflict.employeeIds[0];
+    addCandidate(
+      candidates,
+      setAssignmentStatus(assignments, employeeId, conflict.dateISO, "WORK"),
+    );
+
+    const previous = previousDateISO(conflict.dateISO, context.daysSet);
+    if (previous && isOff(assignments, employeeId, previous)) {
+      addCandidate(candidates, setAssignmentStatus(assignments, employeeId, previous, "WORK"));
+    }
+    return candidates;
+  }
+
+  if (
+    (ruleKey === "cook_if_sunday_work_requires_week_off" ||
+      ruleKey === "assistant_if_sunday_work_requires_week_off") &&
+    conflict.employeeIds[0]
+  ) {
+    const sunday = sundayOnOrBefore(conflict.dateISO, context.daysSet);
+    if (!sunday) return candidates;
+    return buildWeekdayOffCandidates(context, assignments, conflict.employeeIds[0], sunday);
+  }
+
+  if (
+    (ruleKey === "cook_if_sunday_off_no_week_off" ||
+      ruleKey === "assistant_if_sunday_off_no_week_off") &&
+    conflict.employeeIds[0]
+  ) {
+    const sunday = sundayOnOrBefore(conflict.dateISO, context.daysSet);
+    if (!sunday) return candidates;
+    listWeekdaysAfterSunday(sunday, context.daysSet)
+      .filter((dateISO) => isOff(assignments, conflict.employeeIds[0], dateISO))
+      .forEach((dateISO) => {
+        addCandidate(
+          candidates,
+          setAssignmentStatus(assignments, conflict.employeeIds[0], dateISO, "WORK"),
+        );
+      });
+    return candidates;
+  }
+
+  if (
+    ruleKey === "cook_no_monday_off_after_sunday_off" ||
+    ruleKey === "assistant_no_monday_off_after_sunday_off" ||
+    ruleKey === "annual_holiday_credit_one_per_person"
+  ) {
+    conflict.employeeIds.forEach((employeeId) => {
+      addCandidate(
+        candidates,
+        setAssignmentStatus(assignments, employeeId, conflict.dateISO, "WORK"),
+      );
+    });
+    return candidates;
+  }
+
+  if (ruleKey === "assistant_weekday_off_must_be_fixed" && conflict.employeeIds[0]) {
+    const employeeId = conflict.employeeIds[0];
+    const weekdayOffDates = context.daysOfMonth.filter(
+      (dateISO) => getWeekday(dateISO) !== 0 && isOff(assignments, employeeId, dateISO),
+    );
+    const weekdays = [...new Set(weekdayOffDates.map((dateISO) => getWeekday(dateISO)))];
+
+    weekdays.forEach((weekday) => {
+      let candidate = assignments;
+      weekdayOffDates
+        .filter((dateISO) => getWeekday(dateISO) !== weekday)
+        .forEach((dateISO) => {
+          candidate = setAssignmentStatus(candidate, employeeId, dateISO, "WORK");
+        });
+      addCandidate(candidates, candidate);
+    });
+
+    return candidates;
+  }
+
+  if (
+    ruleKey === "if_josana_or_luis_off_then_elaine_must_work" ||
+    customTemplate === "substitution_required"
+  ) {
+    const substituteId = conflict.employeeIds[0];
+    if (substituteId) {
+      addCandidate(
+        candidates,
+        setAssignmentStatus(assignments, substituteId, conflict.dateISO, "WORK"),
+      );
+    }
+    return candidates;
+  }
+
+  if (ruleKey === "if_maria_off_then_lidriel_must_work") {
+    const mustWorkId = conflict.employeeIds[1];
+    if (mustWorkId) {
+      addCandidate(
+        candidates,
+        setAssignmentStatus(assignments, mustWorkId, conflict.dateISO, "WORK"),
+      );
+    }
+    return candidates;
+  }
+
+  conflict.employeeIds.forEach((employeeId) => {
+    if (!isOff(assignments, employeeId, conflict.dateISO)) return;
+    addCandidate(
+      candidates,
+      setAssignmentStatus(assignments, employeeId, conflict.dateISO, "WORK"),
+    );
+  });
+
+  return candidates;
+}
+
+function repairGeneratedSchedule(
+  input: Input,
+  initialAssignments: ScheduleAssignments,
+): SuggestedScheduleReport {
+  const context: RepairContext = {
+    employees: input.employees,
+    rules: input.rules,
+    daysOfMonth: input.daysOfMonth,
+    daysSet: new Set(input.daysOfMonth),
+    dayIndexByISO: new Map(input.daysOfMonth.map((dateISO, index) => [dateISO, index])),
+    holidays: input.holidays ?? {},
+  };
+
+  let assignments = initialAssignments;
+  let validation = validateSchedule({
+    employees: context.employees,
+    rules: context.rules,
+    assignments,
+    daysOfMonth: context.daysOfMonth,
+    holidays: context.holidays,
+  });
+  const initialHardConflicts = countConflicts(validation, "HARD");
+  const initialSoftConflicts = countConflicts(validation, "SOFT");
+  let repairPasses = 0;
+
+  const maxRepairPasses = input.maxRepairPasses ?? DEFAULT_MAX_REPAIR_PASSES;
+  for (let pass = 0; pass < maxRepairPasses; pass += 1) {
+    const hardConflicts = validation.conflicts.filter(
+      (conflict) => conflict.severity === "HARD",
+    );
+    if (hardConflicts.length === 0) break;
+
+    const currentScore = scoreValidation(validation);
+    let bestCandidate:
+      | {
+          assignments: ScheduleAssignments;
+          validation: ValidationResult;
+          score: number;
+        }
+      | undefined;
+
+    hardConflicts.forEach((conflict) => {
+      buildRepairCandidates(context, assignments, conflict).forEach((candidate) => {
+        const candidateValidation = validateSchedule({
+          employees: context.employees,
+          rules: context.rules,
+          assignments: candidate,
+          daysOfMonth: context.daysOfMonth,
+          holidays: context.holidays,
+        });
+        const candidateScore = scoreValidation(candidateValidation);
+
+        if (!bestCandidate || candidateScore < bestCandidate.score) {
+          bestCandidate = {
+            assignments: candidate,
+            validation: candidateValidation,
+            score: candidateScore,
+          };
+        }
+      });
+    });
+
+    if (!bestCandidate || bestCandidate.score >= currentScore) break;
+
+    assignments = bestCandidate.assignments;
+    validation = bestCandidate.validation;
+    repairPasses += 1;
+  }
+
+  return {
+    assignments,
+    initialHardConflicts,
+    initialSoftConflicts,
+    finalHardConflicts: countConflicts(validation, "HARD"),
+    finalSoftConflicts: countConflicts(validation, "SOFT"),
+    repairPasses,
+  };
+}
+
+function buildInitialSuggestedSchedule(input: Input): ScheduleAssignments {
   const assignments: ScheduleAssignments = {};
 
   const daysSet = new Set(input.daysOfMonth);
@@ -255,6 +751,9 @@ export function generateSuggestedSchedule(input: Input): ScheduleAssignments {
     "assistant_no_monday_off_after_sunday_off",
   );
   const noTwoConsecutiveOffRule = isEnabledRule(input.rules, "no_two_consecutive_off_days");
+  const maxConsecutiveRule = isEnabledRule(input.rules, "max_six_consecutive_work_days");
+  const maxConsecutive =
+    asNumber(maxConsecutiveRule?.params.maxConsecutiveWorkDays) ?? 6;
 
   const cookRoleId = asString(cookRotationRule?.params.cookRoleId);
   const exactlyOffCount = asNumber(cookRotationRule?.params.exactlyOffCount) ?? 1;
@@ -268,6 +767,14 @@ export function generateSuggestedSchedule(input: Input): ScheduleAssignments {
   const assistants = assistantRoleId
     ? input.employees.filter((e) => e.roleId === assistantRoleId)
     : [];
+  const exactSundayRoleIds = new Set<string>();
+  if (cookRotationRule && cookRoleId) exactSundayRoleIds.add(cookRoleId);
+  input.rules.forEach((rule) => {
+    if (!rule.enabled) return;
+    if (rule.params.customTemplate !== "role_one_off_each_sunday") return;
+    const roleId = asString(rule.params.roleId);
+    if (roleId) exactSundayRoleIds.add(roleId);
+  });
 
   // Rule: always-off-sunday flags + fixed Tales Sunday off.
   const fixedSundayIds = new Set<string>(
@@ -287,10 +794,14 @@ export function generateSuggestedSchedule(input: Input): ScheduleAssignments {
   const sundayOffCookIds = new Map<DateISO, Set<string>>();
 
   if (cooks.length > 0 && exactlyOffCount > 0) {
+    const shouldKeepSameSundayCooks =
+      Boolean(cookNoWeekOffRule) && Boolean(maxConsecutiveRule);
     sundays.forEach((sunday, sundayIndex) => {
       const selected = new Set<string>();
       for (let i = 0; i < exactlyOffCount; i += 1) {
-        const cook = cooks[(sundayIndex + i) % cooks.length];
+        const cook = shouldKeepSameSundayCooks
+          ? cooks[i % cooks.length]
+          : cooks[(sundayIndex + i) % cooks.length];
         if (!cook) continue;
         selected.add(cook.id);
         ensureOff(assignments, cook.id, sunday);
@@ -313,21 +824,46 @@ export function generateSuggestedSchedule(input: Input): ScheduleAssignments {
 
         for (let n = 0; n < requiredWeekdayOffCount; n += 1) {
           if (weekdayCandidates.length === 0) return;
-          const idx = (cookIndex + sundayIndex + n) % weekdayCandidates.length;
-          const candidate = weekdayCandidates[idx];
-          if (
-            noTwoConsecutiveOffRule &&
-            wouldCreateConsecutiveOff(
-              assignments,
-              cook.id,
-              candidate,
-              dayIndexByISO,
-              input.daysOfMonth,
-            )
-          ) {
-            continue;
-          }
-          ensureOff(assignments, cook.id, candidate);
+          let bestCandidate: DateISO | undefined;
+          let bestScore = Number.POSITIVE_INFINITY;
+
+          weekdayCandidates.forEach((candidate, candidateIndex) => {
+            if (isOff(assignments, cook.id, candidate)) return;
+            if (
+              noTwoConsecutiveOffRule &&
+              wouldCreateConsecutiveOff(
+                assignments,
+                cook.id,
+                candidate,
+                dayIndexByISO,
+                input.daysOfMonth,
+              )
+            ) {
+              return;
+            }
+
+            const dayIndex = dayIndexByISO.get(candidate);
+            const previousWorkStreak =
+              dayIndex !== undefined && dayIndex > 0
+                ? streakEndingAt(assignments, cook.id, input.daysOfMonth, dayIndex - 1)
+                : 0;
+            if (maxConsecutiveRule && previousWorkStreak > maxConsecutive) return;
+
+            const legalSpacingPenalty = maxConsecutiveRule
+              ? Math.abs(maxConsecutive - previousWorkStreak)
+              : 0;
+            const rotationPenalty = Math.abs(
+              candidateIndex - ((cookIndex + sundayIndex + n) % weekdayCandidates.length),
+            );
+            const score = legalSpacingPenalty * 10 + rotationPenalty;
+
+            if (score < bestScore) {
+              bestScore = score;
+              bestCandidate = candidate;
+            }
+          });
+
+          if (bestCandidate) ensureOff(assignments, cook.id, bestCandidate);
         }
       });
     });
@@ -448,6 +984,7 @@ export function generateSuggestedSchedule(input: Input): ScheduleAssignments {
   // - weekly OFF should stay fixed (prefer Tue-Sat to avoid Monday-after-Sunday issues)
   const assistantRequiredWeekdayOffCount =
     asNumber(assistantWeekOffRule?.params.requiredWeekdayOffCount) ?? 1;
+  const assignedWeekdayByAssistant = new Map<string, number>();
 
   if (
     assistants.length > 0 &&
@@ -455,7 +992,6 @@ export function generateSuggestedSchedule(input: Input): ScheduleAssignments {
     assistantWeekOffRule
   ) {
     const forbiddenPairs = buildAssistantForbiddenPairs(input.rules);
-    const assignedWeekdayByAssistant = new Map<string, number>();
     const loadByWeekday = new Map<number, number>();
 
     assistants.forEach((assistant) => {
@@ -465,7 +1001,11 @@ export function generateSuggestedSchedule(input: Input): ScheduleAssignments {
       );
       if (weekDaysBySunday.length === 0) return;
 
-      const perWeekdaySets = weekDaysBySunday.map(
+      const fixedChoiceWeeks = weekDaysBySunday.filter((weekDays) => weekDays.length >= 2);
+      const weeksForFixedChoice =
+        fixedChoiceWeeks.length > 0 ? fixedChoiceWeeks : weekDaysBySunday;
+
+      const perWeekdaySets = weeksForFixedChoice.map(
         (weekDays) => new Set(weekDays.map((d) => getWeekday(d))),
       );
 
@@ -490,10 +1030,22 @@ export function generateSuggestedSchedule(input: Input): ScheduleAssignments {
       candidateWeekdays.forEach((weekday) => {
         let conflictPenalty = 0;
         assignedWeekdayByAssistant.forEach((otherWeekday, otherAssistantId) => {
-          if (otherWeekday !== weekday) return;
-          if (forbiddenPairs.has(pairKey(assistant.id, otherAssistantId))) {
+          if (!forbiddenPairs.has(pairKey(assistant.id, otherAssistantId))) return;
+
+          if (otherWeekday === weekday) {
             conflictPenalty += 100;
           }
+
+          weekDaysBySunday.forEach((weekDays) => {
+            const currentWorksSunday = weekDays.some((dateISO) => getWeekday(dateISO) === weekday);
+            const otherWorksSunday = weekDays.some(
+              (dateISO) => getWeekday(dateISO) === otherWeekday,
+            );
+
+            if (!currentWorksSunday && !otherWorksSunday) {
+              conflictPenalty += 100;
+            }
+          });
         });
 
         const loadPenalty = loadByWeekday.get(weekday) ?? 0;
@@ -539,30 +1091,30 @@ export function generateSuggestedSchedule(input: Input): ScheduleAssignments {
           return;
         }
 
-        // End-of-month fallback keeps same-week requirement when preferred day is missing.
-        const fallbackDate = weekDays.find((d) => getWeekday(d) !== 1);
         if (
-          fallbackDate &&
-          (!noTwoConsecutiveOffRule ||
-            !wouldCreateConsecutiveOff(
-              assignments,
-              assistant.id,
-              fallbackDate,
-              dayIndexByISO,
-              input.daysOfMonth,
-            ))
+          !noTwoConsecutiveOffRule ||
+          !wouldCreateConsecutiveOff(
+            assignments,
+            assistant.id,
+            sunday,
+            dayIndexByISO,
+            input.daysOfMonth,
+          )
         ) {
-          ensureOff(assignments, assistant.id, fallbackDate);
+          ensureOff(assignments, assistant.id, sunday);
+          return;
+        }
+
+        const previous = previousDateISO(sunday, daysSet);
+        if (previous && isOff(assignments, assistant.id, previous)) {
+          ensureWork(assignments, assistant.id, previous);
+          ensureOff(assignments, assistant.id, sunday);
         }
       });
     });
   }
 
   // Global legal rule: max consecutive work days.
-  const maxConsecutiveRule = isEnabledRule(input.rules, "max_six_consecutive_work_days");
-  const maxConsecutive =
-    asNumber(maxConsecutiveRule?.params.maxConsecutiveWorkDays) ?? 6;
-
   if (maxConsecutiveRule && maxConsecutive > 0) {
     const forbiddenPairs = new Set<string>([
       ...buildAssistantForbiddenPairs(input.rules),
@@ -583,6 +1135,14 @@ export function generateSuggestedSchedule(input: Input): ScheduleAssignments {
           .slice(windowStart, idx + 1)
           .filter((d) => assignments[employee.id]?.[d] !== "OFF")
           .filter((candidate) => {
+            const candidateWeekday = getWeekday(candidate);
+            if (
+              candidateWeekday === 0 &&
+              exactSundayRoleIds.has(employee.roleId)
+            ) {
+              return false;
+            }
+
             if (
               noTwoConsecutiveOffRule &&
               wouldCreateConsecutiveOff(
@@ -599,6 +1159,15 @@ export function generateSuggestedSchedule(input: Input): ScheduleAssignments {
             const isCook = Boolean(cookRoleId) && employee.roleId === cookRoleId;
             const isAssistant =
               Boolean(assistantRoleId) && employee.roleId === assistantRoleId;
+            const fixedAssistantWeekday = assignedWeekdayByAssistant.get(employee.id);
+
+            if (
+              isAssistant &&
+              fixedAssistantWeekday &&
+              candidateWeekday !== fixedAssistantWeekday
+            ) {
+              return false;
+            }
 
             if (
               isCook &&
@@ -637,6 +1206,7 @@ export function generateSuggestedSchedule(input: Input): ScheduleAssignments {
 
         candidates.forEach((candidate) => {
           const weekday = getWeekday(candidate);
+          const candidateIndex = dayIndexByISO.get(candidate) ?? 0;
           const pairConflicts = countPairConflictsOnDate(
             assignments,
             employee.id,
@@ -644,7 +1214,8 @@ export function generateSuggestedSchedule(input: Input): ScheduleAssignments {
             forbiddenPairs,
           );
           const sundayPenalty = weekday === 0 ? 5 : 0;
-          const score = pairConflicts * 100 + sundayPenalty;
+          const spacingPenalty = input.daysOfMonth.length - candidateIndex;
+          const score = pairConflicts * 100 + sundayPenalty + spacingPenalty;
 
           if (score < bestScore) {
             bestScore = score;
@@ -664,4 +1235,12 @@ export function generateSuggestedSchedule(input: Input): ScheduleAssignments {
   }
 
   return assignments;
+}
+
+export function generateSuggestedScheduleWithReport(input: Input): SuggestedScheduleReport {
+  return repairGeneratedSchedule(input, buildInitialSuggestedSchedule(input));
+}
+
+export function generateSuggestedSchedule(input: Input): ScheduleAssignments {
+  return generateSuggestedScheduleWithReport(input).assignments;
 }

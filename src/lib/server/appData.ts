@@ -179,6 +179,14 @@ export async function ensureDefaultAppData(): Promise<void> {
 
   if ((await rules.countDocuments()) === 0) {
     await rules.insertMany(seed.rules);
+  } else {
+    const existingRuleIds = new Set(
+      (await rules.find({}, { projection: { id: 1 } }).toArray()).map((rule) => rule.id),
+    );
+    const missingDefaultRules = seed.rules.filter((rule) => !existingRuleIds.has(rule.id));
+    if (missingDefaultRules.length > 0) {
+      await rules.insertMany(missingDefaultRules);
+    }
   }
 
   const settingsDocument = await settings.findOne({ id: "main" });

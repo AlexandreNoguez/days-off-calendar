@@ -18,7 +18,7 @@ import type {
 import { createDefaultRules } from "../../domain/defaults/defaultRules";
 import { buildWorkbook } from "../../application/usecases/export/buildWorkbook";
 import { validateSchedule } from "../../application/usecases/rules/validateSchedule";
-import { generateSuggestedSchedule } from "../../application/usecases/schedule/generateSuggestedSchedule";
+import { generateSuggestedScheduleWithReport } from "../../application/usecases/schedule/generateSuggestedSchedule";
 import { getDaysOfMonth, WEEKDAY_LABELS_PT } from "../../shared/utils/dates";
 import { downloadBytes } from "../../shared/utils/download";
 
@@ -782,11 +782,13 @@ export function useWorkspacePage() {
   function generateSuggestion() {
     if (!loadedState) return;
 
-    const nextAssignments = generateSuggestedSchedule({
+    const suggestion = generateSuggestedScheduleWithReport({
       employees: loadedState.employees,
       rules: loadedState.rules,
       daysOfMonth: dayISOs,
+      holidays: loadedState.holidays,
     });
+    const nextAssignments = suggestion.assignments;
     const changedCells = countChangedCells(
       loadedState.schedule.assignments,
       nextAssignments,
@@ -797,7 +799,10 @@ export function useWorkspacePage() {
       createLog({
         type: "SET_ASSIGNMENTS",
         changedCells,
-        message: `Sugestao aplicada em ${changedCells} celula(s).`,
+        message:
+          suggestion.repairPasses > 0
+            ? `Sugestao aplicada em ${changedCells} celula(s), com ${suggestion.repairPasses} retentativa(s) automatica(s).`
+            : `Sugestao aplicada em ${changedCells} celula(s).`,
       }),
       "schedule.generated",
     );

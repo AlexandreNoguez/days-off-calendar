@@ -160,6 +160,49 @@ export function validateSchedule(input: Input): ValidationResult {
     });
   }
 
+  const monthlyOffCountRule = enabledRule(
+    input.rules,
+    "monthly_off_count_between_4_and_5",
+  );
+  if (monthlyOffCountRule && input.daysOfMonth[0]) {
+    const firstDate = input.daysOfMonth[0];
+    const minMonthlyOffCount = Math.max(
+      0,
+      Math.floor(numberParam(monthlyOffCountRule.params, "minMonthlyOffCount") ?? 4),
+    );
+    const maxMonthlyOffCount = Math.max(
+      minMonthlyOffCount,
+      Math.floor(numberParam(monthlyOffCountRule.params, "maxMonthlyOffCount") ?? 5),
+    );
+
+    input.employees.forEach((employee) => {
+      const totalOff = statsPerEmployee[employee.id]?.totalOff ?? 0;
+      if (totalOff < minMonthlyOffCount) {
+        addConflict(conflicts, {
+          ruleId: monthlyOffCountRule.id,
+          dateISO: firstDate,
+          employeeIds: [employee.id],
+          severity: monthlyOffCountRule.severity,
+          message: `Colaborador tem ${totalOff} folga(s) no mês; mínimo esperado é ${minMonthlyOffCount}.`,
+        });
+        return;
+      }
+
+      if (totalOff > maxMonthlyOffCount) {
+        const offDates = input.daysOfMonth.filter((dateISO) =>
+          isOff(input.assignments, employee.id, dateISO),
+        );
+        addConflict(conflicts, {
+          ruleId: monthlyOffCountRule.id,
+          dateISO: offDates[maxMonthlyOffCount] ?? offDates[0] ?? firstDate,
+          employeeIds: [employee.id],
+          severity: monthlyOffCountRule.severity,
+          message: `Colaborador tem ${totalOff} folga(s) no mês; máximo permitido é ${maxMonthlyOffCount}.`,
+        });
+      }
+    });
+  }
+
   // fixed_off_sunday_tales
   const fixedSunday = enabledRule(input.rules, "fixed_off_sunday_tales");
   if (fixedSunday) {
@@ -470,7 +513,12 @@ export function validateSchedule(input: Input): ValidationResult {
 
       const isSundayOff = isOff(input.assignments, cook.id, sunday);
 
-      if (weekOffRule && !isSundayOff && weekdayOffCount < requiredWeekdayOff) {
+      if (
+        weekOffRule &&
+        weekdays.length > 0 &&
+        !isSundayOff &&
+        weekdayOffCount < requiredWeekdayOff
+      ) {
         addConflict(conflicts, {
           ruleId: weekOffRule.id,
           dateISO: sunday,
@@ -550,6 +598,7 @@ export function validateSchedule(input: Input): ValidationResult {
 
       if (
         assistantWeekOffRule &&
+        weekdays.length > 0 &&
         !isSundayOff &&
         weekdayOffCount < assistantRequiredWeekdayOff
       ) {

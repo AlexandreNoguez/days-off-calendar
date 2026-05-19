@@ -243,6 +243,32 @@ export const ruleFormRegistry: Partial<Record<DefaultRuleKey, RuleFormSchema>> =
     serializer: passthrough,
   },
 
+  monthly_off_count_between_4_and_5: {
+    fields: [
+      {
+        type: "number",
+        key: "minMonthlyOffCount",
+        label: "Mínimo de folgas no mês",
+        min: 0,
+        max: 31,
+        step: 1,
+        required: true,
+      },
+      {
+        type: "number",
+        key: "maxMonthlyOffCount",
+        label: "Máximo de folgas no mês",
+        min: 0,
+        max: 31,
+        step: 1,
+        required: true,
+      },
+    ],
+    defaults: { minMonthlyOffCount: 4, maxMonthlyOffCount: 5 },
+    parser: passthrough,
+    serializer: passthrough,
+  },
+
   no_two_consecutive_off_days: {
     fields: [],
     defaults: {},

@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { generateSuggestedSchedule } from "../schedule/generateSuggestedSchedule";
+import {
+  generateSuggestedSchedule,
+  generateSuggestedScheduleWithReport,
+} from "../schedule/generateSuggestedSchedule";
 import { createDefaultSeed } from "../../../domain/defaults/defaultSeed";
 import { DEFAULT_EMPLOYEE_IDS } from "../../../domain/defaults/defaultEmployees";
 import type { DateISO } from "../../../domain/types/ids";
@@ -131,6 +134,41 @@ describe("validateSchedule", () => {
       }),
     ]);
   });
+
+  it("reports monthly off counts outside the configured range", () => {
+    const seed = createDefaultSeed(2026);
+    const gustavo = seed.employees.find(
+      (employee) => employee.id === DEFAULT_EMPLOYEE_IDS.gustavo,
+    );
+
+    expect(gustavo).toBeDefined();
+
+    const result = validateSchedule({
+      employees: [gustavo!],
+      rules: [findRule(seed.rules, "monthly_off_count_between_4_and_5")],
+      assignments: {
+        [DEFAULT_EMPLOYEE_IDS.gustavo]: {
+          "2026-05-01": "OFF",
+          "2026-05-03": "OFF",
+          "2026-05-05": "OFF",
+          "2026-05-07": "OFF",
+          "2026-05-09": "OFF",
+          "2026-05-11": "OFF",
+        },
+      },
+      daysOfMonth: monthDays(2026, 5),
+      holidays: {},
+    });
+
+    expect(result.isValid).toBe(false);
+    expect(result.conflicts).toEqual([
+      expect.objectContaining({
+        ruleId: "rule_monthly_off_count_between_4_and_5",
+        employeeIds: [DEFAULT_EMPLOYEE_IDS.gustavo],
+        severity: "HARD",
+      }),
+    ]);
+  });
 });
 
 describe("generateSuggestedSchedule", () => {
@@ -185,5 +223,86 @@ describe("generateSuggestedSchedule", () => {
       });
 
     expect(sundayOffCounts).toEqual([1, 1, 1, 1, 1]);
+  });
+
+  it("repairs generated hard conflicts by retrying candidates from the conflict list", () => {
+    const employees = [
+      {
+        id: "emp_a",
+        name: "Pessoa A",
+        roleId: "role_any",
+        alwaysOffSunday: true,
+        holidayCreditYear: 2026,
+        holidayOffUsed: false,
+      },
+      {
+        id: "emp_b",
+        name: "Pessoa B",
+        roleId: "role_any",
+        alwaysOffSunday: true,
+        holidayCreditYear: 2026,
+        holidayOffUsed: false,
+      },
+    ];
+    const rules: RuleConfig[] = [
+      {
+        id: "rule_pair",
+        key: "custom_pair",
+        title: "A e B não podem folgar juntas",
+        enabled: true,
+        severity: "HARD",
+        params: {
+          customTemplate: "pair_cannot_both_off",
+          a: "emp_a",
+          b: "emp_b",
+        },
+      },
+    ];
+
+    const report = generateSuggestedScheduleWithReport({
+      employees,
+      rules,
+      daysOfMonth: ["2026-05-03" as DateISO],
+    });
+
+    expect(report.initialHardConflicts).toBe(1);
+    expect(report.finalHardConflicts).toBe(0);
+    expect(report.repairPasses).toBeGreaterThan(0);
+
+    const result = validateSchedule({
+      employees,
+      rules,
+      assignments: report.assignments,
+      daysOfMonth: ["2026-05-03" as DateISO],
+      holidays: {},
+    });
+
+    expect(result.isValid).toBe(true);
+  });
+
+  it("generates every 2026 default month without hard conflicts", () => {
+    const seed = createDefaultSeed(2026);
+
+    for (let month = 1; month <= 12; month += 1) {
+      const daysOfMonth = monthDays(2026, month);
+      const report = generateSuggestedScheduleWithReport({
+        employees: seed.employees,
+        rules: seed.rules,
+        daysOfMonth,
+        holidays: {},
+      });
+
+      const result = validateSchedule({
+        employees: seed.employees,
+        rules: seed.rules,
+        assignments: report.assignments,
+        daysOfMonth,
+        holidays: {},
+      });
+
+      expect(
+        result.conflicts.filter((conflict) => conflict.severity === "HARD"),
+      ).toEqual([]);
+    }
   });
 });

@@ -15,6 +15,7 @@ export type DefaultRuleKey =
   | "laundry_one_sunday_off_per_month"
   | "pot_washer_one_sunday_off_per_month"
   | "max_six_consecutive_work_days"
+  | "monthly_off_count_between_4_and_5"
   | "no_two_consecutive_off_days"
   | "no_coincidence_clarice_ingrid_elaine"
   | "elaine_not_same_day_josana"

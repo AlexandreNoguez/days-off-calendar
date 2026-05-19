@@ -155,6 +155,18 @@ export function createDefaultRules(): RuleConfig[] {
     }),
 
     createRule({
+      key: "monthly_off_count_between_4_and_5",
+      title: "Cada colaborador deve ter entre 4 e 5 folgas no mês",
+      severity: "HARD",
+      params: {
+        minMonthlyOffCount: 4,
+        maxMonthlyOffCount: 5,
+      },
+      description:
+        "Evita escalas com folgas mensais muito abaixo ou acima do esperado.",
+    }),
+
+    createRule({
       key: "no_two_consecutive_off_days",
       title: "Não permitir 2 dias consecutivos de folga",
       severity: "HARD",
