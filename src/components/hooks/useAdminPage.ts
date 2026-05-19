@@ -9,6 +9,58 @@ import type {
   UserRole,
 } from "../../lib/types";
 
+// temporario
+export async function fetchJson<T>(
+  input: RequestInfo | URL,
+  init?: RequestInit,
+): Promise<T> {
+  const response = await fetch(input, {
+    ...init,
+    credentials: "include",
+    cache: "no-store",
+  });
+
+  const contentType = response.headers.get("content-type") ?? "";
+
+  if (!contentType.includes("application/json")) {
+    const text = await response.text();
+
+    console.error("[fetchJson] Expected JSON but received non-JSON response", {
+      input: String(input),
+      status: response.status,
+      statusText: response.statusText,
+      redirected: response.redirected,
+      finalUrl: response.url,
+      contentType,
+      preview: text.slice(0, 500),
+    });
+
+    throw new Error(
+      `Expected JSON but received "${contentType}" from ${response.url}`,
+    );
+  }
+
+  const data = (await response.json()) as T;
+
+  if (!response.ok) {
+    console.error("[fetchJson] Request failed", {
+      input: String(input),
+      status: response.status,
+      statusText: response.statusText,
+      redirected: response.redirected,
+      finalUrl: response.url,
+      data,
+    });
+
+    throw new Error(`Request failed with status ${response.status}`);
+  }
+
+  return data;
+}
+
+
+// fim do temporario
+
 export type AdminTab = "users" | "logs" | "scheduleHistory";
 
 const currentDate = new Date();
@@ -52,44 +104,59 @@ export function useAdminPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+
   async function loadAll() {
     setLoading(true);
-    await Promise.all([loadUsers(), loadLogs(), loadScheduleHistory()]);
-    setLoading(false);
+
+    try {
+      await Promise.all([loadUsers(), loadLogs(), loadScheduleHistory()]);
+    } catch (error) {
+      console.error("[useAdminPage] Failed to load admin data", error);
+      toast.error("Nao foi possivel carregar a area administrativa.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function loadUsers() {
-    const response = await fetch("/api/admin/users");
-    if (!response.ok) {
+    try {
+      const data = await fetchJson<{ users: PublicUser[] }>("/api/admin/users");
+      setUsers(data.users);
+    } catch (error) {
+      console.error("[useAdminPage] Failed to load users", error);
       toast.error("Nao foi possivel carregar usuarios.");
-      return;
     }
-    const data = (await response.json()) as { users: PublicUser[] };
-    setUsers(data.users);
   }
 
   async function loadLogs() {
     const params = new URLSearchParams();
+
     if (logActionFilter.trim()) params.set("action", logActionFilter.trim());
     if (logUserFilter.trim()) params.set("username", logUserFilter.trim());
     if (logDateFrom) params.set("from", logDateFrom);
     if (logDateTo) params.set("to", logDateTo);
 
     const query = params.toString();
-    const response = await fetch(`/api/admin/logs${query ? `?${query}` : ""}`);
-    if (!response.ok) {
-      toast.error("Nao foi possivel carregar logs.");
-      return;
-    }
-    const data = (await response.json()) as { logs: AuditLog[] };
-    setLogs(data.logs);
-  }
 
+    try {
+      const data = await fetchJson<{ logs: AuditLog[] }>(
+        `/api/admin/logs${query ? `?${query}` : ""}`,
+      );
+
+      setLogs(data.logs);
+    } catch (error) {
+      console.error("[useAdminPage] Failed to load logs", error);
+      toast.error("Nao foi possivel carregar logs.");
+    }
+  }
   async function loadScheduleHistory() {
     setScheduleHistoryLoading(true);
+
     const params = new URLSearchParams();
+
     params.set("year", String(historyYear));
     params.set("month", String(historyMonth));
+
     if (historyEmployeeId) params.set("employeeId", historyEmployeeId);
     if (historyRoleId) params.set("roleId", historyRoleId);
     if (historyStatus) params.set("status", historyStatus);
@@ -98,37 +165,38 @@ export function useAdminPage() {
     if (historyOnlyHolidays) params.set("onlyHolidays", "true");
     if (historyQuery.trim()) params.set("q", historyQuery.trim());
 
-    const response = await fetch(`/api/admin/schedule-history?${params.toString()}`);
-    if (!response.ok) {
-      toast.error("Nao foi possivel carregar o historico da escala.");
-      setScheduleHistoryLoading(false);
-      return;
-    }
+    try {
+      const data = await fetchJson<ScheduleHistoryDto>(
+        `/api/admin/schedule-history?${params.toString()}`,
+      );
 
-    const data = (await response.json()) as ScheduleHistoryDto;
-    setScheduleHistory(data);
-    setScheduleHistoryLoading(false);
+      setScheduleHistory(data);
+    } catch (error) {
+      console.error("[useAdminPage] Failed to load schedule history", error);
+      toast.error("Nao foi possivel carregar o historico da escala.");
+    } finally {
+      setScheduleHistoryLoading(false);
+    }
   }
 
   async function createUser() {
-    const response = await fetch("/api/admin/users", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(draft),
-    });
+    try {
+      await fetchJson<{ user: PublicUser }>("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(draft),
+      });
 
-    if (!response.ok) {
-      const data = (await response.json().catch(() => null)) as
-        | { error?: string }
-        | null;
-      toast.error(data?.error ?? "Nao foi possivel criar usuario.");
-      return;
+      setDraft({ username: "", displayName: "", password: "", role: "USER" });
+
+      toast.success("Usuario criado. Repasse login e senha inicial para a pessoa.");
+
+      await loadUsers();
+      await loadLogs();
+    } catch (error) {
+      console.error("[useAdminPage] Failed to create user", error);
+      toast.error("Nao foi possivel criar usuario.");
     }
-
-    setDraft({ username: "", displayName: "", password: "", role: "USER" });
-    toast.success("Usuario criado. Repasse login e senha inicial para a pessoa.");
-    await loadUsers();
-    await loadLogs();
   }
 
   async function patchUser(
