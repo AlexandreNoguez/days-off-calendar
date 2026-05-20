@@ -341,9 +341,9 @@ Dentro de `Administrador`:
 - [x] Registrar geracao automatica de escala.
 - [x] Registrar edicao manual de celulas.
 - [x] Registrar publicacao, reabertura e fechamento da escala.
-- [ ] Registrar alteracoes em lote.
+- [x] Registrar alteracoes em lote.
 - [x] Registrar exportacao XLSX.
-- [ ] Registrar reset/limpeza de dados.
+- [x] Registrar reset/limpeza de dados.
 
 ### Fase 8 - Qualidade e Entrega
 
@@ -353,7 +353,7 @@ Dentro de `Administrador`:
 - [x] Criar teste manual guiado do fluxo completo.
 - [x] Validar permissao admin/user.
 - [x] Validar seed do admin em banco limpo.
-- [ ] Validar persistencia no MongoDB Atlas Free.
+- [x] Validar persistencia no MongoDB Atlas Free.
 - [x] Atualizar README.
 - [x] Documentar variaveis de ambiente.
 - [x] Documentar como criar o primeiro admin.

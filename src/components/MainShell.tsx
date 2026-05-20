@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import Link from "next/link";
 import type { PublicUser } from "../lib/types";
 import {
@@ -25,6 +25,18 @@ import { useMainShell } from "./hooks/useMainShell";
 
 const DRAWER_WIDTH = 256;
 
+function subscribeMounted(): () => void {
+  return () => undefined;
+}
+
+function getMountedSnapshot(): boolean {
+  return true;
+}
+
+function getServerMountedSnapshot(): boolean {
+  return false;
+}
+
 export function MainShell({
   user,
   children,
@@ -34,11 +46,11 @@ export function MainShell({
 }) {
   const shell = useMainShell(user);
 
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useSyncExternalStore(
+    subscribeMounted,
+    getMountedSnapshot,
+    getServerMountedSnapshot,
+  );
 
   const isLightMode = shell.themeMode.mode === "light";
 

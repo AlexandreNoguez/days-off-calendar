@@ -18,6 +18,7 @@ import type {
 import { createDefaultRules } from "../../domain/defaults/defaultRules";
 import { buildWorkbook } from "../../application/usecases/export/buildWorkbook";
 import { validateSchedule } from "../../application/usecases/rules/validateSchedule";
+import { bulkSetAssignments } from "../../application/usecases/schedule/bulkSetAssignments";
 import { generateSuggestedScheduleWithReport } from "../../application/usecases/schedule/generateSuggestedSchedule";
 import { getDaysOfMonth, WEEKDAY_LABELS_PT } from "../../shared/utils/dates";
 import { downloadBytes } from "../../shared/utils/download";
@@ -808,6 +809,74 @@ export function useWorkspacePage() {
     );
   }
 
+  function markAllAsWork() {
+    if (!loadedState) return;
+
+    const result = bulkSetAssignments({
+      assignments: loadedState.schedule.assignments,
+      employeeIds: loadedState.employees.map((employee) => employee.id),
+      dateISOs: dayISOs,
+      status: "WORK",
+    });
+
+    if (result.changedCells === 0) {
+      toast.info("Todas as celulas ja estao marcadas como trabalho.");
+      return;
+    }
+
+    saveSchedule(
+      result.assignments,
+      createLog({
+        type: "BULK_SET",
+        changedCells: result.changedCells,
+        nextStatus: "WORK",
+        message: `Alteracao em lote: ${result.changedCells} celula(s) para Trabalho.`,
+      }),
+      "schedule.bulk.updated",
+    );
+  }
+
+  function resetSchedule() {
+    if (!loadedState) return;
+    if (loadedState.schedule.publication.status !== "DRAFT") {
+      toast.warning("Reabra a escala para limpar o periodo.");
+      return;
+    }
+
+    const changedCells = countChangedCells(loadedState.schedule.assignments, {});
+    if (changedCells === 0 && loadedState.schedule.changeLog.length === 0) {
+      toast.info("A escala do periodo ja esta limpa.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Limpar a escala deste periodo? Esta acao remove as marcacoes e o historico local da escala.",
+    );
+    if (!confirmed) return;
+
+    setPast((items) => [...items, loadedState.schedule.assignments].slice(-50));
+    setFuture([]);
+
+    void savePatch(
+      {
+        schedule: {
+          assignments: {},
+          changeLog: [],
+        },
+        audit: {
+          action: "data.reset",
+          entityType: "schedule",
+          metadata: {
+            scope: "current_period_schedule",
+            period: `${loadedState.plan.year}-${String(loadedState.plan.month).padStart(2, "0")}`,
+            changedCells,
+          },
+        },
+      },
+      "Escala limpa.",
+    );
+  }
+
   function undo() {
     if (!loadedState) return;
     const previous = past[past.length - 1];
@@ -930,6 +999,16 @@ export function useWorkspacePage() {
       canRedo: future.length > 0,
       canExport: Boolean(loadedState && loadedState.employees.length > 0),
       canAccessExport: Boolean(canManage),
+      canBulkEdit: Boolean(
+        loadedState && canManage && publication.status === "DRAFT" && loadedState.employees.length > 0,
+      ),
+      canResetSchedule: Boolean(
+        loadedState &&
+          canManage &&
+          publication.status === "DRAFT" &&
+          (Object.keys(loadedState.schedule.assignments).length > 0 ||
+            loadedState.schedule.changeLog.length > 0),
+      ),
       canPublish: Boolean(
         loadedState &&
           canManage &&
@@ -968,6 +1047,8 @@ export function useWorkspacePage() {
       toggleRule,
       createCustomRule,
       generateSuggestion,
+      markAllAsWork,
+      resetSchedule,
       publishSchedule,
       reopenSchedule,
       closeSchedule,

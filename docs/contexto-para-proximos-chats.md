@@ -174,12 +174,14 @@ Usar nomes de acao consistentes:
 - `plan.updated`
 - `schedule.generated`
 - `schedule.cell.updated`
+- `schedule.bulk.updated`
 - `schedule.undo`
 - `schedule.redo`
 - `schedule.published`
 - `schedule.reopened`
 - `schedule.closed`
 - `schedule.exported`
+- `data.reset`
 
 Logs devem registrar apenas metadados necessarios. Nao guardar senha, tokens ou
 dados sensiveis.
@@ -264,7 +266,7 @@ docs(project): update migration checklist
 
 - [x] Criar indices necessarios no MongoDB.
 - [x] Validar seed do admin em banco limpo.
-- [ ] Validar persistencia no MongoDB Atlas Free.
+- [x] Validar persistencia no MongoDB Atlas Free.
 
 ### Admin e seguranca
 
@@ -275,8 +277,8 @@ docs(project): update migration checklist
 
 ### Auditoria
 
-- [ ] Registrar alteracoes em lote.
-- [ ] Registrar reset/limpeza de dados.
+- [x] Registrar alteracoes em lote.
+- [x] Registrar reset/limpeza de dados.
 
 ### Produto e entrega
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useMemo, useSyncExternalStore, type ReactNode } from "react";
 import { ThemeProvider as MuiThemeProvider, createTheme } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import {
@@ -11,6 +11,7 @@ import {
 
 const STORAGE_KEY = "escala_folgas_theme_mode";
 const COOKIE_KEY = "theme-mode";
+const THEME_MODE_CHANGE_EVENT = "escala-theme-mode-change";
 
 function getStoredMode(): ThemeMode | null {
   if (typeof window === "undefined") return null;
@@ -25,6 +26,27 @@ function saveThemeMode(mode: ThemeMode) {
 
   window.localStorage.setItem(STORAGE_KEY, mode);
   document.cookie = `${COOKIE_KEY}=${mode}; path=/; max-age=31536000; SameSite=Lax`;
+  window.dispatchEvent(new Event(THEME_MODE_CHANGE_EVENT));
+}
+
+function subscribeThemeMode(onStoreChange: () => void): () => void {
+  if (typeof window === "undefined") return () => undefined;
+
+  window.addEventListener("storage", onStoreChange);
+  window.addEventListener(THEME_MODE_CHANGE_EVENT, onStoreChange);
+
+  return () => {
+    window.removeEventListener("storage", onStoreChange);
+    window.removeEventListener(THEME_MODE_CHANGE_EVENT, onStoreChange);
+  };
+}
+
+function getThemeModeSnapshot(): ThemeMode {
+  return getStoredMode() ?? "light";
+}
+
+function getServerThemeModeSnapshot(): ThemeMode {
+  return "light";
 }
 
 type Props = {
@@ -32,20 +54,11 @@ type Props = {
 };
 
 export function AppThemeProvider({ children }: Props) {
-  /**
-   * Important:
-   * The initial value must be the same on server and client.
-   * Do not read localStorage here.
-   */
-  const [mode, setMode] = useState<ThemeMode>("light");
-
-  useEffect(() => {
-    const storedMode = getStoredMode();
-
-    if (storedMode) {
-      setMode(storedMode);
-    }
-  }, []);
+  const mode = useSyncExternalStore(
+    subscribeThemeMode,
+    getThemeModeSnapshot,
+    getServerThemeModeSnapshot,
+  );
 
   const theme = useMemo(
     () =>
@@ -62,16 +75,11 @@ export function AppThemeProvider({ children }: Props) {
     () => ({
       mode,
       toggleMode: () => {
-        setMode((prev) => {
-          const next: ThemeMode = prev === "light" ? "dark" : "light";
-
-          saveThemeMode(next);
-
-          return next;
-        });
+        const next: ThemeMode = mode === "light" ? "dark" : "light";
+        saveThemeMode(next);
       },
     }),
-    [],
+    [mode],
   );
 
   return (

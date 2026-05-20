@@ -32,6 +32,8 @@ import DownloadIcon from "@mui/icons-material/Download";
 import LockIcon from "@mui/icons-material/Lock";
 import LockOpenIcon from "@mui/icons-material/LockOpen";
 import PublishIcon from "@mui/icons-material/Publish";
+import DoneAllIcon from "@mui/icons-material/DoneAll";
+import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import UndoIcon from "@mui/icons-material/Undo";
 import RedoIcon from "@mui/icons-material/Redo";
 import type { RuleConfig } from "../domain/types/rules";
@@ -606,6 +608,23 @@ export function WorkspacePage({ section }: { section: WorkspaceSection }) {
               Reabrir
             </Button>
           )}
+          <Button
+            variant="outlined"
+            startIcon={<DoneAllIcon />}
+            disabled={!state.canBulkEdit || state.saving}
+            onClick={actions.markAllAsWork}
+          >
+            Marcar tudo como Trabalho
+          </Button>
+          <Button
+            variant="outlined"
+            color="error"
+            startIcon={<RestartAltIcon />}
+            disabled={!state.canResetSchedule || state.saving}
+            onClick={actions.resetSchedule}
+          >
+            Limpar escala
+          </Button>
           <Button
             variant="outlined"
             startIcon={<UndoIcon />}
