@@ -306,18 +306,16 @@ Decisoes fechadas nesta rodada:
 
 A migracao tecnica principal esta fechada: Next.js, MongoDB Atlas, auth,
 permissoes, auditoria, modelo de dados e limpeza do legado frontend-only.
-O proximo passo recomendado e continuar o bloco de maior valor para o cliente no
-roadmap de produto.
+O proximo passo recomendado e iniciar o painel de justica/equilibrio.
 
 A ordem recomendada de produto e:
 
-1. Finalizar publicacao de escala com revisao visual/fluxo real.
+1. Criar painel de justica/equilibrio.
 2. Criar tela do colaborador mostrando a escala publicada.
 3. Criar solicitacao de folga com aprovacao do admin.
-4. Criar painel de justica/equilibrio.
-5. Criar cobertura minima por cargo.
-6. Criar alertas inteligentes.
-7. Criar copiar mes anterior.
+4. Criar cobertura minima por cargo.
+5. Criar alertas inteligentes.
+6. Criar copiar mes anterior.
 
 ## Enviar mensagem de commit
 

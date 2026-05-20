@@ -271,7 +271,7 @@ Dentro de `Administrador`:
 - [x] Identificar regras existentes.
 - [x] Definir alvo da migracao.
 - [x] Criar este documento de planejamento.
-- [ ] Revisar decisoes pendentes com o dono do produto.
+- [x] Revisar decisoes pendentes com o dono do produto.
 
 ### Fase 1 - Base Next.js
 

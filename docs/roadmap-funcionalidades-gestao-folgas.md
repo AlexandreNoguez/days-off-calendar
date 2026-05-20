@@ -6,21 +6,30 @@ mapeadas em outro backlog e, aqui, organizar funcionalidades que resolvem dores
 do cliente: reduzir retrabalho, diminuir conversas manuais, dar transparencia e
 melhorar a distribuicao das folgas.
 
+## Proxima Tarefa Priorizada
+
+1. Painel de justica/equilibrio.
+
+Esta e a proxima tarefa a ser executada. O objetivo e dar ao gestor uma visao
+clara de distribuicao de folgas, domingos, feriados e possiveis desequilibrios
+entre colaboradores.
+
 ## Prioridade Recomendada
 
-1. Publicar escala.
+1. Painel de justica/equilibrio.
 2. Tela do colaborador.
 3. Solicitacao de folga.
-4. Painel de justica/equilibrio.
-5. Cobertura minima por cargo.
-6. Alertas inteligentes.
-7. Copiar mes anterior.
+4. Cobertura minima por cargo.
+5. Alertas inteligentes.
+6. Copiar mes anterior.
 
-Essas sete funcionalidades formam o primeiro bloco de evolucao porque criam uma
-ponte clara entre planejamento interno, comunicacao com colaboradores e controle
+Essas funcionalidades formam o proximo bloco de evolucao porque criam uma ponte
+clara entre planejamento interno, comunicacao com colaboradores e controle
 operacional.
 
 ## 1. Publicar Escala
+
+**Status:** implementado.
 
 **Valor para o cliente:** separa rascunho de escala oficial. O gestor pode montar
 e ajustar a escala sem confundir o que ja foi comunicado.
@@ -462,11 +471,12 @@ reescrever regras manualmente.
 
 ## Pendencias Tecnicas Mantidas Fora Deste Roadmap
 
-Estas pendencias continuam importantes, mas nao serao executadas agora:
+Estas pendencias tecnicas foram resolvidas na migracao principal e ficam aqui
+apenas como registro historico:
 
-- Testes automatizados e fixtures.
-- Indices MongoDB e validacao de seed em banco limpo.
-- Reset/troca de senha pelo Admin.
-- Politica definitiva de permissao entre `USER` e `ADMIN`.
-- Auditoria de alteracoes em lote/reset, caso esses fluxos sejam mantidos.
-- Checklist manual de QA, validacao em MongoDB Atlas e deploy.
+- [x] Testes automatizados e fixtures basicas.
+- [x] Indices MongoDB e validacao de seed em banco limpo.
+- [x] Reset/troca de senha pelo Admin.
+- [x] Politica definitiva de permissao entre `USER` e `ADMIN`.
+- [x] Auditoria de alteracoes em lote/reset.
+- [x] Checklist manual de QA, validacao em MongoDB Atlas e deploy.

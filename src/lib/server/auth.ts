@@ -48,6 +48,17 @@ function publicUser(user: UserDocument): PublicUser {
   };
 }
 
+function getInitialAdminPassword(): string {
+  const password = process.env.ADMIN_PASSWORD?.trim();
+  if (password) return password;
+
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("ADMIN_PASSWORD is required to create the initial admin user in production.");
+  }
+
+  return "admin123";
+}
+
 export function createSessionToken(user: PublicUser): string {
   const payload: SessionPayload = {
     userId: user.id,
@@ -144,11 +155,11 @@ export async function ensureAdminUser(): Promise<void> {
 
   const username = getOptionalEnv("ADMIN_USERNAME", "admin").trim();
   const displayName = getOptionalEnv("ADMIN_DISPLAY_NAME", "Administrador").trim();
-  const password = getOptionalEnv("ADMIN_PASSWORD", "admin123");
 
   const existingAdmin = await users.findOne({ username });
   if (existingAdmin) return;
 
+  const password = getInitialAdminPassword();
   const now = new Date().toISOString();
   await users.insertOne({
     id: randomUUID(),

@@ -28,7 +28,9 @@ ADMIN_DISPLAY_NAME=Administrador
 ```
 
 O primeiro admin e criado automaticamente no primeiro login caso ainda nao exista
-usuario com `ADMIN_USERNAME`. Tambem e possivel criar manualmente:
+usuario com `ADMIN_USERNAME`. Em producao, `ADMIN_PASSWORD` deve estar definido;
+o fallback local `admin123` nao e aceito para criacao automatica em producao.
+Tambem e possivel criar manualmente:
 
 ```bash
 npm run seed:admin

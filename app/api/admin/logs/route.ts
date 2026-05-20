@@ -7,30 +7,14 @@ export const runtime = "nodejs";
 
 export async function GET(request: Request) {
   try {
-    console.log("[api/admin/logs] route reached");
-
-    const admin = await requireAdminUser().catch((error) => {
-      console.error("[api/admin/logs] requireAdminUser failed", {
-        message: error instanceof Error ? error.message : String(error),
-      });
-
-      return null;
-    });
+    const admin = await requireAdminUser().catch(() => null);
 
     if (!admin) {
-      console.log("[api/admin/logs] returning 403 json");
-
       return NextResponse.json(
         { error: "Acesso negado." },
         { status: 403 },
       );
     }
-
-    console.log("[api/admin/logs] admin ok", {
-      userId: admin.id,
-      username: admin.username,
-      role: admin.role,
-    });
 
     const url = new URL(request.url);
     const action = url.searchParams.get("action");

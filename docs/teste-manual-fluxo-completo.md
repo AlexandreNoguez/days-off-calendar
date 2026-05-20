@@ -280,15 +280,15 @@ Observacoes:
 
 ## Resultado Final
 
-- Responsavel:
-- Data:
-- Ambiente:
-- Browser:
-- Commit/branch:
-- Resultado geral: `[ ] Aprovado` `[ ] Aprovado com ressalvas` `[ ] Reprovado`
+- Responsavel: Dono do produto
+- Data: 2026-05-20
+- Ambiente: Validado manualmente
+- Browser: Validado manualmente
+- Commit/branch: Validado no estado atual do projeto
+- Resultado geral: `[x] Aprovado` `[ ] Aprovado com ressalvas` `[ ] Reprovado`
 
 Resumo:
 
 ```text
-
+Fluxo completo validado pelo dono do produto.
 ```
