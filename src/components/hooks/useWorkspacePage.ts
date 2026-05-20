@@ -213,6 +213,10 @@ function publicationDescription(publication: SchedulePublication): string {
   return "Ainda nao publicada";
 }
 
+function currentTimestamp(): string {
+  return new Date().toISOString();
+}
+
 export function useWorkspacePage() {
   const [loadedState, setLoadedState] = useState<AppStateDto | null>(null);
   const [loading, setLoading] = useState(true);
@@ -456,11 +460,20 @@ export function useWorkspacePage() {
     if (!loadedState) return;
     const name = roleDraft.trim();
     if (!name) return;
+    const timestamp = currentTimestamp();
 
     setRoleDraft("");
     void savePatch(
       {
-        roles: [...loadedState.roles, { id: newId("role") as RoleId, name }],
+        roles: [
+          ...loadedState.roles,
+          {
+            id: newId("role") as RoleId,
+            name,
+            createdAt: timestamp,
+            updatedAt: timestamp,
+          },
+        ],
         audit: { action: "role.created", entityType: "role", metadata: { name } },
       },
       "Cargo criado.",
@@ -486,6 +499,7 @@ export function useWorkspacePage() {
 
   function createEmployee() {
     if (!loadedState || !employeeDraft.name.trim() || !employeeDraft.roleId) return;
+    const timestamp = currentTimestamp();
 
     const employee: Employee = {
       id: newId("emp") as EmployeeId,
@@ -495,6 +509,8 @@ export function useWorkspacePage() {
       holidayCreditYear: loadedState.plan.year,
       holidayOffUsed: false,
       notes: employeeDraft.notes.trim() || undefined,
+      createdAt: timestamp,
+      updatedAt: timestamp,
     };
 
     setEmployeeDraft({
@@ -537,7 +553,7 @@ export function useWorkspacePage() {
   function restoreDefaultRules() {
     void savePatch(
       {
-        rules: createDefaultRules(),
+        rules: createDefaultRules(currentTimestamp()),
         audit: { action: "rules.restored", entityType: "rule" },
       },
       "Regras padrao restauradas.",
@@ -546,10 +562,11 @@ export function useWorkspacePage() {
 
   function toggleRule(ruleId: RuleConfig["id"], enabled: boolean) {
     if (!loadedState) return;
+    const timestamp = currentTimestamp();
 
     void savePatch({
       rules: loadedState.rules.map((item) =>
-        item.id === ruleId ? { ...item, enabled } : item,
+        item.id === ruleId ? { ...item, enabled, updatedAt: timestamp } : item,
       ),
       audit: {
         action: "rule.updated",
@@ -563,6 +580,7 @@ export function useWorkspacePage() {
   function buildCustomRule(): RuleConfig | null {
     if (!loadedState) return null;
     const now = Date.now();
+    const timestamp = currentTimestamp();
 
     if (ruleDraft.template === "pair_cannot_both_off") {
       if (!ruleDraft.employeeAId || !ruleDraft.employeeBId) {
@@ -588,6 +606,8 @@ export function useWorkspacePage() {
         severity: ruleDraft.severity,
         title: `${a?.name ?? "A"} e ${b?.name ?? "B"} nao podem folgar juntos`,
         description: "Regra personalizada criada no front-end.",
+        createdAt: timestamp,
+        updatedAt: timestamp,
         params: {
           customTemplate: "pair_cannot_both_off",
           a: ruleDraft.employeeAId,
@@ -613,6 +633,8 @@ export function useWorkspacePage() {
         severity: ruleDraft.severity,
         title: `Substituicao obrigatoria por ${substitute?.name ?? "colaborador"}`,
         description: "Regra personalizada criada no front-end.",
+        createdAt: timestamp,
+        updatedAt: timestamp,
         params: {
           customTemplate: "substitution_required",
           substituteId: ruleDraft.substituteId,
@@ -634,6 +656,8 @@ export function useWorkspacePage() {
       severity: ruleDraft.severity,
       title: `${ruleDraft.sundayOffCount} folga(s) no domingo para ${role?.name ?? "cargo"}`,
       description: "Regra personalizada criada no front-end.",
+      createdAt: timestamp,
+      updatedAt: timestamp,
       params: {
         customTemplate: "role_one_off_each_sunday",
         roleId: ruleDraft.roleId,

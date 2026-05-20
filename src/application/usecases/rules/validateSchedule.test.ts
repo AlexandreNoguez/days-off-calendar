@@ -226,6 +226,7 @@ describe("generateSuggestedSchedule", () => {
   });
 
   it("repairs generated hard conflicts by retrying candidates from the conflict list", () => {
+    const timestamp = "2026-01-01T00:00:00.000Z";
     const employees = [
       {
         id: "emp_a",
@@ -234,6 +235,8 @@ describe("generateSuggestedSchedule", () => {
         alwaysOffSunday: true,
         holidayCreditYear: 2026,
         holidayOffUsed: false,
+        createdAt: timestamp,
+        updatedAt: timestamp,
       },
       {
         id: "emp_b",
@@ -242,6 +245,8 @@ describe("generateSuggestedSchedule", () => {
         alwaysOffSunday: true,
         holidayCreditYear: 2026,
         holidayOffUsed: false,
+        createdAt: timestamp,
+        updatedAt: timestamp,
       },
     ];
     const rules: RuleConfig[] = [
@@ -251,6 +256,8 @@ describe("generateSuggestedSchedule", () => {
         title: "A e B não podem folgar juntas",
         enabled: true,
         severity: "HARD",
+        createdAt: timestamp,
+        updatedAt: timestamp,
         params: {
           customTemplate: "pair_cannot_both_off",
           a: "emp_a",

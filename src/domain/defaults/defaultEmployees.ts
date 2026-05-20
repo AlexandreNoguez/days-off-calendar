@@ -1,6 +1,8 @@
 import type { Employee } from "../types/employees";
 import { DEFAULT_ROLE_IDS } from "./defaultRoles";
 
+const DEFAULT_TIMESTAMP = "1970-01-01T00:00:00.000Z";
+
 export const DEFAULT_EMPLOYEE_IDS = {
   // Cooks
   gustavo: "emp_gustavo",
@@ -26,7 +28,10 @@ export const DEFAULT_EMPLOYEE_IDS = {
   tales: "emp_tales",
 } as const;
 
-export function createDefaultEmployees(year: number): Employee[] {
+export function createDefaultEmployees(
+  year: number,
+  timestamp = DEFAULT_TIMESTAMP,
+): Employee[] {
   return [
     // Cooks
     {
@@ -36,6 +41,8 @@ export function createDefaultEmployees(year: number): Employee[] {
       alwaysOffSunday: false,
       holidayCreditYear: year,
       holidayOffUsed: false,
+      createdAt: timestamp,
+      updatedAt: timestamp,
     },
     {
       id: DEFAULT_EMPLOYEE_IDS.milena,
@@ -44,6 +51,8 @@ export function createDefaultEmployees(year: number): Employee[] {
       alwaysOffSunday: false,
       holidayCreditYear: year,
       holidayOffUsed: false,
+      createdAt: timestamp,
+      updatedAt: timestamp,
     },
     {
       id: DEFAULT_EMPLOYEE_IDS.dyson,
@@ -52,6 +61,8 @@ export function createDefaultEmployees(year: number): Employee[] {
       alwaysOffSunday: false,
       holidayCreditYear: year,
       holidayOffUsed: false,
+      createdAt: timestamp,
+      updatedAt: timestamp,
     },
     {
       id: DEFAULT_EMPLOYEE_IDS.alex,
@@ -60,6 +71,8 @@ export function createDefaultEmployees(year: number): Employee[] {
       alwaysOffSunday: false,
       holidayCreditYear: year,
       holidayOffUsed: false,
+      createdAt: timestamp,
+      updatedAt: timestamp,
     },
 
     // Laundry
@@ -70,6 +83,8 @@ export function createDefaultEmployees(year: number): Employee[] {
       alwaysOffSunday: false,
       holidayCreditYear: year,
       holidayOffUsed: false,
+      createdAt: timestamp,
+      updatedAt: timestamp,
     },
 
     // Pot washer
@@ -80,6 +95,8 @@ export function createDefaultEmployees(year: number): Employee[] {
       alwaysOffSunday: false,
       holidayCreditYear: year,
       holidayOffUsed: false,
+      createdAt: timestamp,
+      updatedAt: timestamp,
     },
 
     // Assistants
@@ -90,6 +107,8 @@ export function createDefaultEmployees(year: number): Employee[] {
       alwaysOffSunday: false,
       holidayCreditYear: year,
       holidayOffUsed: false,
+      createdAt: timestamp,
+      updatedAt: timestamp,
     },
     {
       id: DEFAULT_EMPLOYEE_IDS.lidriel,
@@ -98,6 +117,8 @@ export function createDefaultEmployees(year: number): Employee[] {
       alwaysOffSunday: false,
       holidayCreditYear: year,
       holidayOffUsed: false,
+      createdAt: timestamp,
+      updatedAt: timestamp,
     },
     {
       id: DEFAULT_EMPLOYEE_IDS.maria,
@@ -106,6 +127,8 @@ export function createDefaultEmployees(year: number): Employee[] {
       alwaysOffSunday: false,
       holidayCreditYear: year,
       holidayOffUsed: false,
+      createdAt: timestamp,
+      updatedAt: timestamp,
     },
     {
       id: DEFAULT_EMPLOYEE_IDS.elaine,
@@ -114,6 +137,8 @@ export function createDefaultEmployees(year: number): Employee[] {
       alwaysOffSunday: false,
       holidayCreditYear: year,
       holidayOffUsed: false,
+      createdAt: timestamp,
+      updatedAt: timestamp,
     },
     {
       id: DEFAULT_EMPLOYEE_IDS.josana,
@@ -122,6 +147,8 @@ export function createDefaultEmployees(year: number): Employee[] {
       alwaysOffSunday: false,
       holidayCreditYear: year,
       holidayOffUsed: false,
+      createdAt: timestamp,
+      updatedAt: timestamp,
     },
     {
       id: DEFAULT_EMPLOYEE_IDS.luis,
@@ -130,6 +157,8 @@ export function createDefaultEmployees(year: number): Employee[] {
       alwaysOffSunday: false,
       holidayCreditYear: year,
       holidayOffUsed: false,
+      createdAt: timestamp,
+      updatedAt: timestamp,
     },
 
     // Stock assistant (Tales always off on Sundays)
@@ -141,6 +170,8 @@ export function createDefaultEmployees(year: number): Employee[] {
       holidayCreditYear: year,
       holidayOffUsed: false,
       notes: "Trabalha de segunda a sábado, folga sempre aos domingos.",
+      createdAt: timestamp,
+      updatedAt: timestamp,
     },
   ];
 }

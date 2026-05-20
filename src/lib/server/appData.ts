@@ -1,5 +1,10 @@
 import { randomUUID } from "crypto";
-import type { Collection, OptionalUnlessRequiredId } from "mongodb";
+import type {
+  Collection,
+  Filter,
+  OptionalUnlessRequiredId,
+  UpdateFilter,
+} from "mongodb";
 import { createDefaultSeed } from "../../domain/defaults/defaultSeed";
 import type { Employee, Role } from "../../domain/types/employees";
 import type { RuleConfig } from "../../domain/types/rules";
@@ -48,6 +53,34 @@ async function replaceCollection<T extends { id: string }>(
   if (documents.length > 0) {
     await collection.insertMany(documents as OptionalUnlessRequiredId<T>[]);
   }
+}
+
+function withTimestamps<T extends { createdAt?: string; updatedAt?: string }>(
+  documents: T[],
+  updatedAt: string,
+): Array<T & { createdAt: string; updatedAt: string }> {
+  return documents.map((document) => ({
+    ...document,
+    createdAt: document.createdAt ?? updatedAt,
+    updatedAt: document.updatedAt ?? updatedAt,
+  }));
+}
+
+async function ensureDocumentTimestamps<
+  T extends { createdAt?: string; updatedAt?: string },
+>(
+  collection: Collection<T>,
+  updatedAt: string,
+): Promise<void> {
+  await collection.updateMany(
+    {
+      $or: [
+        { createdAt: { $exists: false } },
+        { updatedAt: { $exists: false } },
+      ],
+    } as Filter<T>,
+    { $set: { createdAt: updatedAt, updatedAt } } as UpdateFilter<T>,
+  );
 }
 
 function buildEmployeeSnapshots(
@@ -146,8 +179,8 @@ export async function ensureDefaultAppData(): Promise<void> {
   const current = new Date();
   const year = current.getFullYear();
   const month = current.getMonth() + 1;
-  const seed = createDefaultSeed(year);
   const updatedAt = nowISO();
+  const seed = createDefaultSeed(year, updatedAt);
 
   const settings = db.collection<AppSettings>("settings");
   const roles = db.collection<Role>("roles");
@@ -163,6 +196,7 @@ export async function ensureDefaultAppData(): Promise<void> {
         year,
         month,
         holidays: {},
+        createdAt: updatedAt,
         updatedAt,
       },
     },
@@ -188,6 +222,14 @@ export async function ensureDefaultAppData(): Promise<void> {
       await rules.insertMany(missingDefaultRules);
     }
   }
+
+  await Promise.all([
+    ensureDocumentTimestamps(settings, updatedAt),
+    ensureDocumentTimestamps(roles, updatedAt),
+    ensureDocumentTimestamps(employees, updatedAt),
+    ensureDocumentTimestamps(rules, updatedAt),
+    ensureDocumentTimestamps(schedules, updatedAt),
+  ]);
 
   const settingsDocument = await settings.findOne({ id: "main" });
   const activeYear = settingsDocument?.year ?? year;
@@ -280,15 +322,24 @@ export async function saveAppStatePatch(
   }
 
   if (patch.roles) {
-    await replaceCollection(db.collection<Role>("roles"), patch.roles);
+    await replaceCollection(
+      db.collection<Role>("roles"),
+      withTimestamps(patch.roles, updatedAt),
+    );
   }
 
   if (patch.employees) {
-    await replaceCollection(db.collection<Employee>("employees"), patch.employees);
+    await replaceCollection(
+      db.collection<Employee>("employees"),
+      withTimestamps(patch.employees, updatedAt),
+    );
   }
 
   if (patch.rules) {
-    await replaceCollection(db.collection<RuleConfig>("rules"), patch.rules);
+    await replaceCollection(
+      db.collection<RuleConfig>("rules"),
+      withTimestamps(patch.rules, updatedAt),
+    );
   }
 
   if (patch.schedule) {

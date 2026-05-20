@@ -2,10 +2,13 @@ import type { RuleConfig, RuleSeverity, DefaultRuleKey } from "../types/rules";
 import { DEFAULT_ROLE_IDS } from "./defaultRoles";
 import { DEFAULT_EMPLOYEE_IDS } from "./defaultEmployees";
 
+const DEFAULT_TIMESTAMP = "1970-01-01T00:00:00.000Z";
+
 function createRule(input: {
   key: DefaultRuleKey;
   title: string;
   severity: RuleSeverity;
+  timestamp: string;
   enabled?: boolean;
   description?: string;
   params?: Record<string, unknown>;
@@ -17,17 +20,20 @@ function createRule(input: {
     severity: input.severity,
     enabled: input.enabled ?? true,
     description: input.description,
+    createdAt: input.timestamp,
+    updatedAt: input.timestamp,
     params: input.params ?? {},
   };
 }
 
-export function createDefaultRules(): RuleConfig[] {
+export function createDefaultRules(timestamp = DEFAULT_TIMESTAMP): RuleConfig[] {
   return [
     // Tales: always OFF on Sundays
     createRule({
       key: "fixed_off_sunday_tales",
       title: "Tales folga sempre aos domingos",
       severity: "HARD",
+      timestamp,
       params: {
         employeeId: DEFAULT_EMPLOYEE_IDS.tales,
       },
@@ -40,6 +46,7 @@ export function createDefaultRules(): RuleConfig[] {
       key: "cook_rotation_one_off_each_sunday",
       title: "Rodízio de domingo dos cozinheiros (1 de folga por domingo)",
       severity: "HARD",
+      timestamp,
       params: {
         cookRoleId: DEFAULT_ROLE_IDS.cook,
         exactlyOffCount: 1,
@@ -53,6 +60,7 @@ export function createDefaultRules(): RuleConfig[] {
       key: "cook_if_sunday_off_no_week_off",
       title: "Cozinheiro que folga no domingo não pode folgar durante a semana",
       severity: "HARD",
+      timestamp,
       params: {
         cookRoleId: DEFAULT_ROLE_IDS.cook,
       },
@@ -63,6 +71,7 @@ export function createDefaultRules(): RuleConfig[] {
       key: "cook_if_sunday_work_requires_week_off",
       title: "Cozinheiro que trabalha no domingo deve folgar 1 dia na semana",
       severity: "HARD",
+      timestamp,
       params: {
         cookRoleId: DEFAULT_ROLE_IDS.cook,
         requiredWeekdayOffCount: 1,
@@ -74,6 +83,7 @@ export function createDefaultRules(): RuleConfig[] {
       key: "cook_no_monday_off_after_sunday_off",
       title: "Se folgou domingo, não pode folgar na segunda seguinte",
       severity: "HARD",
+      timestamp,
       params: {
         cookRoleId: DEFAULT_ROLE_IDS.cook,
       },
@@ -84,6 +94,7 @@ export function createDefaultRules(): RuleConfig[] {
       key: "assistant_if_sunday_off_no_week_off",
       title: "Auxiliar que folga no domingo não pode folgar durante a semana",
       severity: "HARD",
+      timestamp,
       params: {
         assistantRoleId: DEFAULT_ROLE_IDS.assistant,
       },
@@ -94,6 +105,7 @@ export function createDefaultRules(): RuleConfig[] {
       key: "assistant_if_sunday_work_requires_week_off",
       title: "Auxiliar que trabalha no domingo deve folgar 1 dia na semana",
       severity: "HARD",
+      timestamp,
       params: {
         assistantRoleId: DEFAULT_ROLE_IDS.assistant,
         requiredWeekdayOffCount: 1,
@@ -105,6 +117,7 @@ export function createDefaultRules(): RuleConfig[] {
       key: "assistant_no_monday_off_after_sunday_off",
       title: "Auxiliar: se folgou domingo, não pode folgar na segunda seguinte",
       severity: "HARD",
+      timestamp,
       params: {
         assistantRoleId: DEFAULT_ROLE_IDS.assistant,
       },
@@ -115,6 +128,7 @@ export function createDefaultRules(): RuleConfig[] {
       key: "assistant_weekday_off_must_be_fixed",
       title: "Auxiliar deve manter folga fixa no mesmo dia da semana",
       severity: "HARD",
+      timestamp,
       params: {
         assistantRoleId: DEFAULT_ROLE_IDS.assistant,
       },
@@ -125,6 +139,7 @@ export function createDefaultRules(): RuleConfig[] {
       key: "laundry_one_sunday_off_per_month",
       title: "Lavanderia tem direito a 1 folga no domingo por mês",
       severity: "HARD",
+      timestamp,
       params: {
         employeeId: DEFAULT_EMPLOYEE_IDS.ingrid,
         exactlyOffCount: 1,
@@ -136,6 +151,7 @@ export function createDefaultRules(): RuleConfig[] {
       key: "pot_washer_one_sunday_off_per_month",
       title: "Paneleiro tem direito a 1 folga no domingo por mês",
       severity: "HARD",
+      timestamp,
       params: {
         employeeId: DEFAULT_EMPLOYEE_IDS.fernando,
         exactlyOffCount: 1,
@@ -147,6 +163,7 @@ export function createDefaultRules(): RuleConfig[] {
       key: "max_six_consecutive_work_days",
       title: "Máximo de 6 dias consecutivos de trabalho",
       severity: "HARD",
+      timestamp,
       params: {
         maxConsecutiveWorkDays: 6,
       },
@@ -158,6 +175,7 @@ export function createDefaultRules(): RuleConfig[] {
       key: "monthly_off_count_between_4_and_5",
       title: "Cada colaborador deve ter entre 4 e 5 folgas no mês",
       severity: "HARD",
+      timestamp,
       params: {
         minMonthlyOffCount: 4,
         maxMonthlyOffCount: 5,
@@ -170,6 +188,7 @@ export function createDefaultRules(): RuleConfig[] {
       key: "no_two_consecutive_off_days",
       title: "Não permitir 2 dias consecutivos de folga",
       severity: "HARD",
+      timestamp,
       params: {},
       description:
         "Evita duas folgas em dias seguidos para o mesmo colaborador.",
@@ -180,6 +199,7 @@ export function createDefaultRules(): RuleConfig[] {
       key: "no_coincidence_clarice_ingrid_elaine",
       title: "Folgas de Clarice, Ingrid e Elaine não podem coincidir",
       severity: "HARD",
+      timestamp,
       params: {
         employeeIds: [
           DEFAULT_EMPLOYEE_IDS.clarice,
@@ -194,6 +214,7 @@ export function createDefaultRules(): RuleConfig[] {
       key: "elaine_not_same_day_josana",
       title: "Elaine não pode folgar no mesmo dia da Josana",
       severity: "HARD",
+      timestamp,
       params: {
         a: DEFAULT_EMPLOYEE_IDS.elaine,
         b: DEFAULT_EMPLOYEE_IDS.josana,
@@ -205,6 +226,7 @@ export function createDefaultRules(): RuleConfig[] {
       key: "elaine_not_same_day_luis",
       title: "Elaine não pode folgar no mesmo dia do Luís",
       severity: "HARD",
+      timestamp,
       params: {
         a: DEFAULT_EMPLOYEE_IDS.elaine,
         b: DEFAULT_EMPLOYEE_IDS.luis,
@@ -217,6 +239,7 @@ export function createDefaultRules(): RuleConfig[] {
       title:
         "Quando Josana ou Luís folgam, Elaine deve trabalhar (substituição)",
       severity: "HARD",
+      timestamp,
       params: {
         substituteId: DEFAULT_EMPLOYEE_IDS.elaine,
         substitutedIds: [
@@ -231,6 +254,7 @@ export function createDefaultRules(): RuleConfig[] {
       key: "if_maria_off_then_lidriel_must_work",
       title: "Quando Maria folga, Lidriel não pode folgar",
       severity: "HARD",
+      timestamp,
       params: {
         ifOffEmployeeId: DEFAULT_EMPLOYEE_IDS.maria,
         mustWorkEmployeeId: DEFAULT_EMPLOYEE_IDS.lidriel,
@@ -242,6 +266,7 @@ export function createDefaultRules(): RuleConfig[] {
       key: "ingrid_and_fernando_cannot_both_off",
       title: "Folgas de Ingrid e Fernando não podem coincidir",
       severity: "HARD",
+      timestamp,
       params: {
         a: DEFAULT_EMPLOYEE_IDS.ingrid,
         b: DEFAULT_EMPLOYEE_IDS.fernando,
@@ -253,6 +278,7 @@ export function createDefaultRules(): RuleConfig[] {
       key: "annual_holiday_credit_one_per_person",
       title: "Cada pessoa tem direito a 1 folga em feriado por ano",
       severity: "HARD",
+      timestamp,
       params: {
         creditPerYear: 1,
       },
@@ -264,6 +290,7 @@ export function createDefaultRules(): RuleConfig[] {
       title: "Evitar folgar sempre no mesmo dia da semana",
       severity: "SOFT",
       enabled: true,
+      timestamp,
       params: {
         minOccurrences: 3,
         includeSundays: false,

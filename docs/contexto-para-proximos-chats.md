@@ -21,9 +21,13 @@ devem ser mantidos e a checklist viva do que ainda falta.
 - Usuario comum consulta a escala, mas nao pode alterar setup, cadastros,
   regras, exportacao administrativa ou a propria escala.
 - Regras, colaboradores, cargos, plano, feriados e escala sao persistidos via backend.
+- Modelos principais usam timestamps (`createdAt`/`updatedAt`) e o bootstrap do
+  banco normaliza documentos antigos que ainda nao tinham esses campos.
 - Escala possui status de publicacao: rascunho, publicada ou fechada.
 - Escala publicada/fechada fica bloqueada para edicao ate ser reaberta.
 - Dark mode restaurado e persistido no browser via `localStorage`.
+- Legado frontend-only removido: nao ha mais React Router, Vite app, Zustand
+  stores ou persistencia local como caminho de produto.
 
 ## Mapa de Arquitetura
 
@@ -267,6 +271,8 @@ docs(project): update migration checklist
 - [x] Criar indices necessarios no MongoDB.
 - [x] Validar seed do admin em banco limpo.
 - [x] Validar persistencia no MongoDB Atlas Free.
+- [x] Fechar modelo de dados implementado.
+- [x] Remover legado Vite/localStorage/Zustand.
 
 ### Admin e seguranca
 
@@ -298,14 +304,10 @@ Decisoes fechadas nesta rodada:
 
 ## Proximo Passo Recomendado
 
-As primeiras validacoes automatizadas de regras ja existem e o fluxo admin/user
-foi validado em ambiente local. O proximo passo tecnico recomendado e apontar o
-`.env` para o MongoDB Atlas Free, executar o roteiro em
-`docs/teste-manual-fluxo-completo.md` nesse ambiente e registrar qualquer falha
-antes de seguir para novas funcionalidades.
-
-Depois disso, continuar o bloco de maior valor para o cliente no roadmap de
-produto.
+A migracao tecnica principal esta fechada: Next.js, MongoDB Atlas, auth,
+permissoes, auditoria, modelo de dados e limpeza do legado frontend-only.
+O proximo passo recomendado e continuar o bloco de maior valor para o cliente no
+roadmap de produto.
 
 A ordem recomendada de produto e:
 

@@ -75,115 +75,119 @@ O objetivo e manter todas as regras ja definidas, preservar o fluxo validado do 
 - [x] Esconder menu administrativo para usuarios comuns.
 - [x] Bloquear chamadas server-side administrativas para usuarios nao-admin.
 
-## Modelo de Dados Proposto
+## Modelo de Dados Implementado
 
 ### User
 
-- [ ] `id`
-- [ ] `username`
-- [ ] `displayName`
-- [ ] `passwordHash`
-- [ ] `role`: `ADMIN` ou `USER`
-- [ ] `active`
-- [ ] `createdByUserId`
-- [ ] `createdAt`
-- [ ] `updatedAt`
-- [ ] `lastLoginAt`
+- [x] `id`
+- [x] `username`
+- [x] `displayName`
+- [x] `passwordHash`
+- [x] `role`: `ADMIN` ou `USER`
+- [x] `active`
+- [x] `createdByUserId`
+- [x] `createdAt`
+- [x] `updatedAt`
+- [x] `lastLoginAt`
 
 ### AuditLog
 
-- [ ] `id`
-- [ ] `userId`
-- [ ] `usernameSnapshot`
-- [ ] `action`
-- [ ] `entityType`
-- [ ] `entityId`
-- [ ] `metadata`
-- [ ] `ip`
-- [ ] `userAgent`
-- [ ] `createdAt`
+- [x] `id`
+- [x] `userId`
+- [x] `usernameSnapshot`
+- [x] `action`
+- [x] `entityType`
+- [x] `entityId`
+- [x] `metadata`
+- [x] `ip`
+- [x] `userAgent`
+- [x] `createdAt`
 
 Exemplos de `action`:
 
-- [ ] `auth.login.success`
-- [ ] `auth.login.failed`
-- [ ] `auth.logout`
-- [ ] `user.created`
-- [ ] `user.updated`
-- [ ] `employee.created`
-- [ ] `employee.updated`
-- [ ] `employee.deleted`
-- [ ] `role.created`
-- [ ] `role.updated`
-- [ ] `role.deleted`
-- [ ] `rule.created`
-- [ ] `rule.updated`
-- [ ] `rule.deleted`
-- [ ] `schedule.generated`
-- [ ] `schedule.cell.updated`
-- [ ] `schedule.published`
-- [ ] `schedule.reopened`
-- [ ] `schedule.closed`
-- [ ] `schedule.bulk.updated`
-- [ ] `schedule.exported`
-- [ ] `data.reset`
+- [x] `auth.login.success`
+- [x] `auth.login.failed`
+- [x] `auth.logout`
+- [x] `user.created`
+- [x] `user.updated`
+- [x] `employee.created`
+- [x] `employee.updated`
+- [x] `employee.deleted`
+- [x] `role.created`
+- [x] `role.updated`
+- [x] `role.deleted`
+- [x] `rule.created`
+- [x] `rule.updated`
+- [x] `rule.deleted`
+- [x] `schedule.generated`
+- [x] `schedule.cell.updated`
+- [x] `schedule.published`
+- [x] `schedule.reopened`
+- [x] `schedule.closed`
+- [x] `schedule.bulk.updated`
+- [x] `schedule.exported`
+- [x] `data.reset`
 
 ### Role
 
-- [ ] `id`
-- [ ] `name`
-- [ ] `createdAt`
-- [ ] `updatedAt`
+- [x] `id`
+- [x] `name`
+- [x] `createdAt`
+- [x] `updatedAt`
 
 ### Employee
 
-- [ ] `id`
-- [ ] `name`
-- [ ] `roleId`
-- [ ] `alwaysOffSunday`
-- [ ] `holidayCreditYear`
-- [ ] `holidayOffUsed`
-- [ ] `notes`
-- [ ] `createdAt`
-- [ ] `updatedAt`
+- [x] `id`
+- [x] `name`
+- [x] `roleId`
+- [x] `alwaysOffSunday`
+- [x] `holidayCreditYear`
+- [x] `holidayOffUsed`
+- [x] `notes`
+- [x] `createdAt`
+- [x] `updatedAt`
 
 ### RuleConfig
 
-- [ ] `id`
-- [ ] `key`
-- [ ] `enabled`
-- [ ] `severity`
-- [ ] `title`
-- [ ] `description`
-- [ ] `params`
-- [ ] `createdAt`
-- [ ] `updatedAt`
+- [x] `id`
+- [x] `key`
+- [x] `enabled`
+- [x] `severity`
+- [x] `title`
+- [x] `description`
+- [x] `params`
+- [x] `createdAt`
+- [x] `updatedAt`
 
-### Plan
+### Plan/AppSettings
 
-- [ ] `id`
-- [ ] `year`
-- [ ] `month`
-- [ ] `createdAt`
-- [ ] `updatedAt`
+- [x] `id`
+- [x] `year`
+- [x] `month`
+- [x] `holidays`
+- [x] `createdAt`
+- [x] `updatedAt`
 
 ### Calendar/Holiday
 
-- [ ] `id`
-- [ ] `dateISO`
-- [ ] `label`
-- [ ] `createdAt`
-- [ ] `updatedAt`
+- [x] Feriados implementados como `holidays: Record<DateISO, true>` dentro de `AppSettings`.
+- [x] `dateISO`
+- [x] `updatedAt` herdado do documento `AppSettings`
+- [x] `label` nao implementado nesta fase, porque a regra atual precisa apenas marcar data como feriado.
 
 ### Schedule
 
-- [ ] `id`
-- [ ] `year`
-- [ ] `month`
-- [ ] `assignments`
-- [ ] `changeLog`
-- [ ] `createdAt`
-- [ ] `updatedAt`
+- [x] `id`
+- [x] `periodKey`
+- [x] `year`
+- [x] `month`
+- [x] `assignments`
+- [x] `changeLog`
+- [x] `employeeSnapshots`
+- [x] `holidaysSnapshot`
+- [x] `publication`
+- [x] `createdAt`
+- [x] `updatedAt`
 
 ## Regras que Devem Ser Preservadas
 

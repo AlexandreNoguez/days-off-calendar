@@ -55,6 +55,7 @@ export type AppSettings = {
   year: number;
   month: number;
   holidays: Record<DateISO, true>;
+  createdAt: string;
   updatedAt: string;
 };
 
@@ -78,7 +79,7 @@ export type ScheduleDocument = {
   >;
   holidaysSnapshot?: Record<DateISO, true>;
   publication?: SchedulePublication;
-  createdAt?: string;
+  createdAt: string;
   updatedAt: string;
 };
 

@@ -35,6 +35,8 @@ export type RuleConfigBase = {
   severity: RuleSeverity;
   title: string;
   description?: string;
+  createdAt: string;
+  updatedAt: string;
 };
 
 // Keep params flexible for MVP; we can strongly type later.

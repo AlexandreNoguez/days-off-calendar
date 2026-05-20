@@ -1,21 +1,20 @@
-# Escala de Folgas — Documentação do Projeto
+# Escala de Folgas
 
-Aplicação para montar uma escala de folgas com regras (HARD/SOFT), evitar desfalques, registrar ações de usuários e permitir exportação para **XLSX**.
+Aplicacao para montar escala de folgas com regras HARD/SOFT, controle de
+permissoes, auditoria de acoes e exportacao XLSX.
 
 Stack atual: **Next.js + React + TypeScript + MUI + MongoDB + Toastify**.
 
-A versão original do MVP era frontend-only com Vite/localStorage. A evolução atual migrou a base para Next.js com backend interno e persistência no MongoDB.
+A versao original do MVP era frontend-only. A base atual usa backend interno no
+Next.js e MongoDB como fonte principal de dados.
 
----
+## Documentacao
 
-## 📌 Plano de evolução
-
-- [Plano de migração para Next.js + MongoDB](docs/plano-migracao-nextjs-mongodb.md)
+- [Plano de migracao para Next.js + MongoDB](docs/plano-migracao-nextjs-mongodb.md)
 - [Teste manual guiado do fluxo completo](docs/teste-manual-fluxo-completo.md)
+- [Roadmap de funcionalidades](docs/roadmap-funcionalidades-gestao-folgas.md)
 
----
-
-## Configuração local
+## Configuracao Local
 
 Crie/edite o arquivo `.env` na raiz do projeto:
 
@@ -28,15 +27,14 @@ ADMIN_PASSWORD=uma-senha-inicial-segura
 ADMIN_DISPLAY_NAME=Administrador
 ```
 
-O arquivo `.env` real fica fora do Git. Use `.env.example` como modelo.
-
-O primeiro admin e criado automaticamente no primeiro login caso ainda nao exista usuario com `ADMIN_USERNAME`. Tambem e possivel criar manualmente:
+O primeiro admin e criado automaticamente no primeiro login caso ainda nao exista
+usuario com `ADMIN_USERNAME`. Tambem e possivel criar manualmente:
 
 ```bash
 npm run seed:admin
 ```
 
-## Como rodar
+## Como Rodar
 
 ```bash
 npm install
@@ -45,333 +43,77 @@ npm run dev
 
 Depois acesse `http://localhost:3000`.
 
----
-
-## ✅ Objetivos do MVP
-
-As seções abaixo preservam o histórico do MVP original e continuam úteis como referência das regras de negócio.
-
-- Permitir cadastrar **cargos** e **funcionários** (com flags como “sempre folga domingo”).
-- Configurar o **período (mês/ano)** e marcar **feriados**.
-- Montar escala de folgas com validação de regras (hard/soft).
-- Manter **histórico (undo/redo)** da escala.
-- Exportar a escala para **.xlsx**.
-- Persistir dados no **localStorage**, com opção de limpeza.
-
----
-
-## ✅ Regras de negócio (levantamento inicial)
-
-### Funcionários e cargos
-
-- Cozinheiros: Gustavo, Milena, Dyson, Alex
-- Lavanderia: Ingrid
-- Paneleiro: Fernando
-- Auxiliares: Clarice, Lidriel, Maria, Elaine, Josana, Luís
-- Auxiliar de estoque: Tales
-
-### Regras (MVP)
-
-- Tales trabalha **segunda a sábado** e **folga sempre aos domingos**.
-- Cozinheiros fazem rodízio: **1 cozinheiro de folga por domingo** (aprox. 1 domingo por mês cada).
-- Se cozinheiro **folga no domingo**, **não pode folgar na semana**.
-- Se cozinheiro **trabalha no domingo**, **precisa folgar 1 dia na semana**.
-- Auxiliares:
-  - Se auxiliar **folga no domingo**, **não pode folgar na semana**.
-  - Se auxiliar **trabalha no domingo**, **precisa folgar 1 dia na semana**.
-  - A folga semanal do auxiliar deve ser **fixa no mesmo dia da semana**.
-  - A folga semanal do auxiliar **não pode cair na segunda** após domingo de folga.
-- Não pode ter folga coincidindo:
-  - Clarice, Ingrid e Elaine não podem folgar no mesmo dia.
-  - Elaine não pode folgar no mesmo dia de Josana e também não pode folgar no mesmo dia de Luís.
-  - Ingrid e Fernando não podem folgar no mesmo dia (e vice-versa).
-  - Se Maria folga, Lidriel não pode folgar.
-- Substituição:
-  - Quando Josana ou Luís estiverem de folga, **Elaine deve trabalhar** (substitui).
-- Feriados:
-  - Cada pessoa tem direito a **1 folga em feriado por ano** (além das folgas normais).
-- Regra SOFT:
-  - Evitar que alguém folgue sempre no mesmo dia da semana.
-
----
-
-## ✅ Stack adotada
-
-### Core
-
-- [x] React + Vite + TypeScript
-
-### UI
-
-- [x] MUI (Material UI)
-- [x] AppShell com layout responsivo
-- [ ] (Opcional) MUI X DataGrid / Date Pickers (avaliar uso no MVP)
-
-### Estado
-
-- [x] Zustand
-- [x] Persistência com `zustand/middleware` (localStorage)
-- [x] Botão/fluxo para limpar localStorage (planejado no App Store / persistance)
-
-### Roteamento
-
-- [x] React Router (router central com rotas do wizard)
-- [x] ErrorBoundary customizado no router (melhor UX para erros)
-
-### Forms/Validação
-
-- [x] react-hook-form + zod (implementado em Employees/Rules)
-
-### Notificações
-
-- [x] react-toastify (feedbacks de seed/salvar/export/reset)
-
-### Export XLSX
-
-- [ ] SheetJS (xlsx) (planejado)
-- [ ] (Alternativa) ExcelJS (avaliar se necessário)
-
----
-
-## ✅ Arquitetura e padrões
-
-### Regras gerais
-
-- [x] **Views não contêm lógica de negócio**
-      Views apenas renderizam UI e disparam callbacks.
-- [x] Lógica fica em **hooks** (feature hooks) e **stores** (estado).
-- [x] Tipos e contratos em `domain/types`.
-
-### Estrutura por camadas (front)
-
-- `src/domain/*` → tipos, regras, defaults (seed), contratos
-- `src/stores/*` → zustand stores + persistência
-- `src/features/*` → containers + views + hooks por feature
-- `src/shared/*` → utilitários e helpers (datas, etc.)
-- `src/app/*` → router, layout (AppShell), providers
-
----
-
-## ✅ Persistência com Zustand (importante)
-
-### Problema resolvido
-
-- [x] Evitar persistir `actions` (funções) no localStorage
-      → Isso causava erros como `setHasSavedData is not a function` e loops de render.
-
-### Padrão aplicado
-
-- [x] `partialize` para persistir **apenas campos serializáveis**
-- [x] `merge` garantindo que `actions` do estado atual **nunca** seja sobrescrito por dados persistidos antigos
-
-### Observação
-
-- [x] Após mudanças no persist, é necessário **limpar localStorage** para remover versões antigas.
-
----
-
-## ✅ Funcionalidades implementadas até agora (checkbox)
-
-### Fundação do projeto
-
-- [x] Projeto React + Vite + TS criado
-- [x] Estrutura inicial de pastas (app/features/stores/domain/shared)
-- [x] Router com wizard de planejamento (setup/schedule/export) + menu lateral com entrada única de Cadastros e navegação por tabs
-- [x] AppShell base com layout agradável
-- [x] Ajustes de tipagem e exports dos containers (erros 2305 resolvidos)
-
-### Stores
-
-- [x] `app.store.ts` com:
-  - [x] wizardStep
-  - [x] hasSavedData
-  - [x] persist + partialize
-- [x] `employees.store.ts` com:
-  - [x] CRUD de roles
-  - [x] CRUD de employees
-  - [x] seedDefaults
-  - [x] persist + partialize (+ limpeza de localStorage quando necessário)
-- [x] `rules.store.ts` com:
-  - [x] setRules / toggleRule / updateRuleParams
-  - [x] seedDefaults
-  - [x] persist + partialize (+ limpeza de localStorage quando necessário)
-- [x] `schedule.store.ts` com histórico (undo/redo) + assign (base)
-- [x] `history.ts` (push/undo/redo)
-- [x] Correção de imports type-only com `verbatimModuleSyntax`
-
-### Wizard / Setup
-
-- [x] Hook `useWizardFlow` (navegação entre passos)
-- [x] Hook `useSeedDefaults` (carregar dados padrão)
-- [x] Ação “Carregar dados padrão” funcionando após correções de persistência
-- [x] Step 2 (Setup calendário + feriados) — concluído
-
----
-
-## ⬜ Próximos passos (roadmap do MVP)
-
-### Step 2 — Setup (mês/ano + feriados)
-
-- [x] Criar/ajustar `plan.store.ts` (year/month/holidays) com persist
-- [x] Criar `shared/utils/dates.ts` (getDaysOfMonth, weekday, etc.)
-- [x] Implementar `useSetup()` (contrato pra view)
-- [x] SetupPage.view: grid de calendário + toggles de feriado
-
-### Step 3 — Employees
-
-- [x] UI de listagem e cadastro (RHF + zod)
-- [x] Seleção de cargo (Role)
-- [x] Checkbox “sempre folga domingo”
-- [x] UX: tabela MUI simples
-- [x] Botão para restaurar defaults de Employees (seed)
-
-### Step 4 — Rules
-
-- [x] Listagem de regras com switch enabled/disabled
-- [x] Catálogo inicial de schema por regra (`ruleFormRegistry`)
-- [x] Formulários guiados usando dados dinâmicos de colaboradores/cargos (fase inicial)
-- [x] Editor de parâmetros (JSON no MVP, formulários guiados em evolução)
-- [x] Modo avançado JSON opcional dentro do card de regra
-- [x] Nova regra personalizada com wizard curto (templates)
-- [x] Botões de templates para acelerar criação de regras personalizadas
-- [x] Layout de Rules com 2 cards por linha no desktop (1 coluna mobile/tablet)
-- [x] Validação de regras (HARD/SOFT)
-- [x] Botão para restaurar defaults de Rules (seed)
-
-
-### Cadastros no menu lateral
-
-- [x] Entrada única `Cadastros` no menu lateral (`/cadastros`)
-- [x] Tabs com `Colaboradores | Cargos | Rules`
-- [x] Reuso das telas existentes para manter lógica de negócio
-- [x] Abas com `Tabs` responsivas para dispositivos menores
-
-### Step 5 — Schedule
-
-- [x] Grade de escala por dia/funcionário
-- [x] Aplicação automática de regras (gerar sugestão)
-- [x] Validações e conflitos (exibir mensagens)
-- [x] Undo/redo UI
-- [x] Histórico de alterações (log)
-
-### Step 6 — Export
-
-- [x] Montar planilha XLSX final
-- [x] Escolher lib final (implementação interna OOXML sem dependência externa)
-- [x] Exportar com formatação mínima
-
-### Extras (qualidade)
-
-- [x] ErrorBoundary customizado no router
-- [x] Toastify em ações importantes (seed, salvar, export)
-- [x] Responsividade refinada no AppShell (Drawer/hamburger)
-- [x] Botão “limpar dados” global (localStorage + reset stores)
-- [x] Documentação de regras (HARD/SOFT) e exemplos
-
----
-
-## 📘 Documentação de Regras (HARD/SOFT)
-
-Esta seção reflete o comportamento atual do validador em
-`src/application/usecases/rules/validateSchedule.ts`.
-
-### HARD (bloqueia validade da escala)
-
-- `fixed_off_sunday_tales`
-  - Regra: Tales deve estar `OFF` em todos os domingos.
-  - Exemplo inválido: domingo com Tales em `WORK`.
-- `cook_rotation_one_off_each_sunday`
-  - Regra: exatamente 1 cozinheiro `OFF` por domingo.
-  - Exemplo inválido: 0 ou 2+ cozinheiros `OFF` no mesmo domingo.
-- `cook_if_sunday_work_requires_week_off`
-  - Regra: cozinheiro que trabalhou domingo precisa de 1 folga entre segunda e sábado da mesma semana.
-  - Exemplo inválido: trabalhou domingo e não folgou nenhum dia útil da semana.
-- `cook_if_sunday_off_no_week_off`
-  - Regra: cozinheiro que folgou no domingo não pode folgar na semana (segunda a sábado).
-  - Exemplo inválido: folga no domingo e também na terça.
-- `cook_no_monday_off_after_sunday_off`
-  - Regra: cozinheiro que folgou no domingo não pode folgar na segunda seguinte.
-  - Exemplo inválido: cozinheiro `OFF` no domingo e também `OFF` na segunda.
-- `laundry_one_sunday_off_per_month`
-  - Regra: colaborador da lavanderia configurado deve ter exatamente 1 domingo de folga no mês.
-  - Exemplo inválido: nenhum domingo `OFF` ou 2+ domingos `OFF`.
-- `pot_washer_one_sunday_off_per_month`
-  - Regra: paneleiro configurado deve ter exatamente 1 domingo de folga no mês.
-  - Exemplo inválido: nenhum domingo `OFF` ou 2+ domingos `OFF`.
-- `max_six_consecutive_work_days`
-  - Regra: ninguém deve trabalhar mais de 6 dias seguidos sem folga.
-  - Exemplo inválido: 7 dias consecutivos em `WORK`.
-- `no_two_consecutive_off_days`
-  - Regra: ninguém deve ter duas folgas consecutivas.
-  - Exemplo inválido: `OFF` na terça e também na quarta.
-- `no_coincidence_clarice_ingrid_elaine`
-  - Regra: Clarice, Ingrid e Elaine não podem folgar juntas no mesmo dia.
-  - Exemplo inválido: Clarice e Ingrid `OFF` no mesmo dia.
-- `elaine_not_same_day_josana`
-  - Regra: Elaine e Josana não podem folgar no mesmo dia.
-  - Exemplo inválido: ambas `OFF` na mesma data.
-- `elaine_not_same_day_luis`
-  - Regra: Elaine e Luís não podem folgar no mesmo dia.
-  - Exemplo inválido: ambos `OFF` na mesma data.
-- `ingrid_and_fernando_cannot_both_off`
-  - Regra: Ingrid e Fernando não podem folgar no mesmo dia.
-  - Exemplo inválido: Ingrid e Fernando `OFF` simultaneamente.
-- `if_maria_off_then_lidriel_must_work`
-  - Regra: se Maria folgar, Lidriel deve trabalhar.
-  - Exemplo inválido: Maria `OFF` e Lidriel `OFF` no mesmo dia.
-- `if_josana_or_luis_off_then_elaine_must_work`
-  - Regra: se Josana ou Luís folgarem, Elaine deve trabalhar.
-  - Exemplo inválido: Josana `OFF` e Elaine `OFF` no mesmo dia.
-- `assistant_if_sunday_off_no_week_off`
-  - Regra: auxiliar que folga no domingo não pode ter folga na semana.
-  - Exemplo inválido: auxiliar `OFF` no domingo e `OFF` na quarta.
-- `assistant_if_sunday_work_requires_week_off`
-  - Regra: auxiliar que trabalha no domingo precisa folgar durante a semana.
-  - Exemplo inválido: auxiliar trabalha domingo e não folga entre segunda e sábado.
-- `assistant_no_monday_off_after_sunday_off`
-  - Regra: auxiliar que folga no domingo não pode folgar na segunda seguinte.
-  - Exemplo inválido: auxiliar `OFF` no domingo e também `OFF` na segunda.
-- `assistant_weekday_off_must_be_fixed`
-  - Regra: auxiliar deve manter folga semanal fixa no mesmo dia da semana.
-  - Exemplo inválido: uma semana folga na terça e outra na quinta.
-- `annual_holiday_credit_one_per_person`
-  - Regra: cada pessoa pode usar no máximo a quantidade configurada de folgas em feriado no ano.
-  - Exemplo inválido: 2 feriados `OFF` no mesmo ano com limite configurado em 1.
-
-### SOFT (aviso, não bloqueia)
-
-- `avoid_same_weekday_off`
-  - Regra: avisa quando uma pessoa folga sempre no mesmo dia da semana, considerando o mínimo configurado.
-  - Exemplo com padrão atual: 3 folgas não dominicais no mês, todas na terça.
-- A escala pode ser exportada com conflitos SOFT.
-
----
-
-## 🧪 Como rodar (dev)
+## Scripts
 
 ```bash
-npm install
 npm run dev
+npm run lint
+./node_modules/.bin/tsc --noEmit
+npm test
+npm run build
+npm run seed:admin
 ```
-````
 
----
+## Arquitetura
 
-## 🧠 Convenções importantes
+- `app/`: rotas, layouts e API routes do Next.js.
+- `app/api/*`: backend HTTP da aplicacao.
+- `src/components/*`: telas e componentes client-side.
+- `src/components/hooks/*`: hooks de tela com estado, chamadas de API e regras de UI.
+- `src/domain/*`: tipos, defaults e conceitos puros de dominio.
+- `src/application/usecases/*`: validacao, geracao, edicao de escala e exportacao.
+- `src/lib/server/*`: auth, MongoDB, auditoria, ambiente e persistencia server-side.
+- `src/lib/types.ts`: contratos compartilhados entre frontend e backend.
+- `src/shared/*`: utilitarios e componentes compartilhados.
 
-- Containers chamam hooks e repassam props para Views.
-- Views não acessam stores direto (evitar lógica/efeito em UI).
-- Stores persistidas devem usar:
-  - `partialize` (não persistir actions)
-  - `merge` (não aceitar sobrescrita de actions por dados antigos)
+## Funcionalidades
 
-- Se surgir erro do tipo “X is not a function” em actions:
-  - limpar localStorage e revisar persist config.
+- Login com sessao assinada em cookie HTTP-only.
+- Perfis `ADMIN` e `USER`.
+- Rotas protegidas e chamadas administrativas validadas no server.
+- Cadastro de usuarios pelo admin.
+- Reset de senha e ativacao/desativacao de usuarios.
+- Cadastro de cargos, colaboradores e regras.
+- Configuracao de mes/ano e feriados.
+- Geracao automatica da escala.
+- Edicao manual com undo/redo.
+- Alteracao em lote e reset da escala com auditoria.
+- Publicacao, reabertura e fechamento da escala.
+- Consulta de historico de escalas.
+- Exportacao XLSX.
+- Logs de login e acoes de uso.
 
----
+## Regras de Negocio
 
-## 📌 Notas
+- Tales folga sempre aos domingos.
+- Rodizio de cozinheiros: exatamente 1 cozinheiro de folga por domingo.
+- Cozinheiro que folga domingo nao pode folgar na semana.
+- Cozinheiro que trabalha domingo precisa folgar 1 dia na semana.
+- Cozinheiro que folgou domingo nao pode folgar na segunda seguinte.
+- Auxiliar que folga domingo nao pode folgar na semana.
+- Auxiliar que trabalha domingo precisa folgar 1 dia na semana.
+- Auxiliar que folgou domingo nao pode folgar na segunda seguinte.
+- Auxiliar deve manter folga semanal fixa.
+- Lavanderia tem direito a 1 folga no domingo por mes.
+- Paneleiro tem direito a 1 folga no domingo por mes.
+- Maximo de 6 dias consecutivos de trabalho.
+- Nao permitir 2 dias consecutivos de folga.
+- Clarice, Ingrid e Elaine nao podem folgar juntas.
+- Elaine nao pode folgar no mesmo dia da Josana.
+- Elaine nao pode folgar no mesmo dia do Luis.
+- Quando Josana ou Luis folgam, Elaine deve trabalhar.
+- Quando Maria folga, Lidriel deve trabalhar.
+- Ingrid e Fernando nao podem folgar juntos.
+- Cada pessoa pode usar no maximo 1 folga em feriado por ano.
+- Regra SOFT: evitar folgar sempre no mesmo dia da semana.
 
-- A base atual possui backend via Next.js.
-- Os dados principais ficam no MongoDB e podem ser exportados para XLSX.
-- As regras podem evoluir para suportar mais cargos, times e calendários.
+## Padroes Importantes
+
+- Componentes de renderizacao nao devem conter logica de negocio.
+- Hooks de tela centralizam API, toast, permissoes e dados derivados.
+- `src/domain` e `src/application` devem continuar independentes de React,
+  Next.js, MUI, MongoDB e APIs de browser.
+- Alteracoes de estado da aplicacao passam pelo backend, nao pelo browser como
+  fonte de verdade.
+- Logs devem registrar apenas metadados necessarios, nunca senhas, tokens ou
+  dados sensiveis.

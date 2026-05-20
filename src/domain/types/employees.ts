@@ -3,6 +3,8 @@ import type { EmployeeId, RoleId } from "./ids";
 export type Role = {
   id: RoleId;
   name: string;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type Employee = {
@@ -18,4 +20,6 @@ export type Employee = {
   holidayOffUsed: boolean;
 
   notes?: string;
+  createdAt: string;
+  updatedAt: string;
 };
