@@ -15,6 +15,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Setup", href: "/setup", adminOnly: true },
   { label: "Cadastros", href: "/cadastros", adminOnly: true },
   { label: "Escala", href: "/schedule" },
+  { label: "Equilibrio", href: "/fairness", adminOnly: true },
   { label: "Exportar", href: "/export", adminOnly: true },
   { label: "Administrador", href: "/admin", adminOnly: true },
 ];

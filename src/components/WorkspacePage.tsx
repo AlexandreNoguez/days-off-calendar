@@ -50,6 +50,12 @@ const publicationChipColors = {
   CLOSED: "secondary",
 } as const;
 
+function imbalanceColor(score: number): "success" | "warning" | "error" {
+  if (score >= 6) return "error";
+  if (score >= 3) return "warning";
+  return "success";
+}
+
 export function WorkspacePage({ section }: { section: WorkspaceSection }) {
   const { state, actions } = useWorkspacePage();
 
@@ -738,6 +744,154 @@ export function WorkspacePage({ section }: { section: WorkspaceSection }) {
     );
   }
 
+  function renderFairness() {
+    return (
+      <Stack spacing={2}>
+        {renderHeader(
+          "Justica e equilibrio",
+          "Acompanhe a distribuicao de folgas, domingos, feriados e sequencias de trabalho.",
+        )}
+
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: {
+              xs: "1fr",
+              sm: "repeat(2, minmax(0, 1fr))",
+              lg: "repeat(4, minmax(0, 1fr))",
+            },
+            gap: 2,
+          }}
+        >
+          <Paper variant="outlined" sx={{ p: 2 }}>
+            <Typography variant="caption" color="text.secondary">
+              Media de folgas
+            </Typography>
+            <Typography variant="h5" fontWeight={700}>
+              {state.fairnessSummary.averageTotalOff}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Faixa {state.fairnessSummary.minTotalOff}-{state.fairnessSummary.maxTotalOff}
+            </Typography>
+          </Paper>
+          <Paper variant="outlined" sx={{ p: 2 }}>
+            <Typography variant="caption" color="text.secondary">
+              Media de domingos
+            </Typography>
+            <Typography variant="h5" fontWeight={700}>
+              {state.fairnessSummary.averageSundayOff}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Total de feriados: {state.fairnessSummary.holidayOffCount}
+            </Typography>
+          </Paper>
+          <Paper variant="outlined" sx={{ p: 2 }}>
+            <Typography variant="caption" color="text.secondary">
+              Maior sequencia
+            </Typography>
+            <Typography variant="h5" fontWeight={700}>
+              {state.fairnessSummary.maxLongestWorkStreak}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              dias de trabalho
+            </Typography>
+          </Paper>
+          <Paper variant="outlined" sx={{ p: 2 }}>
+            <Typography variant="caption" color="text.secondary">
+              Maior desequilibrio
+            </Typography>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Typography variant="h5" fontWeight={700}>
+                {state.fairnessSummary.highestImbalanceScore}
+              </Typography>
+              <Chip
+                size="small"
+                label={state.fairnessSummary.mostImbalancedEmployeeName}
+                color={imbalanceColor(state.fairnessSummary.highestImbalanceScore)}
+              />
+            </Stack>
+          </Paper>
+        </Box>
+
+        {state.fairnessSummary.totalOffRange >= 3 && (
+          <Alert severity="warning">
+            A diferenca entre quem tem mais e menos folgas no periodo esta em{" "}
+            {state.fairnessSummary.totalOffRange} dia(s).
+          </Alert>
+        )}
+
+        <Paper variant="outlined" sx={{ overflow: "auto" }}>
+          <Table size="small" sx={{ minWidth: 1000 }}>
+            <TableHead>
+              <TableRow>
+                <TableCell>Ranking</TableCell>
+                <TableCell>Colaborador</TableCell>
+                <TableCell>Cargo</TableCell>
+                <TableCell align="center">Folgas</TableCell>
+                <TableCell align="center">Domingos</TableCell>
+                <TableCell align="center">Feriados</TableCell>
+                <TableCell align="center">Maior sequencia</TableCell>
+                <TableCell align="center">Dia mais repetido</TableCell>
+                <TableCell align="center">Pontuacao</TableCell>
+                <TableCell>Alertas</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {state.fairnessRows.map((row, index) => (
+                <TableRow key={row.employeeId}>
+                  <TableCell>
+                    <Chip size="small" label={index + 1} />
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2" fontWeight={700}>
+                      {row.employeeName}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>{row.roleName}</TableCell>
+                  <TableCell align="center">{row.totalOff}</TableCell>
+                  <TableCell align="center">{row.sundayOff}</TableCell>
+                  <TableCell align="center">{row.holidayOff}</TableCell>
+                  <TableCell align="center">
+                    <Chip
+                      size="small"
+                      label={row.longestWorkStreak}
+                      color={row.longestWorkStreak > 6 ? "error" : "default"}
+                    />
+                  </TableCell>
+                  <TableCell align="center">
+                    {row.strongestWeekdayOffCount > 0
+                      ? `${row.strongestWeekdayLabel} (${row.strongestWeekdayOffCount})`
+                      : "-"}
+                  </TableCell>
+                  <TableCell align="center">
+                    <Chip
+                      size="small"
+                      label={row.imbalanceScore}
+                      color={imbalanceColor(row.imbalanceScore)}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    {row.alerts.length > 0 ? (
+                      <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+                        {row.alerts.map((alert) => (
+                          <Chip key={alert} size="small" label={alert} color="warning" />
+                        ))}
+                      </Stack>
+                    ) : (
+                      <Typography variant="body2" color="text.secondary">
+                        Sem alertas
+                      </Typography>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Paper>
+      </Stack>
+    );
+  }
+
   function renderExport() {
     return (
       <Stack spacing={2}>
@@ -761,6 +915,7 @@ export function WorkspacePage({ section }: { section: WorkspaceSection }) {
     setup: renderSetup,
     cadastros: renderCadastros,
     schedule: renderSchedule,
+    fairness: renderFairness,
     export: renderExport,
   }[section];
 

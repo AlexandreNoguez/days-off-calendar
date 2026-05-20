@@ -23,7 +23,12 @@ import { generateSuggestedScheduleWithReport } from "../../application/usecases/
 import { getDaysOfMonth, WEEKDAY_LABELS_PT } from "../../shared/utils/dates";
 import { downloadBytes } from "../../shared/utils/download";
 
-export type WorkspaceSection = "setup" | "cadastros" | "schedule" | "export";
+export type WorkspaceSection =
+  | "setup"
+  | "cadastros"
+  | "schedule"
+  | "fairness"
+  | "export";
 export type CadastroTab = "employees" | "roles" | "rules";
 export type CustomRuleTemplate =
   | "pair_cannot_both_off"
@@ -82,6 +87,33 @@ type ChangeLogRow = {
   id: string;
   atLabel: string;
   message: string;
+};
+
+type FairnessRow = {
+  employeeId: EmployeeId;
+  employeeName: string;
+  roleName: string;
+  totalOff: number;
+  sundayOff: number;
+  holidayOff: number;
+  longestWorkStreak: number;
+  distinctOffWeekdays: number;
+  strongestWeekdayLabel: string;
+  strongestWeekdayOffCount: number;
+  imbalanceScore: number;
+  alerts: string[];
+};
+
+type FairnessSummary = {
+  averageTotalOff: number;
+  minTotalOff: number;
+  maxTotalOff: number;
+  totalOffRange: number;
+  averageSundayOff: number;
+  holidayOffCount: number;
+  maxLongestWorkStreak: number;
+  highestImbalanceScore: number;
+  mostImbalancedEmployeeName: string;
 };
 
 export const MONTHS = [
@@ -166,6 +198,29 @@ function statusOf(
 
 function roleName(roles: Role[], roleId: RoleId): string {
   return roles.find((role) => role.id === roleId)?.name ?? roleId;
+}
+
+function average(values: number[]): number {
+  if (values.length === 0) return 0;
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function roundMetric(value: number): number {
+  return Math.round(value * 10) / 10;
+}
+
+function buildEmptyFairnessSummary(): FairnessSummary {
+  return {
+    averageTotalOff: 0,
+    minTotalOff: 0,
+    maxTotalOff: 0,
+    totalOffRange: 0,
+    averageSundayOff: 0,
+    holidayOffCount: 0,
+    maxLongestWorkStreak: 0,
+    highestImbalanceScore: 0,
+    mostImbalancedEmployeeName: "-",
+  };
 }
 
 function defaultRuleDraft(): RuleDraft {
@@ -371,6 +426,109 @@ export function useWorkspacePage() {
         message: entry.message,
       }));
   }, [loadedState]);
+
+  const fairnessRows = useMemo<FairnessRow[]>(() => {
+    if (!loadedState) return [];
+
+    const totalOffValues = loadedState.employees.map(
+      (employee) => validation.statsPerEmployee[employee.id]?.totalOff ?? 0,
+    );
+    const sundayOffValues = loadedState.employees.map(
+      (employee) => validation.statsPerEmployee[employee.id]?.sundayOff ?? 0,
+    );
+    const averageTotalOff = average(totalOffValues);
+    const averageSundayOff = average(sundayOffValues);
+
+    return loadedState.employees
+      .map((employee) => {
+        const stats = validation.statsPerEmployee[employee.id] ?? {
+          totalOff: 0,
+          sundayOff: 0,
+          holidayOff: 0,
+        };
+        const offByWeekday = new Array<number>(7).fill(0);
+        let currentWorkStreak = 0;
+        let longestWorkStreak = 0;
+
+        days.forEach((day) => {
+          const status = statusOf(
+            loadedState.schedule.assignments,
+            employee.id,
+            day.dateISO,
+          );
+
+          if (status === "OFF") {
+            offByWeekday[day.weekday] += 1;
+            currentWorkStreak = 0;
+            return;
+          }
+
+          currentWorkStreak += 1;
+          longestWorkStreak = Math.max(longestWorkStreak, currentWorkStreak);
+        });
+
+        const strongestWeekdayOffCount = Math.max(...offByWeekday);
+        const strongestWeekdayIndex = Math.max(0, offByWeekday.indexOf(strongestWeekdayOffCount));
+        const distinctOffWeekdays = offByWeekday.filter((count) => count > 0).length;
+        const totalOffDelta = Math.abs(stats.totalOff - averageTotalOff);
+        const sundayOffDelta = Math.abs(stats.sundayOff - averageSundayOff);
+        const repeatedWeekdayPenalty = Math.max(0, strongestWeekdayOffCount - 1);
+        const workStreakPenalty = Math.max(0, longestWorkStreak - 6);
+        const holidayPenalty = Math.max(0, stats.holidayOff - 1);
+        const imbalanceScore = roundMetric(
+          totalOffDelta * 2 +
+            sundayOffDelta * 3 +
+            repeatedWeekdayPenalty +
+            workStreakPenalty * 2 +
+            holidayPenalty * 3,
+        );
+        const alerts: string[] = [];
+
+        if (totalOffDelta >= 2) alerts.push("Total de folgas distante da media");
+        if (sundayOffDelta >= 1) alerts.push("Domingos fora do equilibrio");
+        if (longestWorkStreak > 6) alerts.push("Sequencia longa de trabalho");
+        if (stats.holidayOff > 1) alerts.push("Mais de uma folga em feriado");
+        if (stats.totalOff > 0 && distinctOffWeekdays <= 1) {
+          alerts.push("Folgas concentradas no mesmo dia");
+        }
+
+        return {
+          employeeId: employee.id,
+          employeeName: employee.name,
+          roleName: roleName(loadedState.roles, employee.roleId),
+          totalOff: stats.totalOff,
+          sundayOff: stats.sundayOff,
+          holidayOff: stats.holidayOff,
+          longestWorkStreak,
+          distinctOffWeekdays,
+          strongestWeekdayLabel: WEEKDAY_LABELS_PT[strongestWeekdayIndex],
+          strongestWeekdayOffCount,
+          imbalanceScore,
+          alerts,
+        };
+      })
+      .sort((a, b) => b.imbalanceScore - a.imbalanceScore || a.employeeName.localeCompare(b.employeeName));
+  }, [days, loadedState, validation.statsPerEmployee]);
+
+  const fairnessSummary = useMemo<FairnessSummary>(() => {
+    if (fairnessRows.length === 0) return buildEmptyFairnessSummary();
+
+    const totalOffValues = fairnessRows.map((row) => row.totalOff);
+    const sundayOffValues = fairnessRows.map((row) => row.sundayOff);
+    const mostImbalanced = fairnessRows[0];
+
+    return {
+      averageTotalOff: roundMetric(average(totalOffValues)),
+      minTotalOff: Math.min(...totalOffValues),
+      maxTotalOff: Math.max(...totalOffValues),
+      totalOffRange: Math.max(...totalOffValues) - Math.min(...totalOffValues),
+      averageSundayOff: roundMetric(average(sundayOffValues)),
+      holidayOffCount: fairnessRows.reduce((sum, row) => sum + row.holidayOff, 0),
+      maxLongestWorkStreak: Math.max(...fairnessRows.map((row) => row.longestWorkStreak)),
+      highestImbalanceScore: mostImbalanced?.imbalanceScore ?? 0,
+      mostImbalancedEmployeeName: mostImbalanced?.employeeName ?? "-",
+    };
+  }, [fairnessRows]);
 
   async function savePatch(patch: AppStatePatch, successMessage?: string) {
     if (!canManage) {
@@ -1050,6 +1208,8 @@ export function useWorkspacePage() {
       setupCells,
       scheduleRows,
       changeLogRows,
+      fairnessRows,
+      fairnessSummary,
       validation,
       hardConflicts,
       softConflicts,

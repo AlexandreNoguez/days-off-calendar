@@ -111,6 +111,8 @@ por WhatsApp, papel ou conversa solta.
 
 ## 4. Painel de Justica e Equilibrio
 
+**Status:** primeira versao implementada.
+
 **Valor para o cliente:** mostra se a escala esta distribuindo folgas de forma
 equilibrada. Ajuda a evitar percepcao de favoritismo.
 
@@ -120,7 +122,7 @@ equilibrada. Ajuda a evitar percepcao de favoritismo.
 - Comparar domingos de folga, feriados de folga, total de folgas, sequencias de
   trabalho e padrao de dias da semana.
 - Criar ranking de desequilibrio.
-- Integrar com o historico de escalas.
+- [Pendente] Integrar com o historico de escalas.
 
 **Dados/API:**
 
