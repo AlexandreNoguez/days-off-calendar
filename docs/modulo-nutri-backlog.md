@@ -122,8 +122,8 @@ Criterios de aceite:
 
 ## Fase 5 - Receitas E Fichas Tecnicas
 
-**Status:** implementado para MVP inicial. Exportacao de ficha tecnica e
-versionamento/aprovacao ficam como proxima camada.
+**Status:** implementado para MVP inicial. Versionamento/aprovacao ficam como
+proxima camada.
 
 **Objetivo:** permitir preparacoes para paciente e restaurante.
 
@@ -137,7 +137,7 @@ Tarefas:
 - [Implementado] Calcular nutrientes por receita, por 100 g e por porcao.
 - [Implementado] Calcular custo total e custo por porcao.
 - [Implementado] Marcar alergicos e observacoes.
-- [Pendente] Exportar ficha tecnica.
+- [Implementado] Exportar ficha tecnica em HTML imprimivel.
 - [Pendente] Criar fluxo de aprovacao/versionamento para uso em cardapios.
 
 Criterios de aceite:

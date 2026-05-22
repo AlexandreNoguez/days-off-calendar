@@ -1726,6 +1726,7 @@ export function NutriPage() {
                   <TableCell>Nutrientes por porcao</TableCell>
                   <TableCell>Custo</TableCell>
                   <TableCell>Status</TableCell>
+                  <TableCell>Acoes</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -1766,11 +1767,23 @@ export function NutriPage() {
                         color={recipe.active ? "success" : "default"}
                       />
                     </TableCell>
+                    <TableCell>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={<PrintIcon />}
+                        href={`/api/nutri/recipes/${recipe.id}/print`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Imprimir
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
                 {state.recipes.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6}>
+                    <TableCell colSpan={7}>
                       <Alert severity="info">
                         Nenhuma receita encontrada para os filtros atuais.
                       </Alert>

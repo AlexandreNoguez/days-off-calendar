@@ -137,6 +137,13 @@ export async function listNutriRecipes(input: {
   return recipes.map(stripMongoId);
 }
 
+export async function findNutriRecipeById(id: string): Promise<NutriRecipe | null> {
+  await ensureNutriRecipeIndexes();
+  const collection = await getRecipesCollection();
+  const recipe = await collection.findOne({ id });
+  return recipe ? stripMongoId(recipe) : null;
+}
+
 export async function summarizeNutriRecipes(): Promise<{
   total: number;
   active: number;
