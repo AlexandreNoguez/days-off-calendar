@@ -25,6 +25,12 @@ import { useMainShell } from "./hooks/useMainShell";
 
 const DRAWER_WIDTH = 256;
 
+const USER_ROLE_COLORS = {
+  ADMIN: "primary",
+  USER: "default",
+  NUTRI: "success",
+} as const;
+
 function subscribeMounted(): () => void {
   return () => undefined;
 }
@@ -70,7 +76,7 @@ export function MainShell({
           <Chip
             size="small"
             label={user.role}
-            color={user.role === "ADMIN" ? "primary" : "default"}
+            color={USER_ROLE_COLORS[user.role]}
           />
         </Stack>
       </Toolbar>

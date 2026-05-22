@@ -8,6 +8,9 @@ export const runtime = "nodejs";
 export async function GET() {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Nao autenticado." }, { status: 401 });
+  if (user.role === "NUTRI") {
+    return NextResponse.json({ error: "Acesso restrito ao modulo Nutri." }, { status: 403 });
+  }
 
   const state = await getAppState(user);
   return NextResponse.json(state);

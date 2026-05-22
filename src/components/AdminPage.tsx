@@ -60,6 +60,12 @@ const PUBLICATION_COLORS = {
   CLOSED: "secondary",
 } as const;
 
+const USER_ROLE_COLORS = {
+  ADMIN: "primary",
+  USER: "default",
+  NUTRI: "success",
+} as const;
+
 export function AdminPage() {
   const { state, actions } = useAdminPage();
 
@@ -149,6 +155,7 @@ export function AdminPage() {
                   }
                 >
                   <MenuItem value="USER">USER</MenuItem>
+                  <MenuItem value="NUTRI">NUTRI</MenuItem>
                   <MenuItem value="ADMIN">ADMIN</MenuItem>
                 </Select>
               </FormControl>
@@ -182,11 +189,27 @@ export function AdminPage() {
                   <TableCell>{user.displayName}</TableCell>
                   <TableCell>{user.username}</TableCell>
                   <TableCell>
-                    <Chip
-                      size="small"
-                      label={user.role}
-                      color={user.role === "ADMIN" ? "primary" : "default"}
-                    />
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <Chip
+                        size="small"
+                        label={user.role}
+                        color={USER_ROLE_COLORS[user.role]}
+                      />
+                      <FormControl size="small" sx={{ minWidth: 120 }}>
+                        <Select
+                          value={user.role}
+                          onChange={(event) =>
+                            void actions.patchUser(user.id, {
+                              role: event.target.value as UserRole,
+                            })
+                          }
+                        >
+                          <MenuItem value="USER">USER</MenuItem>
+                          <MenuItem value="NUTRI">NUTRI</MenuItem>
+                          <MenuItem value="ADMIN">ADMIN</MenuItem>
+                        </Select>
+                      </FormControl>
+                    </Stack>
                   </TableCell>
                   <TableCell>
                     <Switch

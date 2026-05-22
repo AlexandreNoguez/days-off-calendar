@@ -21,6 +21,11 @@ function toPublicUser(user: UserDocument): PublicUser {
   };
 }
 
+function parseUserRole(role?: UserRole): UserRole {
+  if (role === "ADMIN" || role === "NUTRI") return role;
+  return "USER";
+}
+
 export async function GET() {
   const admin = await requireAdminUser().catch(() => null);
   if (!admin) return NextResponse.json({ error: "Acesso negado." }, { status: 403 });
@@ -51,7 +56,7 @@ export async function POST(request: Request) {
   const username = body?.username?.trim().toLowerCase() ?? "";
   const displayName = body?.displayName?.trim() ?? "";
   const password = body?.password ?? "";
-  const role = body?.role === "ADMIN" ? "ADMIN" : "USER";
+  const role = parseUserRole(body?.role);
 
   if (!username || !displayName || password.length < 6) {
     return NextResponse.json(

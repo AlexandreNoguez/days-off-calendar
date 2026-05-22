@@ -123,6 +123,12 @@ export async function requireAdminUser(): Promise<PublicUser> {
   return user;
 }
 
+export async function requireNutriUser(): Promise<PublicUser> {
+  const user = await requireCurrentUser();
+  if (user.role !== "NUTRI") throw new Error("Forbidden");
+  return user;
+}
+
 export function setSessionCookie(response: NextResponse, user: PublicUser): void {
   response.cookies.set({
     name: SESSION_COOKIE,

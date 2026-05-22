@@ -7,7 +7,7 @@ import type {
   ScheduleChangeLogEntry,
 } from "../domain/types/schedule";
 
-export type UserRole = "ADMIN" | "USER";
+export type UserRole = "ADMIN" | "USER" | "NUTRI";
 
 export type PublicUser = {
   id: string;

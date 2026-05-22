@@ -7,6 +7,10 @@ import { hashPassword } from "@/src/lib/server/passwords";
 
 export const runtime = "nodejs";
 
+function isEditableUserRole(role: unknown): role is UserRole {
+  return role === "ADMIN" || role === "USER" || role === "NUTRI";
+}
+
 export async function PATCH(
   request: Request,
   context: { params: Promise<{ id: string }> },
@@ -30,7 +34,7 @@ export async function PATCH(
     set.displayName = body.displayName.trim();
   }
 
-  if (body.role === "ADMIN" || body.role === "USER") set.role = body.role;
+  if (isEditableUserRole(body.role)) set.role = body.role;
   if (typeof body.active === "boolean") set.active = body.active;
   if (typeof body.password === "string" && body.password.length > 0) {
     if (body.password.length < 6) {

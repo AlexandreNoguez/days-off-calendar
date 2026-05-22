@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import type { PublicUser } from "@/src/lib/types";
+import { getDefaultRouteForRole } from "@/src/lib/routes";
 
 export function useLoginPage() {
   const router = useRouter();
@@ -24,15 +26,19 @@ export function useLoginPage() {
 
     setLoading(false);
 
+    const data = (await response.json().catch(() => null)) as
+      | { error?: string; user?: PublicUser }
+      | null;
+
     if (!response.ok) {
-      const data = (await response.json().catch(() => null)) as
-        | { error?: string }
-        | null;
       setError(data?.error ?? "Nao foi possivel entrar.");
       return;
     }
 
-    router.replace(searchParams.get("next") || "/schedule");
+    router.replace(
+      searchParams.get("next") ||
+        (data?.user ? getDefaultRouteForRole(data.user.role) : "/schedule"),
+    );
     router.refresh();
   }
 

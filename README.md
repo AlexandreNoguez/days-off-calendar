@@ -13,6 +13,10 @@ Next.js e MongoDB como fonte principal de dados.
 - [Plano de migracao para Next.js + MongoDB](docs/plano-migracao-nextjs-mongodb.md)
 - [Teste manual guiado do fluxo completo](docs/teste-manual-fluxo-completo.md)
 - [Roadmap de funcionalidades](docs/roadmap-funcionalidades-gestao-folgas.md)
+- [Modulo Nutri - visao geral e requisitos](docs/modulo-nutri-visao-geral.md)
+- [Modulo Nutri - modelagem tecnica inicial](docs/modulo-nutri-modelagem-tecnica.md)
+- [Modulo Nutri - backlog e fases](docs/modulo-nutri-backlog.md)
+- [Modulo Nutri - README interno](src/modules/nutri/README.md)
 
 ## Configuracao Local
 
