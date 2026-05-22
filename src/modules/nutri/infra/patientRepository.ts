@@ -101,6 +101,13 @@ export async function summarizeNutriPatients(): Promise<{
   };
 }
 
+export async function findNutriPatientById(id: string): Promise<NutriPatient | null> {
+  await ensureNutriPatientIndexes();
+  const collection = await getPatientsCollection();
+  const patient = await collection.findOne({ id });
+  return patient ? stripMongoId(patient) : null;
+}
+
 export async function createNutriPatient(input: {
   patient: SavePatientInput;
   userId: string;

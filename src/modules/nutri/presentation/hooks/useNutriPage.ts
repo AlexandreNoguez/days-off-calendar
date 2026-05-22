@@ -3,11 +3,21 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import type {
+  NutriAssessmentInput,
+  NutriAssessmentResponse,
+  NutriAssessmentsResponse,
+} from "../../contracts/assessments";
+import type {
   NutriPatientInput,
   NutriPatientsResponse,
   NutriPatientResponse,
 } from "../../contracts/patients";
-import type { NutriPatient, NutriPatientSex } from "../../domain/types";
+import { calculateImc } from "../../application/calculateImc";
+import type {
+  NutriAssessment,
+  NutriPatient,
+  NutriPatientSex,
+} from "../../domain/types";
 
 export type NutriTab = "patients" | "mealPlans" | "recipes" | "menus";
 
@@ -18,6 +28,23 @@ export type NutriPatientDraft = {
   phone: string;
   email: string;
   notes: string;
+};
+
+export type NutriAssessmentDraft = {
+  date: string;
+  objective: string;
+  weightKg: string;
+  heightCm: string;
+  waistCm: string;
+  hipCm: string;
+  activityLevel: string;
+  allergies: string;
+  intolerances: string;
+  dietaryRestrictions: string;
+  medications: string;
+  supplements: string;
+  foodRoutineNotes: string;
+  clinicalNotes: string;
 };
 
 const INITIAL_SUMMARY = [
@@ -53,6 +80,29 @@ const EMPTY_PATIENT_DRAFT: NutriPatientDraft = {
   email: "",
   notes: "",
 };
+
+function todayISO(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function createEmptyAssessmentDraft(): NutriAssessmentDraft {
+  return {
+    date: todayISO(),
+    objective: "",
+    weightKg: "",
+    heightCm: "",
+    waistCm: "",
+    hipCm: "",
+    activityLevel: "",
+    allergies: "",
+    intolerances: "",
+    dietaryRestrictions: "",
+    medications: "",
+    supplements: "",
+    foodRoutineNotes: "",
+    clinicalNotes: "",
+  };
+}
 
 async function fetchJson<T>(
   input: RequestInfo | URL,
@@ -103,6 +153,41 @@ function toPatientDraft(patient: NutriPatient): NutriPatientDraft {
   };
 }
 
+function positiveNumber(value: string): number | undefined {
+  const parsed = Number(value.replace(",", "."));
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+}
+
+function splitList(value: string): string[] {
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function toAssessmentInput(
+  patientId: string,
+  draft: NutriAssessmentDraft,
+): NutriAssessmentInput {
+  return {
+    patientId,
+    date: draft.date,
+    objective: draft.objective.trim(),
+    weightKg: positiveNumber(draft.weightKg),
+    heightCm: positiveNumber(draft.heightCm),
+    waistCm: positiveNumber(draft.waistCm),
+    hipCm: positiveNumber(draft.hipCm),
+    activityLevel: draft.activityLevel.trim(),
+    allergies: splitList(draft.allergies),
+    intolerances: splitList(draft.intolerances),
+    dietaryRestrictions: splitList(draft.dietaryRestrictions),
+    medications: draft.medications.trim(),
+    supplements: draft.supplements.trim(),
+    foodRoutineNotes: draft.foodRoutineNotes.trim(),
+    clinicalNotes: draft.clinicalNotes.trim(),
+  };
+}
+
 export function useNutriPage() {
   const [tab, setTab] = useState<NutriTab>("patients");
   const [patients, setPatients] = useState<NutriPatient[]>([]);
@@ -118,6 +203,13 @@ export function useNutriPage() {
   const [editingPatientId, setEditingPatientId] = useState<string | null>(null);
   const [editDraft, setEditDraft] =
     useState<NutriPatientDraft>(EMPTY_PATIENT_DRAFT);
+  const [selectedPatientId, setSelectedPatientId] = useState("");
+  const [assessments, setAssessments] = useState<NutriAssessment[]>([]);
+  const [loadingAssessments, setLoadingAssessments] = useState(false);
+  const [savingAssessment, setSavingAssessment] = useState(false);
+  const [assessmentDraft, setAssessmentDraft] = useState<NutriAssessmentDraft>(
+    createEmptyAssessmentDraft(),
+  );
 
   const summary = useMemo(
     () =>
@@ -132,12 +224,37 @@ export function useNutriPage() {
   const canCreatePatient = draft.fullName.trim().length > 0;
   const canUpdatePatient =
     Boolean(editingPatientId) && editDraft.fullName.trim().length > 0;
+  const selectedPatient = useMemo(
+    () => patients.find((patient) => patient.id === selectedPatientId),
+    [patients, selectedPatientId],
+  );
+  const activePatients = useMemo(
+    () => patients.filter((patient) => patient.active),
+    [patients],
+  );
+  const assessmentImcPreview = useMemo(
+    () =>
+      calculateImc({
+        weightKg: positiveNumber(assessmentDraft.weightKg),
+        heightCm: positiveNumber(assessmentDraft.heightCm),
+      }),
+    [assessmentDraft.heightCm, assessmentDraft.weightKg],
+  );
+  const canCreateAssessment = Boolean(selectedPatientId && assessmentDraft.date);
 
   useEffect(() => {
     void loadPatients();
     // Initial data load should run once.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (selectedPatientId) {
+      void loadAssessments(selectedPatientId);
+    }
+    // Loading follows selected patient changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedPatientId]);
 
   async function loadPatients(nextQuery = query) {
     setLoadingPatients(true);
@@ -152,6 +269,11 @@ export function useNutriPage() {
 
       setPatients(data.patients);
       setPatientSummary(data.summary);
+
+      const firstActivePatient = data.patients.find((patient) => patient.active);
+      if (!selectedPatientId && firstActivePatient) {
+        setSelectedPatientId(firstActivePatient.id);
+      }
     } catch (error) {
       console.error("[useNutriPage] Failed to load patients", error);
       toast.error("Nao foi possivel carregar pacientes.");
@@ -239,6 +361,53 @@ export function useNutriPage() {
     void loadPatients(value);
   }
 
+  async function loadAssessments(patientId = selectedPatientId) {
+    if (!patientId) {
+      setAssessments([]);
+      return;
+    }
+
+    setLoadingAssessments(true);
+
+    try {
+      const params = new URLSearchParams({ patientId });
+      const data = await fetchJson<NutriAssessmentsResponse>(
+        `/api/nutri/assessments?${params.toString()}`,
+      );
+
+      setAssessments(data.assessments);
+    } catch (error) {
+      console.error("[useNutriPage] Failed to load assessments", error);
+      toast.error("Nao foi possivel carregar avaliacoes.");
+    } finally {
+      setLoadingAssessments(false);
+    }
+  }
+
+  async function createAssessment() {
+    if (!canCreateAssessment) return;
+    setSavingAssessment(true);
+
+    try {
+      await fetchJson<NutriAssessmentResponse>("/api/nutri/assessments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(toAssessmentInput(selectedPatientId, assessmentDraft)),
+      });
+
+      setAssessmentDraft(createEmptyAssessmentDraft());
+      toast.success("Avaliacao registrada.");
+      await loadAssessments(selectedPatientId);
+    } catch (error) {
+      console.error("[useNutriPage] Failed to create assessment", error);
+      toast.error(
+        error instanceof Error ? error.message : "Nao foi possivel registrar.",
+      );
+    } finally {
+      setSavingAssessment(false);
+    }
+  }
+
   return {
     state: {
       tab,
@@ -250,8 +419,17 @@ export function useNutriPage() {
       draft,
       editingPatientId,
       editDraft,
+      selectedPatientId,
+      selectedPatient,
+      activePatients,
+      assessments,
+      loadingAssessments,
+      savingAssessment,
+      assessmentDraft,
+      assessmentImcPreview,
       canCreatePatient,
       canUpdatePatient,
+      canCreateAssessment,
       summary,
       firstSteps: FIRST_STEPS,
     },
@@ -261,12 +439,16 @@ export function useNutriPage() {
       setAndSearchPatients,
       setDraft,
       setEditDraft,
+      setSelectedPatientId,
+      setAssessmentDraft,
       loadPatients,
+      loadAssessments,
       createPatient,
       startEditingPatient,
       cancelEditingPatient,
       updatePatient,
       setPatientActive,
+      createAssessment,
     },
   };
 }
