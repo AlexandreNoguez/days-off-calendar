@@ -860,6 +860,24 @@ export function useNutriPage() {
     }
   }
 
+  async function duplicateMealPlan(id: string) {
+    setSavingMealPlan(true);
+
+    try {
+      await fetchJson<NutriMealPlanResponse>(`/api/nutri/meal-plans/${id}/duplicate`, {
+        method: "POST",
+      });
+
+      toast.success("Plano duplicado como novo rascunho.");
+      await loadMealPlans(mealPlanDraft.patientId || selectedPatientId);
+    } catch (error) {
+      console.error("[useNutriPage] Failed to duplicate meal plan", error);
+      toast.error("Nao foi possivel duplicar o plano.");
+    } finally {
+      setSavingMealPlan(false);
+    }
+  }
+
   return {
     state: {
       tab,
@@ -936,6 +954,7 @@ export function useNutriPage() {
       removeMealPlanItem,
       createMealPlan,
       setMealPlanStatus,
+      duplicateMealPlan,
     },
   };
 }

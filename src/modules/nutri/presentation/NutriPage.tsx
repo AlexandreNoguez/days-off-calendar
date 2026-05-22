@@ -1355,6 +1355,14 @@ export function NutriPage() {
                         <Button
                           size="small"
                           variant="outlined"
+                          disabled={state.savingMealPlan}
+                          onClick={() => void actions.duplicateMealPlan(mealPlan.id)}
+                        >
+                          Duplicar
+                        </Button>
+                        <Button
+                          size="small"
+                          variant="outlined"
                           disabled={state.savingMealPlan || mealPlan.status === "APPROVED"}
                           onClick={() =>
                             void actions.setMealPlanStatus(mealPlan.id, "APPROVED")

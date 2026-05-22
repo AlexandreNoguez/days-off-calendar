@@ -97,8 +97,7 @@ Criterios de aceite:
 
 ## Fase 4 - Plano Alimentar MVP
 
-**Status:** em andamento. Primeira versao do editor, persistencia, comparacao
-de metas e exportacao HTML implementadas.
+**Status:** implementado para MVP.
 
 **Objetivo:** montar plano alimentar individual com totais por refeicao e por dia.
 
@@ -110,7 +109,8 @@ Tarefas:
 - [Implementado] Calcular totais por refeicao e total diario.
 - [Implementado] Comparar totais com metas definidas pela nutricionista.
 - [Implementado] Criar status `DRAFT`, `APPROVED` e `ARCHIVED`.
-- [Pendente] Bloquear edicao direta de plano aprovado.
+- [Implementado] Bloquear edicao direta de plano aprovado via fluxo de nova
+  versao: duplicar plano salvo como `DRAFT`.
 - [Implementado] Exportar versao para paciente em HTML imprimivel.
 
 Criterios de aceite:

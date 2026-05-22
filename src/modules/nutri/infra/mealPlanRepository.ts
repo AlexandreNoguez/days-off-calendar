@@ -85,6 +85,18 @@ function withIds(meals: SaveMealPlanInput["meals"]): NutriMeal[] {
   }));
 }
 
+function cloneMealsWithNewIds(meals: NutriMeal[]): NutriMeal[] {
+  return meals.map((meal) => ({
+    id: createMealId(),
+    name: meal.name,
+    time: meal.time,
+    items: meal.items.map((item) => ({
+      ...item,
+      id: createMealItemId(),
+    })),
+  }));
+}
+
 export async function listNutriMealPlans(input: {
   patientId?: string;
 } = {}): Promise<NutriMealPlan[]> {
@@ -160,4 +172,32 @@ export async function updateNutriMealPlanStatus(input: {
   );
 
   return result ? stripMongoId(result) : null;
+}
+
+export async function duplicateNutriMealPlan(input: {
+  id: string;
+  userId: string;
+}): Promise<NutriMealPlan | null> {
+  await ensureNutriMealPlanIndexes();
+  const collection = await getMealPlansCollection();
+  const source = await collection.findOne({ id: input.id });
+  if (!source) return null;
+
+  const now = nowISO();
+  const meals = cloneMealsWithNewIds(source.meals);
+  const mealPlan: NutriMealPlan = {
+    id: createMealPlanId(),
+    patientId: source.patientId,
+    title: `${source.title} - nova versao`,
+    status: "DRAFT",
+    target: source.target,
+    meals,
+    totals: calculateMealPlanTotals(meals),
+    createdByUserId: input.userId,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  await collection.insertOne(mealPlan);
+  return mealPlan;
 }
