@@ -49,16 +49,19 @@ Criterios de aceite:
 
 ## Fase 2 - Pacientes E Avaliacoes
 
+**Status:** em andamento. CRUD inicial de pacientes implementado.
+
 **Objetivo:** registrar dados essenciais para consulta nutricional.
 
 Tarefas:
 
-- Criar colecoes `nutriPatients` e `nutriAssessments`.
-- Criar CRUD de pacientes.
+- [Implementado] Criar colecao `nutriPatients`.
+- [Pendente] Criar colecao `nutriAssessments`.
+- [Implementado] Criar CRUD de pacientes.
 - Criar formulario de avaliacao com medidas, objetivo, rotina e restricoes.
 - Criar calculo puro de IMC.
 - Criar historico de avaliacoes por paciente.
-- Registrar auditoria sem dados sensiveis no log.
+- [Implementado para pacientes] Registrar auditoria sem dados sensiveis no log.
 
 Criterios de aceite:
 
