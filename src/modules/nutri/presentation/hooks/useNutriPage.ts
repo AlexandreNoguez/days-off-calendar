@@ -13,15 +13,24 @@ import type {
   NutriFoodsResponse,
 } from "../../contracts/foods";
 import type {
+  NutriMealPlanInput,
+  NutriMealPlanResponse,
+  NutriMealPlansResponse,
+} from "../../contracts/mealPlans";
+import type {
   NutriPatientInput,
   NutriPatientsResponse,
   NutriPatientResponse,
 } from "../../contracts/patients";
 import { calculateImc } from "../../application/calculateImc";
+import { calculateMealPlanTotals } from "../../application/calculateMealPlanTotals";
 import type {
   NutriAssessment,
   NutriFood,
   NutriFoodSource,
+  NutriMeal,
+  NutriMealPlan,
+  NutriNutrients,
   NutriPatient,
   NutriPatientSex,
 } from "../../domain/types";
@@ -68,6 +77,32 @@ export type NutriFoodDraft = {
   sodiumMg: string;
   addedSugarG: string;
   allergens: string;
+};
+
+export type NutriMealPlanDraftItem = {
+  id: string;
+  mealName: string;
+  foodId: string;
+  foodName: string;
+  amountG: number;
+  householdMeasure: string;
+  nutrientsPer100g: NutriNutrients;
+};
+
+export type NutriMealPlanDraft = {
+  patientId: string;
+  title: string;
+  targetEnergyKcal: string;
+  targetCarbohydrateG: string;
+  targetProteinG: string;
+  targetFatG: string;
+  targetFiberG: string;
+  targetSodiumMg: string;
+  mealName: string;
+  foodId: string;
+  amountG: string;
+  householdMeasure: string;
+  items: NutriMealPlanDraftItem[];
 };
 
 const INITIAL_SUMMARY = [
@@ -142,6 +177,33 @@ const EMPTY_FOOD_DRAFT: NutriFoodDraft = {
   addedSugarG: "",
   allergens: "",
 };
+
+const DEFAULT_MEAL_NAMES = [
+  "Cafe da manha",
+  "Lanche da manha",
+  "Almoco",
+  "Lanche da tarde",
+  "Jantar",
+  "Ceia",
+] as const;
+
+function createEmptyMealPlanDraft(): NutriMealPlanDraft {
+  return {
+    patientId: "",
+    title: "Plano alimentar",
+    targetEnergyKcal: "",
+    targetCarbohydrateG: "",
+    targetProteinG: "",
+    targetFatG: "",
+    targetFiberG: "",
+    targetSodiumMg: "",
+    mealName: DEFAULT_MEAL_NAMES[0],
+    foodId: "",
+    amountG: "",
+    householdMeasure: "",
+    items: [],
+  };
+}
 
 async function fetchJson<T>(
   input: RequestInfo | URL,
@@ -271,6 +333,54 @@ function toFoodDraft(food: NutriFood): NutriFoodDraft {
   };
 }
 
+function createLocalId(prefix: string): string {
+  return `${prefix}_${globalThis.crypto.randomUUID()}`;
+}
+
+function mealPlanDraftMeals(items: NutriMealPlanDraftItem[]): NutriMeal[] {
+  const mealNames = [...new Set(items.map((item) => item.mealName))];
+
+  return mealNames.map((mealName) => ({
+    id: `draft_${mealName}`,
+    name: mealName,
+    items: items
+      .filter((item) => item.mealName === mealName)
+      .map((item) => ({
+        id: item.id,
+        foodId: item.foodId,
+        foodNameSnapshot: item.foodName,
+        amountG: item.amountG,
+        householdMeasure: item.householdMeasure || undefined,
+        nutrientsPer100gSnapshot: item.nutrientsPer100g,
+      })),
+  }));
+}
+
+function toMealPlanInput(draft: NutriMealPlanDraft): NutriMealPlanInput {
+  const meals = mealPlanDraftMeals(draft.items);
+
+  return {
+    patientId: draft.patientId,
+    title: draft.title.trim(),
+    target: {
+      energyKcal: positiveNumber(draft.targetEnergyKcal),
+      carbohydrateG: positiveNumber(draft.targetCarbohydrateG),
+      proteinG: positiveNumber(draft.targetProteinG),
+      fatG: positiveNumber(draft.targetFatG),
+      fiberG: positiveNumber(draft.targetFiberG),
+      sodiumMg: positiveNumber(draft.targetSodiumMg),
+    },
+    meals: meals.map((meal) => ({
+      name: meal.name,
+      items: meal.items.map((item) => ({
+        foodId: item.foodId,
+        amountG: item.amountG,
+        householdMeasure: item.householdMeasure,
+      })),
+    })),
+  };
+}
+
 export function useNutriPage() {
   const [tab, setTab] = useState<NutriTab>("patients");
   const [patients, setPatients] = useState<NutriPatient[]>([]);
@@ -306,6 +416,12 @@ export function useNutriPage() {
   const [editingFoodId, setEditingFoodId] = useState<string | null>(null);
   const [foodEditDraft, setFoodEditDraft] =
     useState<NutriFoodDraft>(EMPTY_FOOD_DRAFT);
+  const [mealPlans, setMealPlans] = useState<NutriMealPlan[]>([]);
+  const [loadingMealPlans, setLoadingMealPlans] = useState(false);
+  const [savingMealPlan, setSavingMealPlan] = useState(false);
+  const [mealPlanDraft, setMealPlanDraft] = useState<NutriMealPlanDraft>(
+    createEmptyMealPlanDraft(),
+  );
 
   const summary = useMemo(
     () =>
@@ -314,9 +430,11 @@ export function useNutriPage() {
           ? { ...item, value: String(patientSummary.active) }
           : item.label === "Alimentos"
             ? { ...item, value: String(foodSummary.active) }
-          : item,
+            : item.label === "Planos"
+              ? { ...item, value: String(mealPlans.length) }
+              : item,
       ),
-    [foodSummary.active, patientSummary.active],
+    [foodSummary.active, mealPlans.length, patientSummary.active],
   );
 
   const canCreatePatient = draft.fullName.trim().length > 0;
@@ -350,6 +468,28 @@ export function useNutriPage() {
     Object.values(toFoodInput(foodEditDraft).nutrientsPer100g ?? {}).some(
       (value) => typeof value === "number",
     );
+  const activeFoods = useMemo(
+    () => foods.filter((food) => food.active),
+    [foods],
+  );
+  const mealPlanPreviewMeals = useMemo(
+    () => mealPlanDraftMeals(mealPlanDraft.items),
+    [mealPlanDraft.items],
+  );
+  const mealPlanPreviewTotals = useMemo(
+    () => calculateMealPlanTotals(mealPlanPreviewMeals),
+    [mealPlanPreviewMeals],
+  );
+  const canAddMealPlanItem = Boolean(
+    mealPlanDraft.mealName.trim() &&
+      mealPlanDraft.foodId &&
+      positiveNumber(mealPlanDraft.amountG),
+  );
+  const canCreateMealPlan = Boolean(
+    mealPlanDraft.patientId &&
+      mealPlanDraft.title.trim() &&
+      mealPlanDraft.items.length > 0,
+  );
 
   useEffect(() => {
     void Promise.all([loadPatients(), loadFoods()]);
@@ -360,6 +500,7 @@ export function useNutriPage() {
   useEffect(() => {
     if (selectedPatientId) {
       void loadAssessments(selectedPatientId);
+      void loadMealPlans(selectedPatientId);
     }
     // Loading follows selected patient changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -382,6 +523,7 @@ export function useNutriPage() {
       const firstActivePatient = data.patients.find((patient) => patient.active);
       if (!selectedPatientId && firstActivePatient) {
         setSelectedPatientId(firstActivePatient.id);
+        setMealPlanDraft((prev) => ({ ...prev, patientId: firstActivePatient.id }));
       }
     } catch (error) {
       console.error("[useNutriPage] Failed to load patients", error);
@@ -409,6 +551,29 @@ export function useNutriPage() {
       toast.error("Nao foi possivel carregar alimentos.");
     } finally {
       setLoadingFoods(false);
+    }
+  }
+
+  async function loadMealPlans(patientId = selectedPatientId) {
+    if (!patientId) {
+      setMealPlans([]);
+      return;
+    }
+
+    setLoadingMealPlans(true);
+
+    try {
+      const params = new URLSearchParams({ patientId });
+      const data = await fetchJson<NutriMealPlansResponse>(
+        `/api/nutri/meal-plans?${params.toString()}`,
+      );
+
+      setMealPlans(data.mealPlans);
+    } catch (error) {
+      console.error("[useNutriPage] Failed to load meal plans", error);
+      toast.error("Nao foi possivel carregar planos alimentares.");
+    } finally {
+      setLoadingMealPlans(false);
     }
   }
 
@@ -612,6 +777,89 @@ export function useNutriPage() {
     }
   }
 
+  function setMealPlanPatientId(patientId: string) {
+    setSelectedPatientId(patientId);
+    setMealPlanDraft((prev) => ({ ...prev, patientId }));
+  }
+
+  function addMealPlanItem() {
+    const food = foods.find((candidate) => candidate.id === mealPlanDraft.foodId);
+    const amountG = positiveNumber(mealPlanDraft.amountG);
+
+    if (!food || !amountG) return;
+
+    setMealPlanDraft((prev) => ({
+      ...prev,
+      foodId: "",
+      amountG: "",
+      householdMeasure: "",
+      items: [
+        ...prev.items,
+        {
+          id: createLocalId("draft_meal_item"),
+          mealName: prev.mealName.trim(),
+          foodId: food.id,
+          foodName: food.name,
+          amountG,
+          householdMeasure: prev.householdMeasure.trim(),
+          nutrientsPer100g: food.nutrientsPer100g,
+        },
+      ],
+    }));
+  }
+
+  function removeMealPlanItem(id: string) {
+    setMealPlanDraft((prev) => ({
+      ...prev,
+      items: prev.items.filter((item) => item.id !== id),
+    }));
+  }
+
+  async function createMealPlan() {
+    if (!canCreateMealPlan) return;
+    setSavingMealPlan(true);
+
+    try {
+      await fetchJson<NutriMealPlanResponse>("/api/nutri/meal-plans", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(toMealPlanInput(mealPlanDraft)),
+      });
+
+      setMealPlanDraft({
+        ...createEmptyMealPlanDraft(),
+        patientId: mealPlanDraft.patientId,
+      });
+      toast.success("Plano alimentar salvo como rascunho.");
+      await loadMealPlans(mealPlanDraft.patientId);
+    } catch (error) {
+      console.error("[useNutriPage] Failed to create meal plan", error);
+      toast.error(error instanceof Error ? error.message : "Nao foi possivel salvar.");
+    } finally {
+      setSavingMealPlan(false);
+    }
+  }
+
+  async function setMealPlanStatus(id: string, status: NutriMealPlan["status"]) {
+    setSavingMealPlan(true);
+
+    try {
+      await fetchJson<NutriMealPlanResponse>(`/api/nutri/meal-plans/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+
+      toast.success("Status do plano atualizado.");
+      await loadMealPlans(mealPlanDraft.patientId || selectedPatientId);
+    } catch (error) {
+      console.error("[useNutriPage] Failed to update meal plan status", error);
+      toast.error("Nao foi possivel atualizar o plano.");
+    } finally {
+      setSavingMealPlan(false);
+    }
+  }
+
   return {
     state: {
       tab,
@@ -639,11 +887,20 @@ export function useNutriPage() {
       foodDraft,
       editingFoodId,
       foodEditDraft,
+      mealPlans,
+      loadingMealPlans,
+      savingMealPlan,
+      mealPlanDraft,
+      activeFoods,
+      mealPlanPreviewMeals,
+      mealPlanPreviewTotals,
       canCreatePatient,
       canUpdatePatient,
       canCreateAssessment,
       canCreateFood,
       canUpdateFood,
+      canAddMealPlanItem,
+      canCreateMealPlan,
       summary,
       firstSteps: FIRST_STEPS,
     },
@@ -658,9 +915,12 @@ export function useNutriPage() {
       setFoodQuery,
       setFoodDraft,
       setFoodEditDraft,
+      setMealPlanDraft,
+      setMealPlanPatientId,
       loadPatients,
       loadAssessments,
       loadFoods,
+      loadMealPlans,
       createPatient,
       startEditingPatient,
       cancelEditingPatient,
@@ -672,6 +932,10 @@ export function useNutriPage() {
       cancelEditingFood,
       updateFood,
       setFoodActive,
+      addMealPlanItem,
+      removeMealPlanItem,
+      createMealPlan,
+      setMealPlanStatus,
     },
   };
 }

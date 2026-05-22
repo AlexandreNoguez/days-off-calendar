@@ -28,6 +28,7 @@ import {
   Typography,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
+import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import RestaurantMenuIcon from "@mui/icons-material/RestaurantMenu";
 import SaveIcon from "@mui/icons-material/Save";
@@ -122,7 +123,11 @@ export function NutriPage() {
 
       {state.tab === "patients" && renderPatients()}
       {state.tab === "foods" && renderFoods()}
-      {state.tab !== "patients" && state.tab !== "foods" && renderPlannedArea()}
+      {state.tab === "mealPlans" && renderMealPlans()}
+      {state.tab !== "patients" &&
+        state.tab !== "foods" &&
+        state.tab !== "mealPlans" &&
+        renderPlannedArea()}
     </Stack>
   );
 
@@ -1034,6 +1039,312 @@ export function NutriPage() {
           fullWidth
         />
       </Stack>
+    );
+  }
+
+  function renderMealPlans() {
+    return (
+      <Stack spacing={2}>
+        <Paper variant="outlined" sx={{ p: 2 }}>
+          <Stack spacing={2}>
+            <Box>
+              <Typography variant="subtitle1" fontWeight={700}>
+                Novo plano alimentar
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Monte refeicoes com alimentos cadastrados e quantidades em gramas.
+              </Typography>
+            </Box>
+
+            <Stack direction={{ xs: "column", md: "row" }} spacing={1}>
+              <FormControl fullWidth>
+                <InputLabel>Paciente</InputLabel>
+                <Select
+                  label="Paciente"
+                  value={state.mealPlanDraft.patientId || state.selectedPatientId}
+                  disabled={state.savingMealPlan || state.activePatients.length === 0}
+                  onChange={(event) => actions.setMealPlanPatientId(event.target.value)}
+                >
+                  {state.activePatients.map((patient) => (
+                    <MenuItem key={patient.id} value={patient.id}>
+                      {patient.fullName}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <TextField
+                label="Titulo"
+                value={state.mealPlanDraft.title}
+                disabled={state.savingMealPlan}
+                onChange={(event) =>
+                  actions.setMealPlanDraft((prev) => ({
+                    ...prev,
+                    title: event.target.value,
+                  }))
+                }
+                fullWidth
+              />
+            </Stack>
+
+            <Stack direction={{ xs: "column", md: "row" }} spacing={1}>
+              {renderMealPlanTargetField("Meta kcal", "targetEnergyKcal")}
+              {renderMealPlanTargetField("Carboidrato g", "targetCarbohydrateG")}
+              {renderMealPlanTargetField("Proteina g", "targetProteinG")}
+              {renderMealPlanTargetField("Gordura g", "targetFatG")}
+              {renderMealPlanTargetField("Fibra g", "targetFiberG")}
+              {renderMealPlanTargetField("Sodio mg", "targetSodiumMg")}
+            </Stack>
+
+            <Divider />
+
+            <Stack direction={{ xs: "column", md: "row" }} spacing={1}>
+              <TextField
+                label="Refeicao"
+                value={state.mealPlanDraft.mealName}
+                disabled={state.savingMealPlan}
+                onChange={(event) =>
+                  actions.setMealPlanDraft((prev) => ({
+                    ...prev,
+                    mealName: event.target.value,
+                  }))
+                }
+                fullWidth
+              />
+              <FormControl fullWidth>
+                <InputLabel>Alimento</InputLabel>
+                <Select
+                  label="Alimento"
+                  value={state.mealPlanDraft.foodId}
+                  disabled={state.savingMealPlan || state.activeFoods.length === 0}
+                  onChange={(event) =>
+                    actions.setMealPlanDraft((prev) => ({
+                      ...prev,
+                      foodId: event.target.value,
+                    }))
+                  }
+                >
+                  {state.activeFoods.map((food) => (
+                    <MenuItem key={food.id} value={food.id}>
+                      {food.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <TextField
+                label="Quantidade g"
+                type="number"
+                value={state.mealPlanDraft.amountG}
+                disabled={state.savingMealPlan}
+                onChange={(event) =>
+                  actions.setMealPlanDraft((prev) => ({
+                    ...prev,
+                    amountG: event.target.value,
+                  }))
+                }
+                fullWidth
+              />
+              <TextField
+                label="Medida caseira"
+                value={state.mealPlanDraft.householdMeasure}
+                disabled={state.savingMealPlan}
+                onChange={(event) =>
+                  actions.setMealPlanDraft((prev) => ({
+                    ...prev,
+                    householdMeasure: event.target.value,
+                  }))
+                }
+                fullWidth
+              />
+            </Stack>
+
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+              <Button
+                variant="outlined"
+                startIcon={<AddIcon />}
+                disabled={!state.canAddMealPlanItem || state.savingMealPlan}
+                onClick={actions.addMealPlanItem}
+              >
+                Adicionar alimento
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={<SaveIcon />}
+                disabled={!state.canCreateMealPlan || state.savingMealPlan}
+                onClick={() => void actions.createMealPlan()}
+              >
+                Salvar plano
+              </Button>
+            </Stack>
+          </Stack>
+        </Paper>
+
+        <Paper variant="outlined" sx={{ p: 2 }}>
+          <Stack spacing={2}>
+            <Typography variant="subtitle1" fontWeight={700}>
+              Previa do plano
+            </Typography>
+
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              <Chip label={`Kcal: ${state.mealPlanPreviewTotals.energyKcal ?? 0}`} />
+              <Chip label={`Carbo: ${state.mealPlanPreviewTotals.carbohydrateG ?? 0} g`} />
+              <Chip label={`Proteina: ${state.mealPlanPreviewTotals.proteinG ?? 0} g`} />
+              <Chip label={`Gordura: ${state.mealPlanPreviewTotals.fatG ?? 0} g`} />
+              <Chip label={`Fibra: ${state.mealPlanPreviewTotals.fiberG ?? 0} g`} />
+              <Chip label={`Sodio: ${state.mealPlanPreviewTotals.sodiumMg ?? 0} mg`} />
+            </Stack>
+
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Refeicao</TableCell>
+                  <TableCell>Alimento</TableCell>
+                  <TableCell>Quantidade</TableCell>
+                  <TableCell>Acoes</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {state.mealPlanDraft.items.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell>{item.mealName}</TableCell>
+                    <TableCell>{item.foodName}</TableCell>
+                    <TableCell>
+                      {item.amountG} g
+                      {item.householdMeasure ? ` / ${item.householdMeasure}` : ""}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={<DeleteIcon />}
+                        disabled={state.savingMealPlan}
+                        onClick={() => actions.removeMealPlanItem(item.id)}
+                      >
+                        Remover
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {state.mealPlanDraft.items.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={4}>
+                      <Alert severity="info">
+                        Adicione alimentos para montar a previa do plano.
+                      </Alert>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </Stack>
+        </Paper>
+
+        <Paper variant="outlined" sx={{ overflow: "auto" }}>
+          {state.loadingMealPlans ? (
+            <Stack alignItems="center" spacing={2} sx={{ py: 6 }}>
+              <CircularProgress />
+              <Typography color="text.secondary">Carregando planos...</Typography>
+            </Stack>
+          ) : (
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Plano</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Total</TableCell>
+                  <TableCell>Refeicoes</TableCell>
+                  <TableCell>Acoes</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {state.mealPlans.map((mealPlan) => (
+                  <TableRow key={mealPlan.id}>
+                    <TableCell>
+                      <Typography variant="body2" fontWeight={600}>
+                        {mealPlan.title}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Atualizado em {new Date(mealPlan.updatedAt).toLocaleString("pt-BR")}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Chip size="small" label={mealPlan.status} />
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="caption">
+                        {mealPlan.totals.energyKcal ?? 0} kcal /{" "}
+                        {mealPlan.totals.proteinG ?? 0} g proteina
+                      </Typography>
+                    </TableCell>
+                    <TableCell>{mealPlan.meals.length}</TableCell>
+                    <TableCell>
+                      <Stack direction="row" spacing={1}>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          disabled={state.savingMealPlan || mealPlan.status === "APPROVED"}
+                          onClick={() =>
+                            void actions.setMealPlanStatus(mealPlan.id, "APPROVED")
+                          }
+                        >
+                          Aprovar
+                        </Button>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          disabled={state.savingMealPlan || mealPlan.status === "ARCHIVED"}
+                          onClick={() =>
+                            void actions.setMealPlanStatus(mealPlan.id, "ARCHIVED")
+                          }
+                        >
+                          Arquivar
+                        </Button>
+                      </Stack>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {state.mealPlans.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={5}>
+                      <Alert severity="info">
+                        Nenhum plano alimentar salvo para o paciente selecionado.
+                      </Alert>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          )}
+        </Paper>
+      </Stack>
+    );
+  }
+
+  function renderMealPlanTargetField(
+    label: string,
+    key: keyof Pick<
+      typeof state.mealPlanDraft,
+      | "targetEnergyKcal"
+      | "targetCarbohydrateG"
+      | "targetProteinG"
+      | "targetFatG"
+      | "targetFiberG"
+      | "targetSodiumMg"
+    >,
+  ) {
+    return (
+      <TextField
+        label={label}
+        type="number"
+        value={state.mealPlanDraft[key]}
+        disabled={state.savingMealPlan}
+        onChange={(event) =>
+          actions.setMealPlanDraft((prev) => ({
+            ...prev,
+            [key]: event.target.value,
+          }))
+        }
+        fullWidth
+      />
     );
   }
 

@@ -76,3 +76,36 @@ export type NutriFood = {
   createdAt: string;
   updatedAt: string;
 };
+
+export type NutriMealPlanStatus = "DRAFT" | "APPROVED" | "ARCHIVED";
+
+export type NutriMealPlanFoodItem = {
+  id: string;
+  foodId: string;
+  foodNameSnapshot: string;
+  amountG: number;
+  householdMeasure?: string;
+  nutrientsPer100gSnapshot: NutriNutrients;
+};
+
+export type NutriMeal = {
+  id: string;
+  name: string;
+  time?: string;
+  items: NutriMealPlanFoodItem[];
+};
+
+export type NutriMealPlan = {
+  id: string;
+  patientId: string;
+  title: string;
+  status: NutriMealPlanStatus;
+  target: NutriNutrients;
+  meals: NutriMeal[];
+  totals: NutriNutrients;
+  approvedAt?: string;
+  approvedByUserId?: string;
+  createdByUserId: string;
+  createdAt: string;
+  updatedAt: string;
+};

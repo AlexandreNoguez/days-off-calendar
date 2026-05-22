@@ -107,6 +107,17 @@ export async function summarizeNutriFoods(): Promise<{
   };
 }
 
+export async function findNutriFoodsByIds(ids: string[]): Promise<NutriFood[]> {
+  await ensureNutriFoodIndexes();
+  const collection = await getFoodsCollection();
+  const uniqueIds = [...new Set(ids)];
+
+  if (uniqueIds.length === 0) return [];
+
+  const foods = await collection.find({ id: { $in: uniqueIds } }).toArray();
+  return foods.map(stripMongoId);
+}
+
 export async function createNutriFood(input: {
   food: SaveFoodInput;
   userId: string;

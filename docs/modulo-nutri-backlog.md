@@ -97,17 +97,20 @@ Criterios de aceite:
 
 ## Fase 4 - Plano Alimentar MVP
 
+**Status:** em andamento. Primeira versao do editor e persistencia de planos
+implementada.
+
 **Objetivo:** montar plano alimentar individual com totais por refeicao e por dia.
 
 Tarefas:
 
-- Criar entidade `NutriMealPlan`.
-- Criar editor por refeicoes.
-- Adicionar alimentos a refeicoes por gramas e medida caseira.
-- Calcular totais por refeicao e total diario.
-- Comparar totais com metas definidas pela nutricionista.
-- Criar status `DRAFT`, `APPROVED` e `ARCHIVED`.
-- Bloquear edicao direta de plano aprovado.
+- [Implementado] Criar entidade `NutriMealPlan`.
+- [Implementado] Criar editor por refeicoes.
+- [Implementado] Adicionar alimentos a refeicoes por gramas e medida caseira.
+- [Implementado] Calcular totais por refeicao e total diario.
+- [Parcial] Comparar totais com metas definidas pela nutricionista.
+- [Implementado] Criar status `DRAFT`, `APPROVED` e `ARCHIVED`.
+- [Pendente] Bloquear edicao direta de plano aprovado.
 - Exportar versao para paciente em HTML imprimivel.
 
 Criterios de aceite:
