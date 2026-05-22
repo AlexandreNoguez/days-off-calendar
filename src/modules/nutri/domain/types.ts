@@ -49,3 +49,30 @@ export type NutriAssessment = {
   createdAt: string;
   updatedAt: string;
 };
+
+export type NutriFoodSource = "TACO" | "IBGE" | "LABEL" | "MANUAL";
+
+export type NutriNutrients = {
+  energyKcal?: number;
+  carbohydrateG?: number;
+  proteinG?: number;
+  fatG?: number;
+  saturatedFatG?: number;
+  fiberG?: number;
+  sodiumMg?: number;
+  addedSugarG?: number;
+};
+
+export type NutriFood = {
+  id: string;
+  name: string;
+  source: NutriFoodSource;
+  sourceVersion?: string;
+  servingDescription?: string;
+  nutrientsPer100g: NutriNutrients;
+  allergens: string[];
+  active: boolean;
+  createdByUserId: string;
+  createdAt: string;
+  updatedAt: string;
+};

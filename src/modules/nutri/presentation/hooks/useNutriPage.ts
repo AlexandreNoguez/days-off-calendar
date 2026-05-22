@@ -8,6 +8,11 @@ import type {
   NutriAssessmentsResponse,
 } from "../../contracts/assessments";
 import type {
+  NutriFoodInput,
+  NutriFoodResponse,
+  NutriFoodsResponse,
+} from "../../contracts/foods";
+import type {
   NutriPatientInput,
   NutriPatientsResponse,
   NutriPatientResponse,
@@ -15,11 +20,13 @@ import type {
 import { calculateImc } from "../../application/calculateImc";
 import type {
   NutriAssessment,
+  NutriFood,
+  NutriFoodSource,
   NutriPatient,
   NutriPatientSex,
 } from "../../domain/types";
 
-export type NutriTab = "patients" | "mealPlans" | "recipes" | "menus";
+export type NutriTab = "patients" | "foods" | "mealPlans" | "recipes" | "menus";
 
 export type NutriPatientDraft = {
   fullName: string;
@@ -47,6 +54,22 @@ export type NutriAssessmentDraft = {
   clinicalNotes: string;
 };
 
+export type NutriFoodDraft = {
+  name: string;
+  source: NutriFoodSource;
+  sourceVersion: string;
+  servingDescription: string;
+  energyKcal: string;
+  carbohydrateG: string;
+  proteinG: string;
+  fatG: string;
+  saturatedFatG: string;
+  fiberG: string;
+  sodiumMg: string;
+  addedSugarG: string;
+  allergens: string;
+};
+
 const INITIAL_SUMMARY = [
   {
     label: "Pacientes",
@@ -54,14 +77,14 @@ const INITIAL_SUMMARY = [
     description: "Cadastro clinico inicial e historico de avaliacoes.",
   },
   {
+    label: "Alimentos",
+    value: "0",
+    description: "Base nutricional por 100 g para calculos.",
+  },
+  {
     label: "Planos",
     value: "0",
     description: "Planos alimentares em rascunho ou aprovados.",
-  },
-  {
-    label: "Receitas",
-    value: "0",
-    description: "Fichas tecnicas e preparacoes para cardapios.",
   },
 ] as const;
 
@@ -103,6 +126,22 @@ function createEmptyAssessmentDraft(): NutriAssessmentDraft {
     clinicalNotes: "",
   };
 }
+
+const EMPTY_FOOD_DRAFT: NutriFoodDraft = {
+  name: "",
+  source: "MANUAL",
+  sourceVersion: "",
+  servingDescription: "",
+  energyKcal: "",
+  carbohydrateG: "",
+  proteinG: "",
+  fatG: "",
+  saturatedFatG: "",
+  fiberG: "",
+  sodiumMg: "",
+  addedSugarG: "",
+  allergens: "",
+};
 
 async function fetchJson<T>(
   input: RequestInfo | URL,
@@ -188,6 +227,50 @@ function toAssessmentInput(
   };
 }
 
+function toFoodInput(
+  draft: NutriFoodDraft,
+  options: { active?: boolean } = {},
+): NutriFoodInput {
+  const input: NutriFoodInput = {
+    name: draft.name.trim(),
+    source: draft.source,
+    sourceVersion: draft.sourceVersion.trim(),
+    servingDescription: draft.servingDescription.trim(),
+    nutrientsPer100g: {
+      energyKcal: positiveNumber(draft.energyKcal),
+      carbohydrateG: positiveNumber(draft.carbohydrateG),
+      proteinG: positiveNumber(draft.proteinG),
+      fatG: positiveNumber(draft.fatG),
+      saturatedFatG: positiveNumber(draft.saturatedFatG),
+      fiberG: positiveNumber(draft.fiberG),
+      sodiumMg: positiveNumber(draft.sodiumMg),
+      addedSugarG: positiveNumber(draft.addedSugarG),
+    },
+    allergens: splitList(draft.allergens),
+  };
+
+  if (typeof options.active === "boolean") input.active = options.active;
+  return input;
+}
+
+function toFoodDraft(food: NutriFood): NutriFoodDraft {
+  return {
+    name: food.name,
+    source: food.source,
+    sourceVersion: food.sourceVersion ?? "",
+    servingDescription: food.servingDescription ?? "",
+    energyKcal: String(food.nutrientsPer100g.energyKcal ?? ""),
+    carbohydrateG: String(food.nutrientsPer100g.carbohydrateG ?? ""),
+    proteinG: String(food.nutrientsPer100g.proteinG ?? ""),
+    fatG: String(food.nutrientsPer100g.fatG ?? ""),
+    saturatedFatG: String(food.nutrientsPer100g.saturatedFatG ?? ""),
+    fiberG: String(food.nutrientsPer100g.fiberG ?? ""),
+    sodiumMg: String(food.nutrientsPer100g.sodiumMg ?? ""),
+    addedSugarG: String(food.nutrientsPer100g.addedSugarG ?? ""),
+    allergens: food.allergens.join(", "),
+  };
+}
+
 export function useNutriPage() {
   const [tab, setTab] = useState<NutriTab>("patients");
   const [patients, setPatients] = useState<NutriPatient[]>([]);
@@ -210,15 +293,30 @@ export function useNutriPage() {
   const [assessmentDraft, setAssessmentDraft] = useState<NutriAssessmentDraft>(
     createEmptyAssessmentDraft(),
   );
+  const [foods, setFoods] = useState<NutriFood[]>([]);
+  const [foodSummary, setFoodSummary] = useState({
+    total: 0,
+    active: 0,
+    archived: 0,
+  });
+  const [foodQuery, setFoodQuery] = useState("");
+  const [loadingFoods, setLoadingFoods] = useState(true);
+  const [savingFood, setSavingFood] = useState(false);
+  const [foodDraft, setFoodDraft] = useState<NutriFoodDraft>(EMPTY_FOOD_DRAFT);
+  const [editingFoodId, setEditingFoodId] = useState<string | null>(null);
+  const [foodEditDraft, setFoodEditDraft] =
+    useState<NutriFoodDraft>(EMPTY_FOOD_DRAFT);
 
   const summary = useMemo(
     () =>
       INITIAL_SUMMARY.map((item) =>
         item.label === "Pacientes"
           ? { ...item, value: String(patientSummary.active) }
+          : item.label === "Alimentos"
+            ? { ...item, value: String(foodSummary.active) }
           : item,
       ),
-    [patientSummary.active],
+    [foodSummary.active, patientSummary.active],
   );
 
   const canCreatePatient = draft.fullName.trim().length > 0;
@@ -241,9 +339,20 @@ export function useNutriPage() {
     [assessmentDraft.heightCm, assessmentDraft.weightKg],
   );
   const canCreateAssessment = Boolean(selectedPatientId && assessmentDraft.date);
+  const canCreateFood =
+    foodDraft.name.trim().length > 0 &&
+    Object.values(toFoodInput(foodDraft).nutrientsPer100g ?? {}).some(
+      (value) => typeof value === "number",
+    );
+  const canUpdateFood =
+    Boolean(editingFoodId) &&
+    foodEditDraft.name.trim().length > 0 &&
+    Object.values(toFoodInput(foodEditDraft).nutrientsPer100g ?? {}).some(
+      (value) => typeof value === "number",
+    );
 
   useEffect(() => {
-    void loadPatients();
+    void Promise.all([loadPatients(), loadFoods()]);
     // Initial data load should run once.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -279,6 +388,27 @@ export function useNutriPage() {
       toast.error("Nao foi possivel carregar pacientes.");
     } finally {
       setLoadingPatients(false);
+    }
+  }
+
+  async function loadFoods(nextQuery = foodQuery) {
+    setLoadingFoods(true);
+
+    try {
+      const params = new URLSearchParams();
+      if (nextQuery.trim()) params.set("q", nextQuery.trim());
+
+      const data = await fetchJson<NutriFoodsResponse>(
+        `/api/nutri/foods${params.toString() ? `?${params.toString()}` : ""}`,
+      );
+
+      setFoods(data.foods);
+      setFoodSummary(data.summary);
+    } catch (error) {
+      console.error("[useNutriPage] Failed to load foods", error);
+      toast.error("Nao foi possivel carregar alimentos.");
+    } finally {
+      setLoadingFoods(false);
     }
   }
 
@@ -408,6 +538,80 @@ export function useNutriPage() {
     }
   }
 
+  async function createFood() {
+    if (!canCreateFood) return;
+    setSavingFood(true);
+
+    try {
+      await fetchJson<NutriFoodResponse>("/api/nutri/foods", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(toFoodInput(foodDraft, { active: true })),
+      });
+
+      setFoodDraft(EMPTY_FOOD_DRAFT);
+      toast.success("Alimento cadastrado.");
+      await loadFoods();
+    } catch (error) {
+      console.error("[useNutriPage] Failed to create food", error);
+      toast.error(error instanceof Error ? error.message : "Nao foi possivel cadastrar.");
+    } finally {
+      setSavingFood(false);
+    }
+  }
+
+  function startEditingFood(food: NutriFood) {
+    setEditingFoodId(food.id);
+    setFoodEditDraft(toFoodDraft(food));
+  }
+
+  function cancelEditingFood() {
+    setEditingFoodId(null);
+    setFoodEditDraft(EMPTY_FOOD_DRAFT);
+  }
+
+  async function updateFood() {
+    if (!editingFoodId || !canUpdateFood) return;
+    setSavingFood(true);
+
+    try {
+      await fetchJson<NutriFoodResponse>(`/api/nutri/foods/${editingFoodId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(toFoodInput(foodEditDraft)),
+      });
+
+      cancelEditingFood();
+      toast.success("Alimento atualizado.");
+      await loadFoods();
+    } catch (error) {
+      console.error("[useNutriPage] Failed to update food", error);
+      toast.error(error instanceof Error ? error.message : "Nao foi possivel atualizar.");
+    } finally {
+      setSavingFood(false);
+    }
+  }
+
+  async function setFoodActive(id: string, active: boolean) {
+    setSavingFood(true);
+
+    try {
+      await fetchJson<NutriFoodResponse>(`/api/nutri/foods/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ active }),
+      });
+
+      toast.success(active ? "Alimento reativado." : "Alimento arquivado.");
+      await loadFoods();
+    } catch (error) {
+      console.error("[useNutriPage] Failed to change food status", error);
+      toast.error("Nao foi possivel alterar o status do alimento.");
+    } finally {
+      setSavingFood(false);
+    }
+  }
+
   return {
     state: {
       tab,
@@ -427,9 +631,19 @@ export function useNutriPage() {
       savingAssessment,
       assessmentDraft,
       assessmentImcPreview,
+      foods,
+      foodSummary,
+      foodQuery,
+      loadingFoods,
+      savingFood,
+      foodDraft,
+      editingFoodId,
+      foodEditDraft,
       canCreatePatient,
       canUpdatePatient,
       canCreateAssessment,
+      canCreateFood,
+      canUpdateFood,
       summary,
       firstSteps: FIRST_STEPS,
     },
@@ -441,14 +655,23 @@ export function useNutriPage() {
       setEditDraft,
       setSelectedPatientId,
       setAssessmentDraft,
+      setFoodQuery,
+      setFoodDraft,
+      setFoodEditDraft,
       loadPatients,
       loadAssessments,
+      loadFoods,
       createPatient,
       startEditingPatient,
       cancelEditingPatient,
       updatePatient,
       setPatientActive,
       createAssessment,
+      createFood,
+      startEditingFood,
+      cancelEditingFood,
+      updateFood,
+      setFoodActive,
     },
   };
 }

@@ -32,10 +32,15 @@ import EditIcon from "@mui/icons-material/Edit";
 import RestaurantMenuIcon from "@mui/icons-material/RestaurantMenu";
 import SaveIcon from "@mui/icons-material/Save";
 import SearchIcon from "@mui/icons-material/Search";
-import type { NutriImcClassification, NutriPatientSex } from "../domain/types";
+import type {
+  NutriFoodSource,
+  NutriImcClassification,
+  NutriPatientSex,
+} from "../domain/types";
 import {
   useNutriPage,
   type NutriAssessmentDraft,
+  type NutriFoodDraft,
   type NutriPatientDraft,
   type NutriTab,
 } from "./hooks/useNutriPage";
@@ -54,6 +59,13 @@ const IMC_LABELS: Record<NutriImcClassification, string> = {
   OBESITY_I: "Obesidade I",
   OBESITY_II: "Obesidade II",
   OBESITY_III: "Obesidade III",
+};
+
+const FOOD_SOURCE_LABELS: Record<NutriFoodSource, string> = {
+  MANUAL: "Manual",
+  LABEL: "Rotulo",
+  TACO: "TACO",
+  IBGE: "IBGE",
 };
 
 export function NutriPage() {
@@ -102,12 +114,15 @@ export function NutriPage() {
 
       <Tabs value={state.tab} onChange={(_, value: NutriTab) => actions.setTab(value)}>
         <Tab value="patients" label="Pacientes" />
+        <Tab value="foods" label="Alimentos" />
         <Tab value="mealPlans" label="Planos" />
         <Tab value="recipes" label="Receitas" />
         <Tab value="menus" label="Cardapios" />
       </Tabs>
 
-      {state.tab === "patients" ? renderPatients() : renderPlannedArea()}
+      {state.tab === "patients" && renderPatients()}
+      {state.tab === "foods" && renderFoods()}
+      {state.tab !== "patients" && state.tab !== "foods" && renderPlannedArea()}
     </Stack>
   );
 
@@ -677,6 +692,345 @@ export function NutriPage() {
           }
           minRows={2}
           multiline
+          fullWidth
+        />
+      </Stack>
+    );
+  }
+
+  function renderFoods() {
+    return (
+      <Stack spacing={2}>
+        <Paper variant="outlined" sx={{ p: 2 }}>
+          <Stack spacing={2}>
+            <Typography variant="subtitle1" fontWeight={700}>
+              Novo alimento
+            </Typography>
+            {renderFoodForm({
+              draft: state.foodDraft,
+              onChange: actions.setFoodDraft,
+              disabled: state.savingFood,
+            })}
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              disabled={!state.canCreateFood || state.savingFood}
+              onClick={() => void actions.createFood()}
+            >
+              Cadastrar alimento
+            </Button>
+          </Stack>
+        </Paper>
+
+        <Paper variant="outlined" sx={{ p: 2 }}>
+          <Stack spacing={2}>
+            <Stack direction={{ xs: "column", md: "row" }} spacing={1}>
+              <TextField
+                label="Buscar alimento"
+                value={state.foodQuery}
+                onChange={(event) => actions.setFoodQuery(event.target.value)}
+                fullWidth
+              />
+              <Button
+                variant="outlined"
+                startIcon={<SearchIcon />}
+                onClick={() => void actions.loadFoods()}
+              >
+                Buscar
+              </Button>
+            </Stack>
+
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              <Chip label={`Ativos: ${state.foodSummary.active}`} />
+              <Chip label={`Arquivados: ${state.foodSummary.archived}`} />
+              <Chip label={`Total: ${state.foodSummary.total}`} />
+            </Stack>
+          </Stack>
+        </Paper>
+
+        {state.editingFoodId && (
+          <Paper variant="outlined" sx={{ p: 2 }}>
+            <Stack spacing={2}>
+              <Typography variant="subtitle1" fontWeight={700}>
+                Editar alimento
+              </Typography>
+              {renderFoodForm({
+                draft: state.foodEditDraft,
+                onChange: actions.setFoodEditDraft,
+                disabled: state.savingFood,
+              })}
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                <Button
+                  variant="contained"
+                  startIcon={<SaveIcon />}
+                  disabled={!state.canUpdateFood || state.savingFood}
+                  onClick={() => void actions.updateFood()}
+                >
+                  Salvar alteracoes
+                </Button>
+                <Button
+                  variant="outlined"
+                  disabled={state.savingFood}
+                  onClick={actions.cancelEditingFood}
+                >
+                  Cancelar
+                </Button>
+              </Stack>
+            </Stack>
+          </Paper>
+        )}
+
+        <Paper variant="outlined" sx={{ overflow: "auto" }}>
+          {state.loadingFoods ? (
+            <Stack alignItems="center" spacing={2} sx={{ py: 6 }}>
+              <CircularProgress />
+              <Typography color="text.secondary">Carregando alimentos...</Typography>
+            </Stack>
+          ) : (
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Alimento</TableCell>
+                  <TableCell>Fonte</TableCell>
+                  <TableCell>Energia</TableCell>
+                  <TableCell>Macros</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Acoes</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {state.foods.map((food) => (
+                  <TableRow key={food.id}>
+                    <TableCell>
+                      <Typography variant="body2" fontWeight={600}>
+                        {food.name}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {food.servingDescription || "Valores por 100 g"}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Chip size="small" label={FOOD_SOURCE_LABELS[food.source]} />
+                    </TableCell>
+                    <TableCell>
+                      {food.nutrientsPer100g.energyKcal ?? "-"} kcal
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="caption">
+                        C: {food.nutrientsPer100g.carbohydrateG ?? "-"} g / P:{" "}
+                        {food.nutrientsPer100g.proteinG ?? "-"} g / G:{" "}
+                        {food.nutrientsPer100g.fatG ?? "-"} g
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <Switch
+                          checked={food.active}
+                          disabled={state.savingFood}
+                          onChange={(event) =>
+                            void actions.setFoodActive(food.id, event.target.checked)
+                          }
+                        />
+                        <Chip
+                          size="small"
+                          label={food.active ? "Ativo" : "Arquivado"}
+                          color={food.active ? "success" : "default"}
+                        />
+                      </Stack>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={<EditIcon />}
+                        disabled={state.savingFood}
+                        onClick={() => actions.startEditingFood(food)}
+                      >
+                        Editar
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {state.foods.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6}>
+                      <Alert severity="info">
+                        Nenhum alimento encontrado para os filtros atuais.
+                      </Alert>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          )}
+        </Paper>
+      </Stack>
+    );
+  }
+
+  function renderFoodForm(input: {
+    draft: NutriFoodDraft;
+    onChange: React.Dispatch<React.SetStateAction<NutriFoodDraft>>;
+    disabled: boolean;
+  }) {
+    return (
+      <Stack spacing={2}>
+        <Stack direction={{ xs: "column", md: "row" }} spacing={1}>
+          <TextField
+            label="Nome"
+            value={input.draft.name}
+            disabled={input.disabled}
+            onChange={(event) =>
+              input.onChange((prev) => ({ ...prev, name: event.target.value }))
+            }
+            fullWidth
+          />
+          <FormControl fullWidth>
+            <InputLabel>Fonte</InputLabel>
+            <Select
+              label="Fonte"
+              value={input.draft.source}
+              disabled={input.disabled}
+              onChange={(event) =>
+                input.onChange((prev) => ({
+                  ...prev,
+                  source: event.target.value as NutriFoodSource,
+                }))
+              }
+            >
+              {Object.entries(FOOD_SOURCE_LABELS).map(([value, label]) => (
+                <MenuItem key={value} value={value}>
+                  {label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <TextField
+            label="Versao da fonte"
+            value={input.draft.sourceVersion}
+            disabled={input.disabled}
+            onChange={(event) =>
+              input.onChange((prev) => ({
+                ...prev,
+                sourceVersion: event.target.value,
+              }))
+            }
+            fullWidth
+          />
+        </Stack>
+
+        <TextField
+          label="Medida caseira ou observacao"
+          value={input.draft.servingDescription}
+          disabled={input.disabled}
+          onChange={(event) =>
+            input.onChange((prev) => ({
+              ...prev,
+              servingDescription: event.target.value,
+            }))
+          }
+          fullWidth
+        />
+
+        <Stack direction={{ xs: "column", md: "row" }} spacing={1}>
+          <TextField
+            label="Energia kcal"
+            type="number"
+            value={input.draft.energyKcal}
+            disabled={input.disabled}
+            onChange={(event) =>
+              input.onChange((prev) => ({ ...prev, energyKcal: event.target.value }))
+            }
+            fullWidth
+          />
+          <TextField
+            label="Carboidrato g"
+            type="number"
+            value={input.draft.carbohydrateG}
+            disabled={input.disabled}
+            onChange={(event) =>
+              input.onChange((prev) => ({
+                ...prev,
+                carbohydrateG: event.target.value,
+              }))
+            }
+            fullWidth
+          />
+          <TextField
+            label="Proteina g"
+            type="number"
+            value={input.draft.proteinG}
+            disabled={input.disabled}
+            onChange={(event) =>
+              input.onChange((prev) => ({ ...prev, proteinG: event.target.value }))
+            }
+            fullWidth
+          />
+          <TextField
+            label="Gordura g"
+            type="number"
+            value={input.draft.fatG}
+            disabled={input.disabled}
+            onChange={(event) =>
+              input.onChange((prev) => ({ ...prev, fatG: event.target.value }))
+            }
+            fullWidth
+          />
+        </Stack>
+
+        <Stack direction={{ xs: "column", md: "row" }} spacing={1}>
+          <TextField
+            label="Gordura saturada g"
+            type="number"
+            value={input.draft.saturatedFatG}
+            disabled={input.disabled}
+            onChange={(event) =>
+              input.onChange((prev) => ({
+                ...prev,
+                saturatedFatG: event.target.value,
+              }))
+            }
+            fullWidth
+          />
+          <TextField
+            label="Fibra g"
+            type="number"
+            value={input.draft.fiberG}
+            disabled={input.disabled}
+            onChange={(event) =>
+              input.onChange((prev) => ({ ...prev, fiberG: event.target.value }))
+            }
+            fullWidth
+          />
+          <TextField
+            label="Sodio mg"
+            type="number"
+            value={input.draft.sodiumMg}
+            disabled={input.disabled}
+            onChange={(event) =>
+              input.onChange((prev) => ({ ...prev, sodiumMg: event.target.value }))
+            }
+            fullWidth
+          />
+          <TextField
+            label="Acucar adicionado g"
+            type="number"
+            value={input.draft.addedSugarG}
+            disabled={input.disabled}
+            onChange={(event) =>
+              input.onChange((prev) => ({ ...prev, addedSugarG: event.target.value }))
+            }
+            fullWidth
+          />
+        </Stack>
+
+        <TextField
+          label="Alergenicos"
+          value={input.draft.allergens}
+          disabled={input.disabled}
+          onChange={(event) =>
+            input.onChange((prev) => ({ ...prev, allergens: event.target.value }))
+          }
           fullWidth
         />
       </Stack>

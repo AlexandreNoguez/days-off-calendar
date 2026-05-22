@@ -75,16 +75,18 @@ Criterios de aceite:
 
 ## Fase 3 - Alimentos E Calculos Basicos
 
+**Status:** implementado.
+
 **Objetivo:** criar base de alimentos e calculos nutricionais reutilizaveis.
 
 Tarefas:
 
-- Criar entidade `NutriFood`.
-- Criar CRUD de alimentos.
-- Permitir fonte `MANUAL`, `LABEL`, `TACO` ou `IBGE`.
-- Criar calculadora de nutrientes por quantidade.
-- Criar testes unitarios para regra de proporcao por 100 g.
-- Criar tela de busca/filtro de alimentos.
+- [Implementado] Criar entidade `NutriFood`.
+- [Implementado] Criar CRUD de alimentos.
+- [Implementado] Permitir fonte `MANUAL`, `LABEL`, `TACO` ou `IBGE`.
+- [Implementado] Criar calculadora de nutrientes por quantidade.
+- [Implementado] Criar testes unitarios para regra de proporcao por 100 g.
+- [Implementado] Criar tela de busca/filtro de alimentos.
 
 Criterios de aceite:
 
