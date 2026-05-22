@@ -4,7 +4,11 @@ import { requireNutriUser, requestMeta } from "@/src/lib/server/auth";
 import type { NutriRecipeInput } from "../../contracts/recipes";
 import type { NutriNutrients } from "../../domain/types";
 import { findNutriFoodsByIds } from "../../infra/foodRepository";
-import { createNutriRecipe, listNutriRecipes, summarizeNutriRecipes } from "../../infra/recipeRepository";
+import {
+  createNutriRecipe,
+  listNutriRecipes,
+  summarizeNutriRecipes,
+} from "../../infra/recipeRepository";
 
 export const runtime = "nodejs";
 
@@ -149,7 +153,9 @@ export async function POST(request: NextRequest) {
     entityId: recipe.id,
     metadata: {
       ingredientCount: recipe.ingredients.length,
+      status: recipe.status,
       servings: recipe.servings,
+      version: recipe.version,
     },
     ...requestMeta(request),
   });

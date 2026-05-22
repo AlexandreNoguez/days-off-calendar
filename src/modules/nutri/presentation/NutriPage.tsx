@@ -39,6 +39,7 @@ import type {
   NutriImcClassification,
   NutriMealPlan,
   NutriPatientSex,
+  NutriRecipeStatus,
 } from "../domain/types";
 import {
   useNutriPage,
@@ -70,6 +71,12 @@ const FOOD_SOURCE_LABELS: Record<NutriFoodSource, string> = {
   LABEL: "Rotulo",
   TACO: "TACO",
   IBGE: "IBGE",
+};
+
+const RECIPE_STATUS_LABELS: Record<NutriRecipeStatus, string> = {
+  DRAFT: "Rascunho",
+  APPROVED: "Aprovada",
+  ARCHIVED: "Arquivada",
 };
 
 const MEAL_PLAN_COMPARISON_ROWS = [
@@ -1738,7 +1745,7 @@ export function NutriPage() {
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
                         {recipe.category || "Sem categoria"} /{" "}
-                        {recipe.ingredients.length} ingredientes
+                        {recipe.ingredients.length} ingredientes / v{recipe.version}
                       </Typography>
                     </TableCell>
                     <TableCell>{recipe.yieldTotalG} g</TableCell>
@@ -1763,21 +1770,57 @@ export function NutriPage() {
                     <TableCell>
                       <Chip
                         size="small"
-                        label={recipe.active ? "Ativa" : "Arquivada"}
-                        color={recipe.active ? "success" : "default"}
+                        label={RECIPE_STATUS_LABELS[recipe.status]}
+                        color={
+                          recipe.status === "APPROVED"
+                            ? "success"
+                            : recipe.status === "ARCHIVED"
+                              ? "default"
+                              : "warning"
+                        }
                       />
                     </TableCell>
                     <TableCell>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        startIcon={<PrintIcon />}
-                        href={`/api/nutri/recipes/${recipe.id}/print`}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        Imprimir
-                      </Button>
+                      <Stack direction="row" spacing={1}>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          startIcon={<PrintIcon />}
+                          href={`/api/nutri/recipes/${recipe.id}/print`}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Imprimir
+                        </Button>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          disabled={state.savingRecipe}
+                          onClick={() => void actions.duplicateRecipe(recipe.id)}
+                        >
+                          Duplicar
+                        </Button>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          disabled={state.savingRecipe || recipe.status === "APPROVED"}
+                          onClick={() =>
+                            void actions.setRecipeStatus(recipe.id, "APPROVED")
+                          }
+                        >
+                          Aprovar
+                        </Button>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          disabled={state.savingRecipe || recipe.status === "ARCHIVED"}
+                          onClick={() =>
+                            void actions.setRecipeStatus(recipe.id, "ARCHIVED")
+                          }
+                        >
+                          Arquivar
+                        </Button>
+                      </Stack>
                     </TableCell>
                   </TableRow>
                 ))}

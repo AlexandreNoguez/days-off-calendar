@@ -90,6 +90,7 @@ export function renderRecipeHtml(input: {
       <button onclick="window.print()">Imprimir</button>
       <h1>${escapeHtml(recipe.name)}</h1>
       <div class="meta">Categoria: ${recipe.category ? escapeHtml(recipe.category) : "-"}</div>
+      <div class="meta">Status: ${recipe.status} / Versao: ${recipe.version}</div>
       <div class="meta">Exportado em: ${new Date(exportedAt).toLocaleString("pt-BR")}</div>
     </header>
 

@@ -1,4 +1,4 @@
-import type { NutriRecipe } from "../domain/types";
+import type { NutriRecipe, NutriRecipeStatus } from "../domain/types";
 
 export type NutriRecipeInputIngredient = {
   foodId?: string;
@@ -18,6 +18,7 @@ export type NutriRecipeInput = {
   preparationMethod?: string;
   allergens?: string[];
   active?: boolean;
+  status?: NutriRecipeStatus;
 };
 
 export type NutriRecipesResponse = {

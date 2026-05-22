@@ -2,7 +2,11 @@ import { randomUUID } from "crypto";
 import type { Collection, UpdateFilter } from "mongodb";
 import { getDb } from "@/src/lib/server/mongodb";
 import { calculateRecipeNutrition } from "../application/calculateRecipeNutrition";
-import type { NutriRecipe, NutriRecipeIngredient } from "../domain/types";
+import type {
+  NutriRecipe,
+  NutriRecipeIngredient,
+  NutriRecipeStatus,
+} from "../domain/types";
 
 type NutriRecipeDocument = NutriRecipe & { _id?: unknown };
 
@@ -15,6 +19,11 @@ type SaveRecipeInput = {
   preparationMethod?: string;
   allergens?: string[];
   active?: boolean;
+  status?: NutriRecipeStatus;
+  version?: number;
+  sourceRecipeId?: string;
+  approvedAt?: string;
+  approvedByUserId?: string;
 };
 
 let indexesPromise: Promise<void> | undefined;
@@ -34,7 +43,14 @@ function createRecipeIngredientId(): string {
 function stripMongoId(document: NutriRecipeDocument): NutriRecipe {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { _id, ...recipe } = document;
-  return recipe;
+  const status = recipe.status ?? (recipe.active ? "DRAFT" : "ARCHIVED");
+
+  return {
+    ...recipe,
+    status,
+    version: recipe.version ?? 1,
+    active: status !== "ARCHIVED" && recipe.active !== false,
+  };
 }
 
 async function getRecipesCollection(): Promise<Collection<NutriRecipeDocument>> {
@@ -51,6 +67,8 @@ async function ensureNutriRecipeIndexes(): Promise<void> {
         { key: { id: 1 }, name: "nutriRecipes_id_unique", unique: true },
         { key: { name: 1 }, name: "nutriRecipes_name" },
         { key: { active: 1, name: 1 }, name: "nutriRecipes_active_name" },
+        { key: { status: 1, updatedAt: -1 }, name: "nutriRecipes_status_updatedAt" },
+        { key: { sourceRecipeId: 1, version: -1 }, name: "nutriRecipes_source_version" },
         { key: { category: 1, name: 1 }, name: "nutriRecipes_category_name" },
       ]);
     })();
@@ -79,6 +97,15 @@ function withIngredientIds(
   }));
 }
 
+function cloneIngredientsWithNewIds(
+  ingredients: NutriRecipeIngredient[],
+): NutriRecipeIngredient[] {
+  return ingredients.map((ingredient) => ({
+    ...ingredient,
+    id: createRecipeIngredientId(),
+  }));
+}
+
 function buildRecipe(input: {
   id: string;
   recipe: SaveRecipeInput;
@@ -87,6 +114,8 @@ function buildRecipe(input: {
   updatedAt: string;
 }): NutriRecipe {
   const ingredients = withIngredientIds(input.recipe.ingredients);
+  const status =
+    input.recipe.status ?? (input.recipe.active === false ? "ARCHIVED" : "DRAFT");
   const nutrition = calculateRecipeNutrition({
     ingredients,
     yieldTotalG: input.recipe.yieldTotalG,
@@ -101,6 +130,9 @@ function buildRecipe(input: {
     id: input.id,
     name: input.recipe.name,
     category: input.recipe.category,
+    status,
+    version: input.recipe.version ?? 1,
+    sourceRecipeId: input.recipe.sourceRecipeId,
     ingredients,
     yieldTotalG: input.recipe.yieldTotalG,
     servingSizeG: input.recipe.servingSizeG,
@@ -115,7 +147,9 @@ function buildRecipe(input: {
     totalNutrients: nutrition.totalNutrients,
     nutrientsPer100g: nutrition.nutrientsPer100g,
     nutrientsPerServing: nutrition.nutrientsPerServing,
-    active: input.recipe.active ?? true,
+    active: status !== "ARCHIVED",
+    approvedAt: input.recipe.approvedAt,
+    approvedByUserId: input.recipe.approvedByUserId,
     createdByUserId: input.userId,
     createdAt: input.createdAt,
     updatedAt: input.updatedAt,
@@ -201,6 +235,11 @@ export async function updateNutriRecipe(input: {
     preparationMethod: input.patch.preparationMethod ?? existing.preparationMethod,
     allergens: input.patch.allergens ?? existing.allergens,
     active: input.patch.active ?? existing.active,
+    status: input.patch.status ?? existing.status,
+    version: input.patch.version ?? existing.version,
+    sourceRecipeId: input.patch.sourceRecipeId ?? existing.sourceRecipeId,
+    approvedAt: input.patch.approvedAt ?? existing.approvedAt,
+    approvedByUserId: input.patch.approvedByUserId ?? existing.approvedByUserId,
   };
   const next = buildRecipe({
     id: existing.id,
@@ -217,4 +256,93 @@ export async function updateNutriRecipe(input: {
   );
 
   return result ? stripMongoId(result) : null;
+}
+
+export async function updateNutriRecipeStatus(input: {
+  id: string;
+  status: NutriRecipeStatus;
+  userId: string;
+}): Promise<NutriRecipe | null> {
+  await ensureNutriRecipeIndexes();
+  const collection = await getRecipesCollection();
+  const now = nowISO();
+  const set: Partial<NutriRecipe> = {
+    status: input.status,
+    active: input.status !== "ARCHIVED",
+    updatedAt: now,
+  };
+  const unset: Record<string, ""> = {};
+
+  if (input.status === "APPROVED") {
+    set.approvedAt = now;
+    set.approvedByUserId = input.userId;
+  }
+
+  if (input.status === "DRAFT") {
+    unset.approvedAt = "";
+    unset.approvedByUserId = "";
+  }
+
+  const update: UpdateFilter<NutriRecipeDocument> = { $set: set };
+  if (Object.keys(unset).length > 0) update.$unset = unset;
+
+  const result = await collection.findOneAndUpdate(
+    { id: input.id },
+    update,
+    { returnDocument: "after" },
+  );
+
+  return result ? stripMongoId(result) : null;
+}
+
+export async function duplicateNutriRecipe(input: {
+  id: string;
+  userId: string;
+}): Promise<NutriRecipe | null> {
+  await ensureNutriRecipeIndexes();
+  const collection = await getRecipesCollection();
+  const source = await collection.findOne({ id: input.id });
+  if (!source) return null;
+
+  const sourceRecipe = stripMongoId(source);
+  const now = nowISO();
+  const ingredients = cloneIngredientsWithNewIds(sourceRecipe.ingredients);
+  const nutrition = calculateRecipeNutrition({
+    ingredients,
+    yieldTotalG: sourceRecipe.yieldTotalG,
+    servingSizeG: sourceRecipe.servingSizeG,
+  });
+  const totalCostCents = ingredients.reduce((total, ingredient) => {
+    const cost = ingredient.unitCostCents;
+    return typeof cost === "number" ? total + cost : total;
+  }, 0);
+  const recipe: NutriRecipe = {
+    id: createRecipeId(),
+    name: `${sourceRecipe.name} - nova versao`,
+    category: sourceRecipe.category,
+    status: "DRAFT",
+    version: sourceRecipe.version + 1,
+    sourceRecipeId: sourceRecipe.sourceRecipeId ?? sourceRecipe.id,
+    ingredients,
+    yieldTotalG: sourceRecipe.yieldTotalG,
+    servingSizeG: sourceRecipe.servingSizeG,
+    servings: nutrition.servings,
+    preparationMethod: sourceRecipe.preparationMethod,
+    allergens: sourceRecipe.allergens,
+    totalCostCents: totalCostCents || undefined,
+    costPerServingCents:
+      totalCostCents > 0 && nutrition.servings > 0
+        ? Math.round(totalCostCents / nutrition.servings)
+        : undefined,
+    totalNutrients: nutrition.totalNutrients,
+    nutrientsPer100g: nutrition.nutrientsPer100g,
+    nutrientsPerServing: nutrition.nutrientsPerServing,
+    active: true,
+    createdByUserId: input.userId,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  await collection.insertOne(recipe);
+  return recipe;
 }

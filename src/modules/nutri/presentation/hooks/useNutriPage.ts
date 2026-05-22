@@ -41,6 +41,7 @@ import type {
   NutriPatientSex,
   NutriRecipe,
   NutriRecipeIngredient,
+  NutriRecipeStatus,
 } from "../../domain/types";
 
 export type NutriTab = "patients" | "foods" | "mealPlans" | "recipes" | "menus";
@@ -1105,6 +1106,44 @@ export function useNutriPage() {
     }
   }
 
+  async function setRecipeStatus(id: string, status: NutriRecipeStatus) {
+    setSavingRecipe(true);
+
+    try {
+      await fetchJson<NutriRecipeResponse>(`/api/nutri/recipes/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+
+      toast.success("Status da receita atualizado.");
+      await loadRecipes();
+    } catch (error) {
+      console.error("[useNutriPage] Failed to update recipe status", error);
+      toast.error("Nao foi possivel atualizar a receita.");
+    } finally {
+      setSavingRecipe(false);
+    }
+  }
+
+  async function duplicateRecipe(id: string) {
+    setSavingRecipe(true);
+
+    try {
+      await fetchJson<NutriRecipeResponse>(`/api/nutri/recipes/${id}/duplicate`, {
+        method: "POST",
+      });
+
+      toast.success("Receita duplicada como nova versao.");
+      await loadRecipes();
+    } catch (error) {
+      console.error("[useNutriPage] Failed to duplicate recipe", error);
+      toast.error("Nao foi possivel duplicar a receita.");
+    } finally {
+      setSavingRecipe(false);
+    }
+  }
+
   return {
     state: {
       tab,
@@ -1198,6 +1237,8 @@ export function useNutriPage() {
       addRecipeIngredient,
       removeRecipeIngredient,
       createRecipe,
+      setRecipeStatus,
+      duplicateRecipe,
     },
   };
 }

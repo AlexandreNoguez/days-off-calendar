@@ -110,6 +110,8 @@ export type NutriMealPlan = {
   updatedAt: string;
 };
 
+export type NutriRecipeStatus = "DRAFT" | "APPROVED" | "ARCHIVED";
+
 export type NutriRecipeIngredient = {
   id: string;
   foodId: string;
@@ -126,6 +128,9 @@ export type NutriRecipe = {
   id: string;
   name: string;
   category?: string;
+  status: NutriRecipeStatus;
+  version: number;
+  sourceRecipeId?: string;
   ingredients: NutriRecipeIngredient[];
   yieldTotalG: number;
   servingSizeG: number;
@@ -138,6 +143,8 @@ export type NutriRecipe = {
   nutrientsPer100g: NutriNutrients;
   nutrientsPerServing: NutriNutrients;
   active: boolean;
+  approvedAt?: string;
+  approvedByUserId?: string;
   createdByUserId: string;
   createdAt: string;
   updatedAt: string;
