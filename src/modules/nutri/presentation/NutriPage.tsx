@@ -30,12 +30,14 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
+import PrintIcon from "@mui/icons-material/Print";
 import RestaurantMenuIcon from "@mui/icons-material/RestaurantMenu";
 import SaveIcon from "@mui/icons-material/Save";
 import SearchIcon from "@mui/icons-material/Search";
 import type {
   NutriFoodSource,
   NutriImcClassification,
+  NutriMealPlan,
   NutriPatientSex,
 } from "../domain/types";
 import {
@@ -68,6 +70,65 @@ const FOOD_SOURCE_LABELS: Record<NutriFoodSource, string> = {
   TACO: "TACO",
   IBGE: "IBGE",
 };
+
+const MEAL_PLAN_COMPARISON_ROWS = [
+  {
+    label: "Energia",
+    targetKey: "targetEnergyKcal",
+    targetNutrientKey: "energyKcal",
+    totalKey: "energyKcal",
+    unit: "kcal",
+  },
+  {
+    label: "Carboidrato",
+    targetKey: "targetCarbohydrateG",
+    targetNutrientKey: "carbohydrateG",
+    totalKey: "carbohydrateG",
+    unit: "g",
+  },
+  {
+    label: "Proteina",
+    targetKey: "targetProteinG",
+    targetNutrientKey: "proteinG",
+    totalKey: "proteinG",
+    unit: "g",
+  },
+  {
+    label: "Gordura",
+    targetKey: "targetFatG",
+    targetNutrientKey: "fatG",
+    totalKey: "fatG",
+    unit: "g",
+  },
+  {
+    label: "Fibra",
+    targetKey: "targetFiberG",
+    targetNutrientKey: "fiberG",
+    totalKey: "fiberG",
+    unit: "g",
+  },
+  {
+    label: "Sodio",
+    targetKey: "targetSodiumMg",
+    targetNutrientKey: "sodiumMg",
+    totalKey: "sodiumMg",
+    unit: "mg",
+  },
+] as const;
+
+function parseOptionalNumber(value: string): number | undefined {
+  const parsed = Number(value.replace(",", "."));
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+}
+
+function formatOptionalNumber(value: number | undefined, unit: string): string {
+  return typeof value === "number" ? `${value} ${unit}` : "-";
+}
+
+function diffColor(diff: number | undefined): "success" | "warning" | "default" {
+  if (typeof diff !== "number") return "default";
+  return Math.abs(diff) <= 5 ? "success" : "warning";
+}
 
 export function NutriPage() {
   const { state, actions } = useNutriPage();
@@ -1193,6 +1254,8 @@ export function NutriPage() {
               <Chip label={`Sodio: ${state.mealPlanPreviewTotals.sodiumMg ?? 0} mg`} />
             </Stack>
 
+            {renderDraftMealPlanComparison()}
+
             <Table size="small">
               <TableHead>
                 <TableRow>
@@ -1274,10 +1337,21 @@ export function NutriPage() {
                         {mealPlan.totals.energyKcal ?? 0} kcal /{" "}
                         {mealPlan.totals.proteinG ?? 0} g proteina
                       </Typography>
+                      {renderSavedMealPlanDiffs(mealPlan)}
                     </TableCell>
                     <TableCell>{mealPlan.meals.length}</TableCell>
                     <TableCell>
                       <Stack direction="row" spacing={1}>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          startIcon={<PrintIcon />}
+                          href={`/api/nutri/meal-plans/${mealPlan.id}/print`}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Imprimir
+                        </Button>
                         <Button
                           size="small"
                           variant="outlined"
@@ -1315,6 +1389,76 @@ export function NutriPage() {
             </Table>
           )}
         </Paper>
+      </Stack>
+    );
+  }
+
+  function renderDraftMealPlanComparison() {
+    return (
+      <Table size="small">
+        <TableHead>
+          <TableRow>
+            <TableCell>Nutriente</TableCell>
+            <TableCell>Meta</TableCell>
+            <TableCell>Planejado</TableCell>
+            <TableCell>Diferenca</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {MEAL_PLAN_COMPARISON_ROWS.map((row) => {
+            const target = parseOptionalNumber(state.mealPlanDraft[row.targetKey]);
+            const total = state.mealPlanPreviewTotals[row.totalKey];
+            const diff =
+              typeof target === "number" && typeof total === "number"
+                ? Math.round((total - target) * 10) / 10
+                : undefined;
+
+            return (
+              <TableRow key={row.totalKey}>
+                <TableCell>{row.label}</TableCell>
+                <TableCell>{formatOptionalNumber(target, row.unit)}</TableCell>
+                <TableCell>{formatOptionalNumber(total, row.unit)}</TableCell>
+                <TableCell>
+                  <Chip
+                    size="small"
+                    label={formatOptionalNumber(diff, row.unit)}
+                    color={diffColor(diff)}
+                  />
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    );
+  }
+
+  function renderSavedMealPlanDiffs(mealPlan: NutriMealPlan) {
+    const chips = MEAL_PLAN_COMPARISON_ROWS.map((row) => {
+      const target = mealPlan.target[row.targetNutrientKey];
+      const total = mealPlan.totals[row.totalKey];
+      const diff =
+        typeof target === "number" && typeof total === "number"
+          ? Math.round((total - target) * 10) / 10
+          : undefined;
+
+      if (typeof diff !== "number") return null;
+
+      return (
+        <Chip
+          key={row.totalKey}
+          size="small"
+          label={`${row.label}: ${diff > 0 ? "+" : ""}${diff} ${row.unit}`}
+          color={diffColor(diff)}
+        />
+      );
+    }).filter(Boolean);
+
+    if (chips.length === 0) return null;
+
+    return (
+      <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mt: 1 }}>
+        {chips}
       </Stack>
     );
   }

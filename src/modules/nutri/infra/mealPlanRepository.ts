@@ -99,6 +99,15 @@ export async function listNutriMealPlans(input: {
   return mealPlans.map(stripMongoId);
 }
 
+export async function findNutriMealPlanById(
+  id: string,
+): Promise<NutriMealPlan | null> {
+  await ensureNutriMealPlanIndexes();
+  const collection = await getMealPlansCollection();
+  const mealPlan = await collection.findOne({ id });
+  return mealPlan ? stripMongoId(mealPlan) : null;
+}
+
 export async function createNutriMealPlan(input: {
   mealPlan: SaveMealPlanInput;
   userId: string;
