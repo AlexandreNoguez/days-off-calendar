@@ -22,8 +22,14 @@ import type {
   NutriPatientsResponse,
   NutriPatientResponse,
 } from "../../contracts/patients";
+import type {
+  NutriRecipeInput,
+  NutriRecipeResponse,
+  NutriRecipesResponse,
+} from "../../contracts/recipes";
 import { calculateImc } from "../../application/calculateImc";
 import { calculateMealPlanTotals } from "../../application/calculateMealPlanTotals";
+import { calculateRecipeNutrition } from "../../application/calculateRecipeNutrition";
 import type {
   NutriAssessment,
   NutriFood,
@@ -33,6 +39,8 @@ import type {
   NutriNutrients,
   NutriPatient,
   NutriPatientSex,
+  NutriRecipe,
+  NutriRecipeIngredient,
 } from "../../domain/types";
 
 export type NutriTab = "patients" | "foods" | "mealPlans" | "recipes" | "menus";
@@ -105,6 +113,30 @@ export type NutriMealPlanDraft = {
   items: NutriMealPlanDraftItem[];
 };
 
+export type NutriRecipeDraftIngredient = {
+  id: string;
+  foodId: string;
+  foodName: string;
+  netWeightG: number;
+  grossWeightG?: number;
+  unitCostCents?: number;
+  nutrientsPer100g: NutriNutrients;
+};
+
+export type NutriRecipeDraft = {
+  name: string;
+  category: string;
+  yieldTotalG: string;
+  servingSizeG: string;
+  preparationMethod: string;
+  allergens: string;
+  foodId: string;
+  netWeightG: string;
+  grossWeightG: string;
+  unitCostReais: string;
+  ingredients: NutriRecipeDraftIngredient[];
+};
+
 const INITIAL_SUMMARY = [
   {
     label: "Pacientes",
@@ -120,6 +152,11 @@ const INITIAL_SUMMARY = [
     label: "Planos",
     value: "0",
     description: "Planos alimentares em rascunho ou aprovados.",
+  },
+  {
+    label: "Receitas",
+    value: "0",
+    description: "Fichas tecnicas com rendimento, custo e porcao.",
   },
 ] as const;
 
@@ -205,6 +242,22 @@ function createEmptyMealPlanDraft(): NutriMealPlanDraft {
   };
 }
 
+function createEmptyRecipeDraft(): NutriRecipeDraft {
+  return {
+    name: "",
+    category: "",
+    yieldTotalG: "",
+    servingSizeG: "",
+    preparationMethod: "",
+    allergens: "",
+    foodId: "",
+    netWeightG: "",
+    grossWeightG: "",
+    unitCostReais: "",
+    ingredients: [],
+  };
+}
+
 async function fetchJson<T>(
   input: RequestInfo | URL,
   init?: RequestInit,
@@ -257,6 +310,14 @@ function toPatientDraft(patient: NutriPatient): NutriPatientDraft {
 function positiveNumber(value: string): number | undefined {
   const parsed = Number(value.replace(",", "."));
   return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+}
+
+function moneyToCents(value: string): number | undefined {
+  const normalized = value.trim().replace(",", ".");
+  if (!normalized) return undefined;
+
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) && parsed >= 0 ? Math.round(parsed * 100) : undefined;
 }
 
 function splitList(value: string): string[] {
@@ -381,6 +442,37 @@ function toMealPlanInput(draft: NutriMealPlanDraft): NutriMealPlanInput {
   };
 }
 
+function recipeDraftIngredients(
+  ingredients: NutriRecipeDraftIngredient[],
+): NutriRecipeIngredient[] {
+  return ingredients.map((ingredient) => ({
+    id: ingredient.id,
+    foodId: ingredient.foodId,
+    foodNameSnapshot: ingredient.foodName,
+    netWeightG: ingredient.netWeightG,
+    grossWeightG: ingredient.grossWeightG,
+    unitCostCents: ingredient.unitCostCents,
+    nutrientsPer100gSnapshot: ingredient.nutrientsPer100g,
+  }));
+}
+
+function toRecipeInput(draft: NutriRecipeDraft): NutriRecipeInput {
+  return {
+    name: draft.name.trim(),
+    category: draft.category.trim(),
+    yieldTotalG: positiveNumber(draft.yieldTotalG),
+    servingSizeG: positiveNumber(draft.servingSizeG),
+    preparationMethod: draft.preparationMethod.trim(),
+    allergens: splitList(draft.allergens),
+    ingredients: draft.ingredients.map((ingredient) => ({
+      foodId: ingredient.foodId,
+      netWeightG: ingredient.netWeightG,
+      grossWeightG: ingredient.grossWeightG,
+      unitCostCents: ingredient.unitCostCents,
+    })),
+  };
+}
+
 export function useNutriPage() {
   const [tab, setTab] = useState<NutriTab>("patients");
   const [patients, setPatients] = useState<NutriPatient[]>([]);
@@ -422,6 +514,18 @@ export function useNutriPage() {
   const [mealPlanDraft, setMealPlanDraft] = useState<NutriMealPlanDraft>(
     createEmptyMealPlanDraft(),
   );
+  const [recipes, setRecipes] = useState<NutriRecipe[]>([]);
+  const [recipeSummary, setRecipeSummary] = useState({
+    total: 0,
+    active: 0,
+    archived: 0,
+  });
+  const [recipeQuery, setRecipeQuery] = useState("");
+  const [loadingRecipes, setLoadingRecipes] = useState(false);
+  const [savingRecipe, setSavingRecipe] = useState(false);
+  const [recipeDraft, setRecipeDraft] = useState<NutriRecipeDraft>(
+    createEmptyRecipeDraft(),
+  );
 
   const summary = useMemo(
     () =>
@@ -432,9 +536,16 @@ export function useNutriPage() {
             ? { ...item, value: String(foodSummary.active) }
             : item.label === "Planos"
               ? { ...item, value: String(mealPlans.length) }
-              : item,
+              : item.label === "Receitas"
+                ? { ...item, value: String(recipeSummary.active) }
+                : item,
       ),
-    [foodSummary.active, mealPlans.length, patientSummary.active],
+    [
+      foodSummary.active,
+      mealPlans.length,
+      patientSummary.active,
+      recipeSummary.active,
+    ],
   );
 
   const canCreatePatient = draft.fullName.trim().length > 0;
@@ -490,9 +601,48 @@ export function useNutriPage() {
       mealPlanDraft.title.trim() &&
       mealPlanDraft.items.length > 0,
   );
+  const recipePreviewIngredients = useMemo(
+    () => recipeDraftIngredients(recipeDraft.ingredients),
+    [recipeDraft.ingredients],
+  );
+  const recipePreview = useMemo(
+    () =>
+      calculateRecipeNutrition({
+        ingredients: recipePreviewIngredients,
+        yieldTotalG: positiveNumber(recipeDraft.yieldTotalG) ?? 0,
+        servingSizeG: positiveNumber(recipeDraft.servingSizeG) ?? 0,
+      }),
+    [
+      recipeDraft.servingSizeG,
+      recipeDraft.yieldTotalG,
+      recipePreviewIngredients,
+    ],
+  );
+  const recipePreviewCostCents = useMemo(() => {
+    const totalCostCents = recipeDraft.ingredients.reduce((total, ingredient) => {
+      return total + (ingredient.unitCostCents ?? 0);
+    }, 0);
+
+    return {
+      totalCostCents: totalCostCents || undefined,
+      costPerServingCents:
+        totalCostCents > 0 && recipePreview.servings > 0
+          ? Math.round(totalCostCents / recipePreview.servings)
+          : undefined,
+    };
+  }, [recipeDraft.ingredients, recipePreview.servings]);
+  const canAddRecipeIngredient = Boolean(
+    recipeDraft.foodId && positiveNumber(recipeDraft.netWeightG),
+  );
+  const canCreateRecipe = Boolean(
+    recipeDraft.name.trim() &&
+      positiveNumber(recipeDraft.yieldTotalG) &&
+      positiveNumber(recipeDraft.servingSizeG) &&
+      recipeDraft.ingredients.length > 0,
+  );
 
   useEffect(() => {
-    void Promise.all([loadPatients(), loadFoods()]);
+    void Promise.all([loadPatients(), loadFoods(), loadRecipes()]);
     // Initial data load should run once.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -574,6 +724,27 @@ export function useNutriPage() {
       toast.error("Nao foi possivel carregar planos alimentares.");
     } finally {
       setLoadingMealPlans(false);
+    }
+  }
+
+  async function loadRecipes(nextQuery = recipeQuery) {
+    setLoadingRecipes(true);
+
+    try {
+      const params = new URLSearchParams();
+      if (nextQuery.trim()) params.set("q", nextQuery.trim());
+
+      const data = await fetchJson<NutriRecipesResponse>(
+        `/api/nutri/recipes${params.toString() ? `?${params.toString()}` : ""}`,
+      );
+
+      setRecipes(data.recipes);
+      setRecipeSummary(data.summary);
+    } catch (error) {
+      console.error("[useNutriPage] Failed to load recipes", error);
+      toast.error("Nao foi possivel carregar receitas.");
+    } finally {
+      setLoadingRecipes(false);
     }
   }
 
@@ -878,6 +1049,62 @@ export function useNutriPage() {
     }
   }
 
+  function addRecipeIngredient() {
+    const food = foods.find((candidate) => candidate.id === recipeDraft.foodId);
+    const netWeightG = positiveNumber(recipeDraft.netWeightG);
+
+    if (!food || !netWeightG) return;
+
+    setRecipeDraft((prev) => ({
+      ...prev,
+      foodId: "",
+      netWeightG: "",
+      grossWeightG: "",
+      unitCostReais: "",
+      ingredients: [
+        ...prev.ingredients,
+        {
+          id: createLocalId("draft_recipe_ingredient"),
+          foodId: food.id,
+          foodName: food.name,
+          netWeightG,
+          grossWeightG: positiveNumber(prev.grossWeightG),
+          unitCostCents: moneyToCents(prev.unitCostReais),
+          nutrientsPer100g: food.nutrientsPer100g,
+        },
+      ],
+    }));
+  }
+
+  function removeRecipeIngredient(id: string) {
+    setRecipeDraft((prev) => ({
+      ...prev,
+      ingredients: prev.ingredients.filter((ingredient) => ingredient.id !== id),
+    }));
+  }
+
+  async function createRecipe() {
+    if (!canCreateRecipe) return;
+    setSavingRecipe(true);
+
+    try {
+      await fetchJson<NutriRecipeResponse>("/api/nutri/recipes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(toRecipeInput(recipeDraft)),
+      });
+
+      setRecipeDraft(createEmptyRecipeDraft());
+      toast.success("Receita salva.");
+      await loadRecipes();
+    } catch (error) {
+      console.error("[useNutriPage] Failed to create recipe", error);
+      toast.error(error instanceof Error ? error.message : "Nao foi possivel salvar.");
+    } finally {
+      setSavingRecipe(false);
+    }
+  }
+
   return {
     state: {
       tab,
@@ -909,9 +1136,17 @@ export function useNutriPage() {
       loadingMealPlans,
       savingMealPlan,
       mealPlanDraft,
+      recipes,
+      recipeSummary,
+      recipeQuery,
+      loadingRecipes,
+      savingRecipe,
+      recipeDraft,
       activeFoods,
       mealPlanPreviewMeals,
       mealPlanPreviewTotals,
+      recipePreview,
+      recipePreviewCostCents,
       canCreatePatient,
       canUpdatePatient,
       canCreateAssessment,
@@ -919,6 +1154,8 @@ export function useNutriPage() {
       canUpdateFood,
       canAddMealPlanItem,
       canCreateMealPlan,
+      canAddRecipeIngredient,
+      canCreateRecipe,
       summary,
       firstSteps: FIRST_STEPS,
     },
@@ -935,10 +1172,13 @@ export function useNutriPage() {
       setFoodEditDraft,
       setMealPlanDraft,
       setMealPlanPatientId,
+      setRecipeQuery,
+      setRecipeDraft,
       loadPatients,
       loadAssessments,
       loadFoods,
       loadMealPlans,
+      loadRecipes,
       createPatient,
       startEditingPatient,
       cancelEditingPatient,
@@ -955,6 +1195,9 @@ export function useNutriPage() {
       createMealPlan,
       setMealPlanStatus,
       duplicateMealPlan,
+      addRecipeIngredient,
+      removeRecipeIngredient,
+      createRecipe,
     },
   };
 }

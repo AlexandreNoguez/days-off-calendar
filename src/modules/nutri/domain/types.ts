@@ -109,3 +109,36 @@ export type NutriMealPlan = {
   createdAt: string;
   updatedAt: string;
 };
+
+export type NutriRecipeIngredient = {
+  id: string;
+  foodId: string;
+  foodNameSnapshot: string;
+  netWeightG: number;
+  grossWeightG?: number;
+  correctionFactor?: number;
+  cookingFactor?: number;
+  unitCostCents?: number;
+  nutrientsPer100gSnapshot: NutriNutrients;
+};
+
+export type NutriRecipe = {
+  id: string;
+  name: string;
+  category?: string;
+  ingredients: NutriRecipeIngredient[];
+  yieldTotalG: number;
+  servingSizeG: number;
+  servings: number;
+  preparationMethod?: string;
+  allergens: string[];
+  totalCostCents?: number;
+  costPerServingCents?: number;
+  totalNutrients: NutriNutrients;
+  nutrientsPer100g: NutriNutrients;
+  nutrientsPerServing: NutriNutrients;
+  active: boolean;
+  createdByUserId: string;
+  createdAt: string;
+  updatedAt: string;
+};

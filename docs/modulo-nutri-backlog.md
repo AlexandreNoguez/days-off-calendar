@@ -122,17 +122,23 @@ Criterios de aceite:
 
 ## Fase 5 - Receitas E Fichas Tecnicas
 
+**Status:** implementado para MVP inicial. Exportacao de ficha tecnica e
+versionamento/aprovacao ficam como proxima camada.
+
 **Objetivo:** permitir preparacoes para paciente e restaurante.
 
 Tarefas:
 
-- Criar entidade `NutriRecipe`.
-- Cadastrar ingredientes com peso liquido, peso bruto, fator de correcao e custo.
-- Informar rendimento final e porcao.
-- Calcular nutrientes por receita, por 100 g e por porcao.
-- Calcular custo total e custo por porcao.
-- Marcar alergicos e observacoes.
-- Exportar ficha tecnica.
+- [Implementado] Criar entidade `NutriRecipe`.
+- [Implementado no MVP] Cadastrar ingredientes com peso liquido, peso bruto e
+  custo.
+- [Pendente] Calcular e persistir fator de correcao/cozimento a partir de pesos.
+- [Implementado] Informar rendimento final e porcao.
+- [Implementado] Calcular nutrientes por receita, por 100 g e por porcao.
+- [Implementado] Calcular custo total e custo por porcao.
+- [Implementado] Marcar alergicos e observacoes.
+- [Pendente] Exportar ficha tecnica.
+- [Pendente] Criar fluxo de aprovacao/versionamento para uso em cardapios.
 
 Criterios de aceite:
 

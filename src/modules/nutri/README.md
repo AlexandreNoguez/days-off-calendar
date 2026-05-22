@@ -30,6 +30,14 @@ src/modules/nutri/
   module.ts
 ```
 
+## Entregas Implementadas
+
+- Pacientes e avaliacoes nutricionais com IMC.
+- Base manual de alimentos com nutrientes por 100 g.
+- Planos alimentares por paciente com metas, totais, impressao e duplicacao.
+- Receitas/fichas tecnicas com ingredientes, rendimento, porcao, nutrientes e
+  custo.
+
 ## Regra De Dependencias
 
 Permitido:

@@ -45,6 +45,7 @@ import {
   type NutriAssessmentDraft,
   type NutriFoodDraft,
   type NutriPatientDraft,
+  type NutriRecipeDraft,
   type NutriTab,
 } from "./hooks/useNutriPage";
 
@@ -156,6 +157,7 @@ export function NutriPage() {
           gridTemplateColumns: {
             xs: "1fr",
             md: "repeat(3, minmax(0, 1fr))",
+            lg: "repeat(4, minmax(0, 1fr))",
           },
         }}
       >
@@ -185,9 +187,11 @@ export function NutriPage() {
       {state.tab === "patients" && renderPatients()}
       {state.tab === "foods" && renderFoods()}
       {state.tab === "mealPlans" && renderMealPlans()}
+      {state.tab === "recipes" && renderRecipes()}
       {state.tab !== "patients" &&
         state.tab !== "foods" &&
         state.tab !== "mealPlans" &&
+        state.tab !== "recipes" &&
         renderPlannedArea()}
     </Stack>
   );
@@ -1498,6 +1502,378 @@ export function NutriPage() {
         fullWidth
       />
     );
+  }
+
+  function renderRecipes() {
+    return (
+      <Stack spacing={2}>
+        <Paper variant="outlined" sx={{ p: 2 }}>
+          <Stack spacing={2}>
+            <Box>
+              <Typography variant="subtitle1" fontWeight={700}>
+                Nova receita / ficha tecnica
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Use alimentos cadastrados como ingredientes para calcular rendimento,
+                porcao, custo e nutrientes.
+              </Typography>
+            </Box>
+
+            {renderRecipeBaseForm({
+              draft: state.recipeDraft,
+              onChange: actions.setRecipeDraft,
+              disabled: state.savingRecipe,
+            })}
+
+            <Divider />
+
+            <Stack direction={{ xs: "column", md: "row" }} spacing={1}>
+              <FormControl fullWidth>
+                <InputLabel>Ingrediente</InputLabel>
+                <Select
+                  label="Ingrediente"
+                  value={state.recipeDraft.foodId}
+                  disabled={state.savingRecipe || state.activeFoods.length === 0}
+                  onChange={(event) =>
+                    actions.setRecipeDraft((prev) => ({
+                      ...prev,
+                      foodId: event.target.value,
+                    }))
+                  }
+                >
+                  {state.activeFoods.map((food) => (
+                    <MenuItem key={food.id} value={food.id}>
+                      {food.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <TextField
+                label="Peso liquido g"
+                type="number"
+                value={state.recipeDraft.netWeightG}
+                disabled={state.savingRecipe}
+                onChange={(event) =>
+                  actions.setRecipeDraft((prev) => ({
+                    ...prev,
+                    netWeightG: event.target.value,
+                  }))
+                }
+                fullWidth
+              />
+              <TextField
+                label="Peso bruto g"
+                type="number"
+                value={state.recipeDraft.grossWeightG}
+                disabled={state.savingRecipe}
+                onChange={(event) =>
+                  actions.setRecipeDraft((prev) => ({
+                    ...prev,
+                    grossWeightG: event.target.value,
+                  }))
+                }
+                fullWidth
+              />
+              <TextField
+                label="Custo R$"
+                type="number"
+                value={state.recipeDraft.unitCostReais}
+                disabled={state.savingRecipe}
+                onChange={(event) =>
+                  actions.setRecipeDraft((prev) => ({
+                    ...prev,
+                    unitCostReais: event.target.value,
+                  }))
+                }
+                fullWidth
+              />
+            </Stack>
+
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+              <Button
+                variant="outlined"
+                startIcon={<AddIcon />}
+                disabled={!state.canAddRecipeIngredient || state.savingRecipe}
+                onClick={actions.addRecipeIngredient}
+              >
+                Adicionar ingrediente
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={<SaveIcon />}
+                disabled={!state.canCreateRecipe || state.savingRecipe}
+                onClick={() => void actions.createRecipe()}
+              >
+                Salvar receita
+              </Button>
+            </Stack>
+          </Stack>
+        </Paper>
+
+        <Paper variant="outlined" sx={{ p: 2 }}>
+          <Stack spacing={2}>
+            <Typography variant="subtitle1" fontWeight={700}>
+              Previa da ficha tecnica
+            </Typography>
+
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              <Chip label={`Porcoes: ${state.recipePreview.servings || 0}`} />
+              <Chip
+                label={`Kcal/porcao: ${
+                  state.recipePreview.nutrientsPerServing.energyKcal ?? 0
+                }`}
+              />
+              <Chip
+                label={`Proteina/porcao: ${
+                  state.recipePreview.nutrientsPerServing.proteinG ?? 0
+                } g`}
+              />
+              <Chip
+                label={`Kcal/100g: ${state.recipePreview.nutrientsPer100g.energyKcal ?? 0}`}
+              />
+              <Chip
+                label={`Custo/porcao: ${formatMoney(
+                  state.recipePreviewCostCents.costPerServingCents,
+                )}`}
+              />
+            </Stack>
+
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Ingrediente</TableCell>
+                  <TableCell>Peso liquido</TableCell>
+                  <TableCell>Peso bruto</TableCell>
+                  <TableCell>Custo</TableCell>
+                  <TableCell>Acoes</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {state.recipeDraft.ingredients.map((ingredient) => (
+                  <TableRow key={ingredient.id}>
+                    <TableCell>{ingredient.foodName}</TableCell>
+                    <TableCell>{ingredient.netWeightG} g</TableCell>
+                    <TableCell>
+                      {ingredient.grossWeightG ? `${ingredient.grossWeightG} g` : "-"}
+                    </TableCell>
+                    <TableCell>{formatMoney(ingredient.unitCostCents)}</TableCell>
+                    <TableCell>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={<DeleteIcon />}
+                        disabled={state.savingRecipe}
+                        onClick={() => actions.removeRecipeIngredient(ingredient.id)}
+                      >
+                        Remover
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {state.recipeDraft.ingredients.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={5}>
+                      <Alert severity="info">
+                        Adicione ingredientes para montar a ficha tecnica.
+                      </Alert>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </Stack>
+        </Paper>
+
+        <Paper variant="outlined" sx={{ p: 2 }}>
+          <Stack spacing={2}>
+            <Stack direction={{ xs: "column", md: "row" }} spacing={1}>
+              <TextField
+                label="Buscar receita"
+                value={state.recipeQuery}
+                onChange={(event) => actions.setRecipeQuery(event.target.value)}
+                fullWidth
+              />
+              <Button
+                variant="outlined"
+                startIcon={<SearchIcon />}
+                onClick={() => void actions.loadRecipes()}
+              >
+                Buscar
+              </Button>
+            </Stack>
+
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              <Chip label={`Ativas: ${state.recipeSummary.active}`} />
+              <Chip label={`Arquivadas: ${state.recipeSummary.archived}`} />
+              <Chip label={`Total: ${state.recipeSummary.total}`} />
+            </Stack>
+          </Stack>
+        </Paper>
+
+        <Paper variant="outlined" sx={{ overflow: "auto" }}>
+          {state.loadingRecipes ? (
+            <Stack alignItems="center" spacing={2} sx={{ py: 6 }}>
+              <CircularProgress />
+              <Typography color="text.secondary">Carregando receitas...</Typography>
+            </Stack>
+          ) : (
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Receita</TableCell>
+                  <TableCell>Rendimento</TableCell>
+                  <TableCell>Porcao</TableCell>
+                  <TableCell>Nutrientes por porcao</TableCell>
+                  <TableCell>Custo</TableCell>
+                  <TableCell>Status</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {state.recipes.map((recipe) => (
+                  <TableRow key={recipe.id}>
+                    <TableCell>
+                      <Typography variant="body2" fontWeight={600}>
+                        {recipe.name}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {recipe.category || "Sem categoria"} /{" "}
+                        {recipe.ingredients.length} ingredientes
+                      </Typography>
+                    </TableCell>
+                    <TableCell>{recipe.yieldTotalG} g</TableCell>
+                    <TableCell>
+                      {recipe.servingSizeG} g / {recipe.servings} porcoes
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="caption">
+                        {recipe.nutrientsPerServing.energyKcal ?? 0} kcal /{" "}
+                        {recipe.nutrientsPerServing.proteinG ?? 0} g proteina
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="caption">
+                        Total: {formatMoney(recipe.totalCostCents)}
+                      </Typography>
+                      <br />
+                      <Typography variant="caption" color="text.secondary">
+                        Porcao: {formatMoney(recipe.costPerServingCents)}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        size="small"
+                        label={recipe.active ? "Ativa" : "Arquivada"}
+                        color={recipe.active ? "success" : "default"}
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {state.recipes.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6}>
+                      <Alert severity="info">
+                        Nenhuma receita encontrada para os filtros atuais.
+                      </Alert>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          )}
+        </Paper>
+      </Stack>
+    );
+  }
+
+  function renderRecipeBaseForm(input: {
+    draft: NutriRecipeDraft;
+    onChange: React.Dispatch<React.SetStateAction<NutriRecipeDraft>>;
+    disabled: boolean;
+  }) {
+    return (
+      <Stack spacing={2}>
+        <Stack direction={{ xs: "column", md: "row" }} spacing={1}>
+          <TextField
+            label="Nome da receita"
+            value={input.draft.name}
+            disabled={input.disabled}
+            onChange={(event) =>
+              input.onChange((prev) => ({ ...prev, name: event.target.value }))
+            }
+            fullWidth
+          />
+          <TextField
+            label="Categoria"
+            value={input.draft.category}
+            disabled={input.disabled}
+            onChange={(event) =>
+              input.onChange((prev) => ({ ...prev, category: event.target.value }))
+            }
+            fullWidth
+          />
+          <TextField
+            label="Rendimento total g"
+            type="number"
+            value={input.draft.yieldTotalG}
+            disabled={input.disabled}
+            onChange={(event) =>
+              input.onChange((prev) => ({
+                ...prev,
+                yieldTotalG: event.target.value,
+              }))
+            }
+            fullWidth
+          />
+          <TextField
+            label="Porcao g"
+            type="number"
+            value={input.draft.servingSizeG}
+            disabled={input.disabled}
+            onChange={(event) =>
+              input.onChange((prev) => ({
+                ...prev,
+                servingSizeG: event.target.value,
+              }))
+            }
+            fullWidth
+          />
+        </Stack>
+
+        <TextField
+          label="Modo de preparo"
+          value={input.draft.preparationMethod}
+          disabled={input.disabled}
+          onChange={(event) =>
+            input.onChange((prev) => ({
+              ...prev,
+              preparationMethod: event.target.value,
+            }))
+          }
+          minRows={3}
+          multiline
+          fullWidth
+        />
+
+        <TextField
+          label="Alergenicos"
+          value={input.draft.allergens}
+          disabled={input.disabled}
+          onChange={(event) =>
+            input.onChange((prev) => ({ ...prev, allergens: event.target.value }))
+          }
+          fullWidth
+        />
+      </Stack>
+    );
+  }
+
+  function formatMoney(value: number | undefined): string {
+    if (typeof value !== "number") return "-";
+
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(value / 100);
   }
 
   function renderPlannedArea() {
