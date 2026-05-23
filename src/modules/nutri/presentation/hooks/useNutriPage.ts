@@ -39,6 +39,7 @@ import type {
 import { calculateImc } from "../../application/calculateImc";
 import { calculateMealPlanTotals } from "../../application/calculateMealPlanTotals";
 import { calculateRecipeNutrition } from "../../application/calculateRecipeNutrition";
+import { calculateRecipeTechnicalFactors } from "../../application/calculateRecipeTechnicalFactors";
 import { calculateRestaurantMenuShoppingList } from "../../application/calculateRestaurantMenuShoppingList";
 import { calculateRestaurantMenuTotals } from "../../application/calculateRestaurantMenuTotals";
 import type {
@@ -730,6 +731,14 @@ export function useNutriPage() {
       recipeDraft.yieldTotalG,
       recipePreviewIngredients,
     ],
+  );
+  const recipeTechnicalFactorsPreview = useMemo(
+    () =>
+      calculateRecipeTechnicalFactors({
+        ingredients: recipePreviewIngredients,
+        yieldTotalG: positiveNumber(recipeDraft.yieldTotalG) ?? 0,
+      }),
+    [recipeDraft.yieldTotalG, recipePreviewIngredients],
   );
   const recipePreviewCostCents = useMemo(() => {
     const totalCostCents = recipeDraft.ingredients.reduce((total, ingredient) => {
@@ -1509,6 +1518,7 @@ export function useNutriPage() {
       mealPlanPreviewTotals,
       recipePreview,
       recipePreviewCostCents,
+      recipeTechnicalFactorsPreview,
       restaurantMenuPreview,
       restaurantMenuShoppingListPreview,
       canCreatePatient,

@@ -131,7 +131,8 @@ Tarefas:
 - [Implementado] Criar entidade `NutriRecipe`.
 - [Implementado no MVP] Cadastrar ingredientes com peso liquido, peso bruto e
   custo.
-- [Pendente] Calcular e persistir fator de correcao/cozimento a partir de pesos.
+- [Implementado] Calcular e persistir fator de correcao/coccao a partir de
+  pesos.
 - [Implementado] Informar rendimento final e porcao.
 - [Implementado] Calcular nutrientes por receita, por 100 g e por porcao.
 - [Implementado] Calcular custo total e custo por porcao.

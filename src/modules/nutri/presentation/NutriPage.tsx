@@ -1697,6 +1697,12 @@ export function NutriPage() {
                   state.recipePreviewCostCents.costPerServingCents,
                 )}`}
               />
+              <Chip
+                label={`FC: ${state.recipeTechnicalFactorsPreview.correctionFactor ?? "-"}`}
+              />
+              <Chip
+                label={`FCc: ${state.recipeTechnicalFactorsPreview.cookingFactor ?? "-"}`}
+              />
             </Stack>
 
             <Table size="small">
@@ -1705,6 +1711,7 @@ export function NutriPage() {
                   <TableCell>Ingrediente</TableCell>
                   <TableCell>Peso liquido</TableCell>
                   <TableCell>Peso bruto</TableCell>
+                  <TableCell>FC</TableCell>
                   <TableCell>Custo</TableCell>
                   <TableCell>Acoes</TableCell>
                 </TableRow>
@@ -1716,6 +1723,12 @@ export function NutriPage() {
                     <TableCell>{ingredient.netWeightG} g</TableCell>
                     <TableCell>
                       {ingredient.grossWeightG ? `${ingredient.grossWeightG} g` : "-"}
+                    </TableCell>
+                    <TableCell>
+                      {ingredient.grossWeightG
+                        ? Math.round((ingredient.grossWeightG / ingredient.netWeightG) * 100) /
+                          100
+                        : "-"}
                     </TableCell>
                     <TableCell>{formatMoney(ingredient.unitCostCents)}</TableCell>
                     <TableCell>
@@ -1733,7 +1746,7 @@ export function NutriPage() {
                 ))}
                 {state.recipeDraft.ingredients.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={5}>
+                    <TableCell colSpan={6}>
                       <Alert severity="info">
                         Adicione ingredientes para montar a ficha tecnica.
                       </Alert>
@@ -1786,6 +1799,7 @@ export function NutriPage() {
                   <TableCell>Porcao</TableCell>
                   <TableCell>Nutrientes por porcao</TableCell>
                   <TableCell>Custo</TableCell>
+                  <TableCell>Fatores</TableCell>
                   <TableCell>Status</TableCell>
                   <TableCell>Acoes</TableCell>
                 </TableRow>
@@ -1819,6 +1833,12 @@ export function NutriPage() {
                       <br />
                       <Typography variant="caption" color="text.secondary">
                         Porcao: {formatMoney(recipe.costPerServingCents)}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="caption">
+                        FC: {recipe.correctionFactor ?? "-"} / FCc:{" "}
+                        {recipe.cookingFactor ?? "-"}
                       </Typography>
                     </TableCell>
                     <TableCell>
@@ -1880,7 +1900,7 @@ export function NutriPage() {
                 ))}
                 {state.recipes.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={7}>
+                    <TableCell colSpan={8}>
                       <Alert severity="info">
                         Nenhuma receita encontrada para os filtros atuais.
                       </Alert>

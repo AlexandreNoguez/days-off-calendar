@@ -53,6 +53,7 @@ function renderIngredientRows(recipe: NutriRecipe): string {
       <td>${escapeHtml(ingredient.foodNameSnapshot)}</td>
       <td>${ingredient.netWeightG} g</td>
       <td>${ingredient.grossWeightG ? `${ingredient.grossWeightG} g` : "-"}</td>
+      <td>${ingredient.correctionFactor ?? "-"}</td>
       <td>${formatMoney(ingredient.unitCostCents)}</td>
     </tr>`)
     .join("");
@@ -99,6 +100,12 @@ export function renderRecipeHtml(input: {
       <div class="box"><strong>Porcao</strong>${recipe.servingSizeG} g</div>
       <div class="box"><strong>Porcoes</strong>${recipe.servings}</div>
       <div class="box"><strong>Custo por porcao</strong>${formatMoney(recipe.costPerServingCents)}</div>
+      <div class="box"><strong>Peso liquido total</strong>${recipe.totalNetWeightG ?? "-"} g</div>
+      <div class="box"><strong>Peso bruto total</strong>${
+        recipe.totalGrossWeightG ? `${recipe.totalGrossWeightG} g` : "-"
+      }</div>
+      <div class="box"><strong>Fator de correcao</strong>${recipe.correctionFactor ?? "-"}</div>
+      <div class="box"><strong>Fator de coccao</strong>${recipe.cookingFactor ?? "-"}</div>
     </section>
 
     <section>
@@ -109,6 +116,7 @@ export function renderRecipeHtml(input: {
             <th>Ingrediente</th>
             <th>Peso liquido</th>
             <th>Peso bruto</th>
+            <th>FC</th>
             <th>Custo</th>
           </tr>
         </thead>

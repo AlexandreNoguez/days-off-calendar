@@ -133,6 +133,10 @@ export type NutriRecipe = {
   sourceRecipeId?: string;
   ingredients: NutriRecipeIngredient[];
   yieldTotalG: number;
+  totalNetWeightG?: number;
+  totalGrossWeightG?: number;
+  correctionFactor?: number;
+  cookingFactor?: number;
   servingSizeG: number;
   servings: number;
   preparationMethod?: string;

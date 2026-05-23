@@ -2,6 +2,7 @@ import { randomUUID } from "crypto";
 import type { Collection, UpdateFilter } from "mongodb";
 import { getDb } from "@/src/lib/server/mongodb";
 import { calculateRecipeNutrition } from "../application/calculateRecipeNutrition";
+import { calculateRecipeTechnicalFactors } from "../application/calculateRecipeTechnicalFactors";
 import type {
   NutriRecipe,
   NutriRecipeIngredient,
@@ -44,11 +45,21 @@ function stripMongoId(document: NutriRecipeDocument): NutriRecipe {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { _id, ...recipe } = document;
   const status = recipe.status ?? (recipe.active ? "DRAFT" : "ARCHIVED");
+  const technicalFactors = calculateRecipeTechnicalFactors({
+    ingredients: recipe.ingredients,
+    yieldTotalG: recipe.yieldTotalG,
+  });
 
   return {
     ...recipe,
     status,
     version: recipe.version ?? 1,
+    ingredients: technicalFactors.ingredients,
+    totalNetWeightG: recipe.totalNetWeightG ?? technicalFactors.totalNetWeightG,
+    totalGrossWeightG:
+      recipe.totalGrossWeightG ?? technicalFactors.totalGrossWeightG,
+    correctionFactor: recipe.correctionFactor ?? technicalFactors.correctionFactor,
+    cookingFactor: recipe.cookingFactor ?? technicalFactors.cookingFactor,
     active: status !== "ARCHIVED" && recipe.active !== false,
   };
 }
@@ -113,7 +124,12 @@ function buildRecipe(input: {
   createdAt: string;
   updatedAt: string;
 }): NutriRecipe {
-  const ingredients = withIngredientIds(input.recipe.ingredients);
+  const baseIngredients = withIngredientIds(input.recipe.ingredients);
+  const technicalFactors = calculateRecipeTechnicalFactors({
+    ingredients: baseIngredients,
+    yieldTotalG: input.recipe.yieldTotalG,
+  });
+  const ingredients = technicalFactors.ingredients;
   const status =
     input.recipe.status ?? (input.recipe.active === false ? "ARCHIVED" : "DRAFT");
   const nutrition = calculateRecipeNutrition({
@@ -135,6 +151,10 @@ function buildRecipe(input: {
     sourceRecipeId: input.recipe.sourceRecipeId,
     ingredients,
     yieldTotalG: input.recipe.yieldTotalG,
+    totalNetWeightG: technicalFactors.totalNetWeightG,
+    totalGrossWeightG: technicalFactors.totalGrossWeightG,
+    correctionFactor: technicalFactors.correctionFactor,
+    cookingFactor: technicalFactors.cookingFactor,
     servingSizeG: input.recipe.servingSizeG,
     servings: nutrition.servings,
     preparationMethod: input.recipe.preparationMethod,
@@ -318,8 +338,12 @@ export async function duplicateNutriRecipe(input: {
   const sourceRecipe = stripMongoId(source);
   const now = nowISO();
   const ingredients = cloneIngredientsWithNewIds(sourceRecipe.ingredients);
-  const nutrition = calculateRecipeNutrition({
+  const technicalFactors = calculateRecipeTechnicalFactors({
     ingredients,
+    yieldTotalG: sourceRecipe.yieldTotalG,
+  });
+  const nutrition = calculateRecipeNutrition({
+    ingredients: technicalFactors.ingredients,
     yieldTotalG: sourceRecipe.yieldTotalG,
     servingSizeG: sourceRecipe.servingSizeG,
   });
@@ -334,8 +358,12 @@ export async function duplicateNutriRecipe(input: {
     status: "DRAFT",
     version: sourceRecipe.version + 1,
     sourceRecipeId: sourceRecipe.sourceRecipeId ?? sourceRecipe.id,
-    ingredients,
+    ingredients: technicalFactors.ingredients,
     yieldTotalG: sourceRecipe.yieldTotalG,
+    totalNetWeightG: technicalFactors.totalNetWeightG,
+    totalGrossWeightG: technicalFactors.totalGrossWeightG,
+    correctionFactor: technicalFactors.correctionFactor,
+    cookingFactor: technicalFactors.cookingFactor,
     servingSizeG: sourceRecipe.servingSizeG,
     servings: nutrition.servings,
     preparationMethod: sourceRecipe.preparationMethod,

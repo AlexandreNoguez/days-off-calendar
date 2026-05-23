@@ -35,8 +35,8 @@ src/modules/nutri/
 - Pacientes e avaliacoes nutricionais com IMC.
 - Base manual de alimentos com nutrientes por 100 g.
 - Planos alimentares por paciente com metas, totais, impressao e duplicacao.
-- Receitas/fichas tecnicas com ingredientes, rendimento, porcao, nutrientes e
-  custo.
+- Receitas/fichas tecnicas com ingredientes, rendimento, porcao, fatores
+  tecnicos, nutrientes e custo.
 - Cardapios para restaurantes com receitas aprovadas, custo per capita, totais
   nutricionais, lista de compras agregada e relatorio operacional imprimivel.
 - Ferramenta de seed demo por aba, protegida por flag de ambiente e isolada em
