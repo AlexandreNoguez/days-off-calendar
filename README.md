@@ -3,6 +3,8 @@
 Aplicacao para montar escala de folgas com regras HARD/SOFT, controle de
 permissoes, auditoria de acoes e exportacao XLSX.
 
+Versao estavel atual: **v1.0.0**.
+
 Stack atual: **Next.js + React + TypeScript + MUI + MongoDB + Toastify**.
 
 A versao original do MVP era frontend-only. A base atual usa backend interno no
@@ -12,6 +14,8 @@ Next.js e MongoDB como fonte principal de dados.
 
 - [Plano de migracao para Next.js + MongoDB](docs/plano-migracao-nextjs-mongodb.md)
 - [Teste manual guiado do fluxo completo](docs/teste-manual-fluxo-completo.md)
+- [Release v1.0.0](docs/release-v1.0.0.md)
+- [Changelog](CHANGELOG.md)
 - [Roadmap de funcionalidades](docs/roadmap-funcionalidades-gestao-folgas.md)
 - [Modulo Nutri - visao geral e requisitos](docs/modulo-nutri-visao-geral.md)
 - [Modulo Nutri - modelagem tecnica inicial](docs/modulo-nutri-modelagem-tecnica.md)

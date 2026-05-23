@@ -6,17 +6,32 @@ mapeadas em outro backlog e, aqui, organizar funcionalidades que resolvem dores
 do cliente: reduzir retrabalho, diminuir conversas manuais, dar transparencia e
 melhorar a distribuicao das folgas.
 
+## Escopo Fechado Da v1.0.0
+
+A v1.0.0 esta fechada como a primeira versao oficial estavel da gestao de
+folgas. O escopo inclui autenticacao, permissoes, administracao de usuarios,
+persistencia MongoDB, cadastros operacionais, regras, geracao e edicao de
+escala, publicacao/fechamento, auditoria, historico, exportacao XLSX e a
+primeira versao do painel de justica/equilibrio.
+
+Ficam fora da v1.0.0 as funcionalidades de colaborador, pedidos de folga,
+cobertura minima, alertas inteligentes, copiar mes anterior e demais evolucoes
+deste roadmap. Esses itens comecam a compor o planejamento da v1.1.0 em diante.
+
+O escopo formal e as notas de release estao em
+`docs/release-v1.0.0.md`.
+
 ## Proxima Tarefa Priorizada
 
-1. Painel de justica/equilibrio.
+1. Evoluir painel de justica/equilibrio com comparacao historica.
 
-Esta e a proxima tarefa a ser executada. O objetivo e dar ao gestor uma visao
-clara de distribuicao de folgas, domingos, feriados e possiveis desequilibrios
-entre colaboradores.
+Esta e a proxima tarefa apos a v1.0.0. O objetivo e dar ao gestor uma visao
+historica de distribuicao de folgas, domingos, feriados e possiveis
+desequilibrios entre colaboradores.
 
 ## Prioridade Recomendada
 
-1. Painel de justica/equilibrio.
+1. Evoluir painel de justica/equilibrio com comparacao historica.
 2. Tela do colaborador.
 3. Solicitacao de folga.
 4. Cobertura minima por cargo.
