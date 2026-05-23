@@ -40,6 +40,7 @@ import type {
   NutriMealPlan,
   NutriPatientSex,
   NutriRecipeStatus,
+  NutriRestaurantMenuStatus,
 } from "../domain/types";
 import {
   useNutriPage,
@@ -77,6 +78,12 @@ const RECIPE_STATUS_LABELS: Record<NutriRecipeStatus, string> = {
   DRAFT: "Rascunho",
   APPROVED: "Aprovada",
   ARCHIVED: "Arquivada",
+};
+
+const RESTAURANT_MENU_STATUS_LABELS: Record<NutriRestaurantMenuStatus, string> = {
+  DRAFT: "Rascunho",
+  APPROVED: "Aprovado",
+  ARCHIVED: "Arquivado",
 };
 
 const MEAL_PLAN_COMPARISON_ROWS = [
@@ -165,6 +172,7 @@ export function NutriPage() {
             xs: "1fr",
             md: "repeat(3, minmax(0, 1fr))",
             lg: "repeat(4, minmax(0, 1fr))",
+            xl: "repeat(5, minmax(0, 1fr))",
           },
         }}
       >
@@ -195,10 +203,12 @@ export function NutriPage() {
       {state.tab === "foods" && renderFoods()}
       {state.tab === "mealPlans" && renderMealPlans()}
       {state.tab === "recipes" && renderRecipes()}
+      {state.tab === "menus" && renderMenus()}
       {state.tab !== "patients" &&
         state.tab !== "foods" &&
         state.tab !== "mealPlans" &&
         state.tab !== "recipes" &&
+        state.tab !== "menus" &&
         renderPlannedArea()}
     </Stack>
   );
@@ -1930,6 +1940,370 @@ export function NutriPage() {
       style: "currency",
       currency: "BRL",
     }).format(value / 100);
+  }
+
+  function renderMenus() {
+    return (
+      <Stack spacing={2}>
+        <Paper variant="outlined" sx={{ p: 2 }}>
+          <Stack spacing={2}>
+            <Box>
+              <Typography variant="subtitle1" fontWeight={700}>
+                Novo cardapio de restaurante
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Monte cardapios com receitas aprovadas e preserve snapshots para
+                operacao.
+              </Typography>
+            </Box>
+
+            <Stack direction={{ xs: "column", md: "row" }} spacing={1}>
+              <TextField
+                label="Titulo"
+                value={state.restaurantMenuDraft.title}
+                disabled={state.savingRestaurantMenu}
+                onChange={(event) =>
+                  actions.setRestaurantMenuDraft((prev) => ({
+                    ...prev,
+                    title: event.target.value,
+                  }))
+                }
+                fullWidth
+              />
+              <TextField
+                label="Data"
+                type="date"
+                value={state.restaurantMenuDraft.date}
+                disabled={state.savingRestaurantMenu}
+                onChange={(event) =>
+                  actions.setRestaurantMenuDraft((prev) => ({
+                    ...prev,
+                    date: event.target.value,
+                  }))
+                }
+                slotProps={{ inputLabel: { shrink: true } }}
+                fullWidth
+              />
+              <TextField
+                label="Refeicoes previstas"
+                type="number"
+                value={state.restaurantMenuDraft.expectedMeals}
+                disabled={state.savingRestaurantMenu}
+                onChange={(event) =>
+                  actions.setRestaurantMenuDraft((prev) => ({
+                    ...prev,
+                    expectedMeals: event.target.value,
+                  }))
+                }
+                fullWidth
+              />
+            </Stack>
+
+            <Divider />
+
+            <Stack direction={{ xs: "column", md: "row" }} spacing={1}>
+              <TextField
+                label="Refeicao"
+                value={state.restaurantMenuDraft.mealName}
+                disabled={state.savingRestaurantMenu}
+                onChange={(event) =>
+                  actions.setRestaurantMenuDraft((prev) => ({
+                    ...prev,
+                    mealName: event.target.value,
+                  }))
+                }
+                fullWidth
+              />
+              <FormControl fullWidth>
+                <InputLabel>Receita aprovada</InputLabel>
+                <Select
+                  label="Receita aprovada"
+                  value={state.restaurantMenuDraft.recipeId}
+                  disabled={
+                    state.savingRestaurantMenu || state.approvedRecipes.length === 0
+                  }
+                  onChange={(event) =>
+                    actions.setRestaurantMenuDraft((prev) => ({
+                      ...prev,
+                      recipeId: event.target.value,
+                    }))
+                  }
+                >
+                  {state.approvedRecipes.map((recipe) => (
+                    <MenuItem key={recipe.id} value={recipe.id}>
+                      {recipe.name} v{recipe.version}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <TextField
+                label="Porcoes"
+                type="number"
+                value={state.restaurantMenuDraft.servings}
+                disabled={state.savingRestaurantMenu}
+                onChange={(event) =>
+                  actions.setRestaurantMenuDraft((prev) => ({
+                    ...prev,
+                    servings: event.target.value,
+                  }))
+                }
+                fullWidth
+              />
+            </Stack>
+
+            {state.approvedRecipes.length === 0 && (
+              <Alert severity="info">
+                Aprove pelo menos uma receita antes de montar cardapios.
+              </Alert>
+            )}
+
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+              <Button
+                variant="outlined"
+                startIcon={<AddIcon />}
+                disabled={
+                  !state.canAddRestaurantMenuItem || state.savingRestaurantMenu
+                }
+                onClick={actions.addRestaurantMenuItem}
+              >
+                Adicionar receita
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={<SaveIcon />}
+                disabled={
+                  !state.canCreateRestaurantMenu || state.savingRestaurantMenu
+                }
+                onClick={() => void actions.createRestaurantMenu()}
+              >
+                Salvar cardapio
+              </Button>
+            </Stack>
+          </Stack>
+        </Paper>
+
+        <Paper variant="outlined" sx={{ p: 2 }}>
+          <Stack spacing={2}>
+            <Typography variant="subtitle1" fontWeight={700}>
+              Previa operacional
+            </Typography>
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              <Chip
+                label={`Kcal: ${state.restaurantMenuPreview.totals.energyKcal ?? 0}`}
+              />
+              <Chip
+                label={`Proteina: ${
+                  state.restaurantMenuPreview.totals.proteinG ?? 0
+                } g`}
+              />
+              <Chip
+                label={`Custo total: ${formatMoney(
+                  state.restaurantMenuPreview.totalCostCents,
+                )}`}
+              />
+              <Chip
+                label={`Custo per capita: ${formatMoney(
+                  state.restaurantMenuPreview.costPerCapitaCents,
+                )}`}
+              />
+            </Stack>
+
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Refeicao</TableCell>
+                  <TableCell>Receita</TableCell>
+                  <TableCell>Porcoes</TableCell>
+                  <TableCell>Custo</TableCell>
+                  <TableCell>Acoes</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {state.restaurantMenuDraft.items.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell>{item.mealName}</TableCell>
+                    <TableCell>
+                      {item.recipeName} v{item.recipeVersion}
+                    </TableCell>
+                    <TableCell>
+                      {item.servings} x {item.servingSizeG} g
+                    </TableCell>
+                    <TableCell>
+                      {formatMoney(
+                        typeof item.costPerServingCents === "number"
+                          ? item.costPerServingCents * item.servings
+                          : undefined,
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={<DeleteIcon />}
+                        disabled={state.savingRestaurantMenu}
+                        onClick={() => actions.removeRestaurantMenuItem(item.id)}
+                      >
+                        Remover
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {state.restaurantMenuDraft.items.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={5}>
+                      <Alert severity="info">
+                        Adicione receitas aprovadas para montar o cardapio.
+                      </Alert>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </Stack>
+        </Paper>
+
+        <Paper variant="outlined" sx={{ p: 2 }}>
+          <Stack spacing={2}>
+            <Stack direction={{ xs: "column", md: "row" }} spacing={1}>
+              <TextField
+                label="Buscar cardapio"
+                value={state.restaurantMenuQuery}
+                onChange={(event) =>
+                  actions.setRestaurantMenuQuery(event.target.value)
+                }
+                fullWidth
+              />
+              <Button
+                variant="outlined"
+                startIcon={<SearchIcon />}
+                onClick={() => void actions.loadRestaurantMenus()}
+              >
+                Buscar
+              </Button>
+            </Stack>
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              <Chip label={`Rascunhos: ${state.restaurantMenuSummary.draft}`} />
+              <Chip label={`Aprovados: ${state.restaurantMenuSummary.approved}`} />
+              <Chip label={`Arquivados: ${state.restaurantMenuSummary.archived}`} />
+              <Chip label={`Total: ${state.restaurantMenuSummary.total}`} />
+            </Stack>
+          </Stack>
+        </Paper>
+
+        <Paper variant="outlined" sx={{ overflow: "auto" }}>
+          {state.loadingRestaurantMenus ? (
+            <Stack alignItems="center" spacing={2} sx={{ py: 6 }}>
+              <CircularProgress />
+              <Typography color="text.secondary">Carregando cardapios...</Typography>
+            </Stack>
+          ) : (
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Cardapio</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Itens</TableCell>
+                  <TableCell>Totais</TableCell>
+                  <TableCell>Custo</TableCell>
+                  <TableCell>Acoes</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {state.restaurantMenus.map((menu) => (
+                  <TableRow key={menu.id}>
+                    <TableCell>
+                      <Typography variant="body2" fontWeight={600}>
+                        {menu.title}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {new Date(`${menu.date}T00:00:00`).toLocaleDateString(
+                          "pt-BR",
+                        )}
+                        {menu.expectedMeals ? ` / ${menu.expectedMeals} refeicoes` : ""}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        size="small"
+                        label={RESTAURANT_MENU_STATUS_LABELS[menu.status]}
+                        color={
+                          menu.status === "APPROVED"
+                            ? "success"
+                            : menu.status === "ARCHIVED"
+                              ? "default"
+                              : "warning"
+                        }
+                      />
+                    </TableCell>
+                    <TableCell>{menu.items.length}</TableCell>
+                    <TableCell>
+                      <Typography variant="caption">
+                        {menu.totals.energyKcal ?? 0} kcal /{" "}
+                        {menu.totals.proteinG ?? 0} g proteina
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="caption">
+                        Total: {formatMoney(menu.totalCostCents)}
+                      </Typography>
+                      <br />
+                      <Typography variant="caption" color="text.secondary">
+                        Per capita: {formatMoney(menu.costPerCapitaCents)}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Stack direction="row" spacing={1}>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          disabled={
+                            state.savingRestaurantMenu ||
+                            menu.status === "APPROVED"
+                          }
+                          onClick={() =>
+                            void actions.setRestaurantMenuStatus(
+                              menu.id,
+                              "APPROVED",
+                            )
+                          }
+                        >
+                          Aprovar
+                        </Button>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          disabled={
+                            state.savingRestaurantMenu ||
+                            menu.status === "ARCHIVED"
+                          }
+                          onClick={() =>
+                            void actions.setRestaurantMenuStatus(
+                              menu.id,
+                              "ARCHIVED",
+                            )
+                          }
+                        >
+                          Arquivar
+                        </Button>
+                      </Stack>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {state.restaurantMenus.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6}>
+                      <Alert severity="info">
+                        Nenhum cardapio encontrado para os filtros atuais.
+                      </Alert>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          )}
+        </Paper>
+      </Stack>
+    );
   }
 
   function renderPlannedArea() {

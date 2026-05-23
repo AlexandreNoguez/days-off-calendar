@@ -178,6 +178,17 @@ export async function findNutriRecipeById(id: string): Promise<NutriRecipe | nul
   return recipe ? stripMongoId(recipe) : null;
 }
 
+export async function findNutriRecipesByIds(ids: string[]): Promise<NutriRecipe[]> {
+  await ensureNutriRecipeIndexes();
+  const collection = await getRecipesCollection();
+  const uniqueIds = [...new Set(ids)];
+
+  if (uniqueIds.length === 0) return [];
+
+  const recipes = await collection.find({ id: { $in: uniqueIds } }).toArray();
+  return recipes.map(stripMongoId);
+}
+
 export async function summarizeNutriRecipes(): Promise<{
   total: number;
   active: number;

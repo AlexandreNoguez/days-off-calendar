@@ -148,14 +148,18 @@ Criterios de aceite:
 
 ## Fase 6 - Cardapios Para Restaurantes
 
+**Status:** implementado para MVP inicial. Lista de compras, mapa de producao e
+exportacao operacional ficam como proximas camadas.
+
 **Objetivo:** planejar cardapios por data/refeicao e gerar apoio operacional.
 
 Tarefas:
 
-- Criar entidade `NutriRestaurantMenu`.
-- Montar cardapio com receitas aprovadas.
-- Informar numero previsto de refeicoes.
-- Calcular custo total, custo per capita e nutrientes por cardapio.
+- [Implementado] Criar entidade `NutriRestaurantMenu`.
+- [Implementado] Montar cardapio com receitas aprovadas.
+- [Implementado] Informar numero previsto de refeicoes.
+- [Implementado] Calcular custo total, custo per capita e nutrientes por
+  cardapio.
 - Gerar lista de compras agregada.
 - Gerar mapa de producao por preparacao.
 - Exportar relatorio para cozinha/compras.
