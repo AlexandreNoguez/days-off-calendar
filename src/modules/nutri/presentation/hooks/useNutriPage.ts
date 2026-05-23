@@ -33,6 +33,7 @@ import type {
   NutriRestaurantMenusResponse,
 } from "../../contracts/restaurantMenus";
 import type {
+  NutriDemoCleanupResponse,
   NutriDemoSeedEntityType,
   NutriDemoSeedResponse,
 } from "../../dev/demoSeedData";
@@ -637,6 +638,7 @@ export function useNutriPage() {
   const [loadingDemoSeedStatus, setLoadingDemoSeedStatus] = useState(true);
   const [seedingDemoKind, setSeedingDemoKind] =
     useState<NutriDemoSeedKind | null>(null);
+  const [clearingDemoData, setClearingDemoData] = useState(false);
 
   const summary = useMemo(
     () =>
@@ -1466,6 +1468,32 @@ export function useNutriPage() {
     }
   }
 
+  async function clearDemoData() {
+    if (!demoSeedsEnabled || seedingDemoKind || clearingDemoData) return;
+    setClearingDemoData(true);
+
+    try {
+      const result = await fetchJson<NutriDemoCleanupResponse>(
+        "/api/nutri/dev/seed/demo-data",
+        { method: "DELETE" },
+      );
+
+      toast.success(`${result.totalDeleted} itens demo removidos.`);
+      await Promise.all([
+        loadPatients(),
+        loadFoods(),
+        loadRecipes(),
+        loadRestaurantMenus(),
+        selectedPatientId ? loadMealPlans(selectedPatientId) : Promise.resolve(),
+      ]);
+    } catch (error) {
+      console.error("[useNutriPage] Failed to clear demo data", error);
+      toast.error(error instanceof Error ? error.message : "Nao foi possivel limpar.");
+    } finally {
+      setClearingDemoData(false);
+    }
+  }
+
   return {
     state: {
       tab,
@@ -1512,6 +1540,7 @@ export function useNutriPage() {
       demoSeedsEnabled,
       loadingDemoSeedStatus,
       seedingDemoKind,
+      clearingDemoData,
       activeFoods,
       approvedRecipes,
       mealPlanPreviewMeals,
@@ -1584,6 +1613,7 @@ export function useNutriPage() {
       createRestaurantMenu,
       setRestaurantMenuStatus,
       seedDemoData,
+      clearDemoData,
     },
   };
 }

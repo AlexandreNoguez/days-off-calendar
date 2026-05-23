@@ -2425,14 +2425,25 @@ export function NutriPage() {
 
     return (
       <Box>
-        <Button
-          size="small"
-          variant="outlined"
-          disabled={Boolean(state.seedingDemoKind)}
-          onClick={() => void actions.seedDemoData(kind)}
-        >
-          {state.seedingDemoKind === kind ? "Criando demo..." : label}
-        </Button>
+        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+          <Button
+            size="small"
+            variant="outlined"
+            disabled={Boolean(state.seedingDemoKind) || state.clearingDemoData}
+            onClick={() => void actions.seedDemoData(kind)}
+          >
+            {state.seedingDemoKind === kind ? "Criando demo..." : label}
+          </Button>
+          <Button
+            size="small"
+            variant="outlined"
+            color="warning"
+            disabled={Boolean(state.seedingDemoKind) || state.clearingDemoData}
+            onClick={() => void actions.clearDemoData()}
+          >
+            {state.clearingDemoData ? "Limpando demos..." : "Limpar demos"}
+          </Button>
+        </Stack>
       </Box>
     );
   }

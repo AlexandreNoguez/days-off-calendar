@@ -23,6 +23,17 @@ export type NutriDemoSeedResponse = {
   entityType: NutriDemoSeedEntityType;
 };
 
+export type NutriDemoCleanupResponse = {
+  deleted: {
+    patients: number;
+    foods: number;
+    mealPlans: number;
+    recipes: number;
+    restaurantMenus: number;
+  };
+  totalDeleted: number;
+};
+
 export const DEMO_PREFIX = "[Demo]";
 
 export const DEMO_PATIENTS: Array<{

@@ -2,6 +2,7 @@ import {
   createNutriFood,
   listNutriFoods,
 } from "../infra/foodRepository";
+import { getDb } from "@/src/lib/server/mongodb";
 import {
   createNutriMealPlan,
 } from "../infra/mealPlanRepository";
@@ -25,12 +26,14 @@ import type {
 import {
   DEMO_FOODS,
   DEMO_PATIENTS,
+  DEMO_PREFIX,
   activePatients,
   createBatchId,
   demoName,
   menuItemFromRecipe,
   recipeIngredientFromFood,
   selectRoundRobin,
+  type NutriDemoCleanupResponse,
   type NutriDemoSeedResponse,
 } from "./demoSeedData";
 
@@ -392,5 +395,31 @@ export async function seedDemoRestaurantMenus(input: {
     reused: recipeResult.recipes.length,
     dependenciesCreated: recipeResult.dependenciesCreated,
     entityType: "restaurantMenus",
+  };
+}
+
+export async function cleanupDemoData(): Promise<NutriDemoCleanupResponse> {
+  const db = await getDb();
+  const demoNameFilter = { $regex: `^\\${DEMO_PREFIX}` };
+
+  const [restaurantMenus, recipes, mealPlans, foods, patients] = await Promise.all([
+    db.collection("nutriRestaurantMenus").deleteMany({ title: demoNameFilter }),
+    db.collection("nutriRecipes").deleteMany({ name: demoNameFilter }),
+    db.collection("nutriMealPlans").deleteMany({ title: demoNameFilter }),
+    db.collection("nutriFoods").deleteMany({ name: demoNameFilter }),
+    db.collection("nutriPatients").deleteMany({ fullName: demoNameFilter }),
+  ]);
+
+  const deleted = {
+    patients: patients.deletedCount,
+    foods: foods.deletedCount,
+    mealPlans: mealPlans.deletedCount,
+    recipes: recipes.deletedCount,
+    restaurantMenus: restaurantMenus.deletedCount,
+  };
+
+  return {
+    deleted,
+    totalDeleted: Object.values(deleted).reduce((total, value) => total + value, 0),
   };
 }

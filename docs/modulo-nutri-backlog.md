@@ -207,6 +207,7 @@ Tarefas:
   necessario.
 - [Implementado] Criar 5 cardapios demo, usando receitas aprovadas.
 - [Implementado] Garantir auditoria e bloqueio server-side.
+- [Implementado] Criar limpeza automatica dos dados `[Demo]`.
 
 Criterios de aceite:
 

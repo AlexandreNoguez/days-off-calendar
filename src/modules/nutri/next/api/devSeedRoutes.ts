@@ -7,6 +7,7 @@ import type {
 } from "../../dev/demoSeedData";
 import { isNutriDemoToolsEnabled } from "../../dev/demoSeedGuards";
 import {
+  cleanupDemoData,
   seedDemoFoods,
   seedDemoMealPlans,
   seedDemoPatients,
@@ -93,4 +94,29 @@ export async function seedRestaurantMenusPOST(request: NextRequest) {
     entityType: "restaurantMenus",
     runner: seedDemoRestaurantMenus,
   });
+}
+
+export async function cleanupDemoDataDELETE(request: NextRequest) {
+  const user = await requireNutriUser().catch(() => null);
+  if (!user) return NextResponse.json({ error: "Acesso negado." }, { status: 403 });
+
+  if (!isNutriDemoToolsEnabled()) {
+    return NextResponse.json(
+      { error: "Seeds de demo estao desabilitados." },
+      { status: 403 },
+    );
+  }
+
+  const result = await cleanupDemoData();
+
+  await writeAuditLog({
+    user,
+    action: "nutri.demo_seed.cleanup",
+    entityType: "nutriDemoSeed",
+    entityId: "demoData",
+    metadata: result,
+    ...requestMeta(request),
+  });
+
+  return NextResponse.json(result);
 }

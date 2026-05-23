@@ -55,6 +55,7 @@ app/api/nutri/dev/seed/meal-plans/route.ts
 app/api/nutri/dev/seed/recipes/route.ts
 app/api/nutri/dev/seed/restaurant-menus/route.ts
 app/api/nutri/dev/seed/status/route.ts
+app/api/nutri/dev/seed/demo-data/route.ts
 
 src/modules/nutri/dev/demoSeedData.ts
 src/modules/nutri/dev/demoSeedGuards.ts
@@ -202,13 +203,15 @@ identificaveis:
 - timestamps ou sufixos curtos para evitar conflito;
 - auditoria com acao de demo seed.
 
-Uma limpeza automatica pode ser uma etapa futura:
+Tambem existe uma limpeza automatica, protegida pela mesma flag:
 
 ```txt
 DELETE /api/nutri/dev/seed/demo-data
 ```
 
-Por enquanto, a limpeza manual por busca `[Demo]` e suficiente para o MVP.
+Ela remove registros identificados por `[Demo]` nas colecoes de pacientes,
+alimentos, planos, receitas e cardapios. O botao `Limpar demos` aparece ao lado
+dos botoes de seed apenas quando a ferramenta demo esta ativa.
 
 ## Como Remover Antes De Producao
 
