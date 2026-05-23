@@ -171,6 +171,7 @@ export type NutriRestaurantMenuRecipeItem = {
   servingSizeGSnapshot: number;
   costPerServingCentsSnapshot?: number;
   nutrientsPerServingSnapshot: NutriNutrients;
+  preparationMethodSnapshot?: string;
   ingredientsSnapshot: NutriRestaurantMenuIngredientSnapshot[];
 };
 

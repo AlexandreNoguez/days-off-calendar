@@ -197,6 +197,7 @@ export function menuItemFromRecipe(input: {
     servingSizeGSnapshot: input.recipe.servingSizeG,
     costPerServingCentsSnapshot: input.recipe.costPerServingCents,
     nutrientsPerServingSnapshot: input.recipe.nutrientsPerServing,
+    preparationMethodSnapshot: input.recipe.preparationMethod,
     ingredientsSnapshot: input.recipe.ingredients.map((ingredient) => ({
       foodId: ingredient.foodId,
       foodNameSnapshot: ingredient.foodNameSnapshot,

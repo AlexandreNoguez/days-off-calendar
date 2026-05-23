@@ -38,7 +38,7 @@ src/modules/nutri/
 - Receitas/fichas tecnicas com ingredientes, rendimento, porcao, nutrientes e
   custo.
 - Cardapios para restaurantes com receitas aprovadas, custo per capita, totais
-  nutricionais e lista de compras agregada.
+  nutricionais, lista de compras agregada e relatorio operacional imprimivel.
 - Ferramenta de seed demo por aba, protegida por flag de ambiente e isolada em
   `src/modules/nutri/dev`.
 

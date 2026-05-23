@@ -166,6 +166,7 @@ export type NutriRestaurantMenuDraftItem = {
   servingSizeG: number;
   costPerServingCents?: number;
   nutrientsPerServing: NutriNutrients;
+  preparationMethod?: string;
   ingredientsSnapshot: NutriRestaurantMenuIngredientSnapshot[];
 };
 
@@ -546,6 +547,7 @@ function restaurantMenuDraftItems(
     servingSizeGSnapshot: item.servingSizeG,
     costPerServingCentsSnapshot: item.costPerServingCents,
     nutrientsPerServingSnapshot: item.nutrientsPerServing,
+    preparationMethodSnapshot: item.preparationMethod,
     ingredientsSnapshot: item.ingredientsSnapshot,
   }));
 }
@@ -1354,6 +1356,7 @@ export function useNutriPage() {
           servingSizeG: recipe.servingSizeG,
           costPerServingCents: recipe.costPerServingCents,
           nutrientsPerServing: recipe.nutrientsPerServing,
+          preparationMethod: recipe.preparationMethod,
           ingredientsSnapshot: recipe.ingredients.map((ingredient) => ({
             foodId: ingredient.foodId,
             foodNameSnapshot: ingredient.foodNameSnapshot,

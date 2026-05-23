@@ -40,6 +40,7 @@ async function parseRestaurantMenuInput(
       servingSizeGSnapshot: number;
       costPerServingCentsSnapshot?: number;
       nutrientsPerServingSnapshot: NutriNutrients;
+      preparationMethodSnapshot?: string;
       ingredientsSnapshot: Array<{
         foodId: string;
         foodNameSnapshot: string;
@@ -88,6 +89,7 @@ async function parseRestaurantMenuInput(
         servingSizeGSnapshot: recipe.servingSizeG,
         costPerServingCentsSnapshot: recipe.costPerServingCents,
         nutrientsPerServingSnapshot: recipe.nutrientsPerServing,
+        preparationMethodSnapshot: recipe.preparationMethod,
         ingredientsSnapshot: recipe.ingredients.map((ingredient) => ({
           foodId: ingredient.foodId,
           foodNameSnapshot: ingredient.foodNameSnapshot,

@@ -2319,6 +2319,16 @@ export function NutriPage() {
                         <Button
                           size="small"
                           variant="outlined"
+                          startIcon={<PrintIcon />}
+                          href={`/api/nutri/restaurant-menus/${menu.id}/print`}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Imprimir
+                        </Button>
+                        <Button
+                          size="small"
+                          variant="outlined"
                           disabled={
                             state.savingRestaurantMenu ||
                             menu.status === "APPROVED"

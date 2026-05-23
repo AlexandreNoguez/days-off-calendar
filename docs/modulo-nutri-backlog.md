@@ -148,8 +148,7 @@ Criterios de aceite:
 
 ## Fase 6 - Cardapios Para Restaurantes
 
-**Status:** implementado para MVP inicial. Lista de compras, mapa de producao e
-exportacao operacional ficam como proximas camadas.
+**Status:** implementado para MVP operacional inicial.
 
 **Objetivo:** planejar cardapios por data/refeicao e gerar apoio operacional.
 
@@ -161,8 +160,8 @@ Tarefas:
 - [Implementado] Calcular custo total, custo per capita e nutrientes por
   cardapio.
 - [Implementado] Gerar lista de compras agregada.
-- Gerar mapa de producao por preparacao.
-- Exportar relatorio para cozinha/compras.
+- [Implementado] Gerar mapa de producao por preparacao.
+- [Implementado] Exportar relatorio para cozinha/compras em HTML imprimivel.
 
 Criterios de aceite:
 

@@ -104,6 +104,15 @@ export async function listNutriRestaurantMenus(input: {
   return menus.map(stripMongoId);
 }
 
+export async function findNutriRestaurantMenuById(
+  id: string,
+): Promise<NutriRestaurantMenu | null> {
+  await ensureNutriRestaurantMenuIndexes();
+  const collection = await getRestaurantMenusCollection();
+  const menu = await collection.findOne({ id });
+  return menu ? stripMongoId(menu) : null;
+}
+
 export async function summarizeNutriRestaurantMenus(): Promise<{
   total: number;
   draft: number;
