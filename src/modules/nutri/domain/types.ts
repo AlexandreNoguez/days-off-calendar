@@ -152,16 +152,34 @@ export type NutriRecipe = {
 
 export type NutriRestaurantMenuStatus = "DRAFT" | "APPROVED" | "ARCHIVED";
 
+export type NutriRestaurantMenuIngredientSnapshot = {
+  foodId: string;
+  foodNameSnapshot: string;
+  netWeightGSnapshot: number;
+  grossWeightGSnapshot?: number;
+  unitCostCentsSnapshot?: number;
+};
+
 export type NutriRestaurantMenuRecipeItem = {
   id: string;
   mealName: string;
   recipeId: string;
   recipeNameSnapshot: string;
   recipeVersionSnapshot: number;
+  recipeServingsSnapshot: number;
   servings: number;
   servingSizeGSnapshot: number;
   costPerServingCentsSnapshot?: number;
   nutrientsPerServingSnapshot: NutriNutrients;
+  ingredientsSnapshot: NutriRestaurantMenuIngredientSnapshot[];
+};
+
+export type NutriRestaurantMenuShoppingListItem = {
+  foodId: string;
+  foodNameSnapshot: string;
+  totalNetWeightG: number;
+  totalGrossWeightG?: number;
+  recipeNames: string[];
 };
 
 export type NutriRestaurantMenu = {
@@ -174,6 +192,7 @@ export type NutriRestaurantMenu = {
   totalCostCents?: number;
   costPerCapitaCents?: number;
   totals: NutriNutrients;
+  shoppingList: NutriRestaurantMenuShoppingListItem[];
   approvedAt?: string;
   approvedByUserId?: string;
   createdByUserId: string;

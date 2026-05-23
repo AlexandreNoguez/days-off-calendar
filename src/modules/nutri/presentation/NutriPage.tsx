@@ -1319,6 +1319,41 @@ export function NutriPage() {
                 )}
               </TableBody>
             </Table>
+
+            <Typography variant="subtitle2" fontWeight={700}>
+              Lista de compras agregada
+            </Typography>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Ingrediente</TableCell>
+                  <TableCell>Peso liquido</TableCell>
+                  <TableCell>Peso bruto</TableCell>
+                  <TableCell>Receitas</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {state.restaurantMenuShoppingListPreview.map((item) => (
+                  <TableRow key={item.foodId}>
+                    <TableCell>{item.foodNameSnapshot}</TableCell>
+                    <TableCell>{item.totalNetWeightG} g</TableCell>
+                    <TableCell>
+                      {item.totalGrossWeightG ? `${item.totalGrossWeightG} g` : "-"}
+                    </TableCell>
+                    <TableCell>{item.recipeNames.join(", ")}</TableCell>
+                  </TableRow>
+                ))}
+                {state.restaurantMenuShoppingListPreview.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={4}>
+                      <Alert severity="info">
+                        A lista de compras aparece apos adicionar receitas.
+                      </Alert>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
           </Stack>
         </Paper>
 
@@ -2203,6 +2238,7 @@ export function NutriPage() {
                   <TableCell>Cardapio</TableCell>
                   <TableCell>Status</TableCell>
                   <TableCell>Itens</TableCell>
+                  <TableCell>Compras</TableCell>
                   <TableCell>Totais</TableCell>
                   <TableCell>Custo</TableCell>
                   <TableCell>Acoes</TableCell>
@@ -2236,6 +2272,22 @@ export function NutriPage() {
                       />
                     </TableCell>
                     <TableCell>{menu.items.length}</TableCell>
+                    <TableCell>
+                      <Typography variant="caption">
+                        {menu.shoppingList
+                          .slice(0, 3)
+                          .map(
+                            (item) =>
+                              `${item.foodNameSnapshot}: ${item.totalNetWeightG} g`,
+                          )
+                          .join(" / ") || "-"}
+                      </Typography>
+                      {menu.shoppingList.length > 3 && (
+                        <Typography variant="caption" color="text.secondary" display="block">
+                          +{menu.shoppingList.length - 3} itens
+                        </Typography>
+                      )}
+                    </TableCell>
                     <TableCell>
                       <Typography variant="caption">
                         {menu.totals.energyKcal ?? 0} kcal /{" "}
@@ -2291,7 +2343,7 @@ export function NutriPage() {
                 ))}
                 {state.restaurantMenus.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6}>
+                    <TableCell colSpan={7}>
                       <Alert severity="info">
                         Nenhum cardapio encontrado para os filtros atuais.
                       </Alert>

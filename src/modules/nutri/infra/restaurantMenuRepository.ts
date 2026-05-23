@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import type { Collection, UpdateFilter } from "mongodb";
 import { getDb } from "@/src/lib/server/mongodb";
+import { calculateRestaurantMenuShoppingList } from "../application/calculateRestaurantMenuShoppingList";
 import { calculateRestaurantMenuTotals } from "../application/calculateRestaurantMenuTotals";
 import type {
   NutriRestaurantMenu,
@@ -34,7 +35,15 @@ function createRestaurantMenuItemId(): string {
 function stripMongoId(document: NutriRestaurantMenuDocument): NutriRestaurantMenu {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { _id, ...menu } = document;
-  return menu;
+  return {
+    ...menu,
+    shoppingList:
+      menu.shoppingList ??
+      calculateRestaurantMenuShoppingList(menu.items.map((item) => ({
+        ...item,
+        ingredientsSnapshot: item.ingredientsSnapshot ?? [],
+      }))),
+  };
 }
 
 async function getRestaurantMenusCollection(): Promise<
@@ -126,6 +135,7 @@ export async function createNutriRestaurantMenu(input: {
     items,
     expectedMeals: input.menu.expectedMeals,
   });
+  const shoppingList = calculateRestaurantMenuShoppingList(items);
   const menu: NutriRestaurantMenu = {
     id: createRestaurantMenuId(),
     title: input.menu.title,
@@ -136,6 +146,7 @@ export async function createNutriRestaurantMenu(input: {
     totalCostCents: totals.totalCostCents,
     costPerCapitaCents: totals.costPerCapitaCents,
     totals: totals.totals,
+    shoppingList,
     createdByUserId: input.userId,
     createdAt: now,
     updatedAt: now,

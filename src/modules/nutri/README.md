@@ -37,8 +37,8 @@ src/modules/nutri/
 - Planos alimentares por paciente com metas, totais, impressao e duplicacao.
 - Receitas/fichas tecnicas com ingredientes, rendimento, porcao, nutrientes e
   custo.
-- Cardapios para restaurantes com receitas aprovadas, custo per capita e totais
-  nutricionais.
+- Cardapios para restaurantes com receitas aprovadas, custo per capita, totais
+  nutricionais e lista de compras agregada.
 
 ## Regra De Dependencias
 

@@ -160,7 +160,7 @@ Tarefas:
 - [Implementado] Informar numero previsto de refeicoes.
 - [Implementado] Calcular custo total, custo per capita e nutrientes por
   cardapio.
-- Gerar lista de compras agregada.
+- [Implementado] Gerar lista de compras agregada.
 - Gerar mapa de producao por preparacao.
 - Exportar relatorio para cozinha/compras.
 

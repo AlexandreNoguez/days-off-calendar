@@ -35,6 +35,7 @@ import type {
 import { calculateImc } from "../../application/calculateImc";
 import { calculateMealPlanTotals } from "../../application/calculateMealPlanTotals";
 import { calculateRecipeNutrition } from "../../application/calculateRecipeNutrition";
+import { calculateRestaurantMenuShoppingList } from "../../application/calculateRestaurantMenuShoppingList";
 import { calculateRestaurantMenuTotals } from "../../application/calculateRestaurantMenuTotals";
 import type {
   NutriAssessment,
@@ -49,6 +50,7 @@ import type {
   NutriRecipeIngredient,
   NutriRecipeStatus,
   NutriRestaurantMenu,
+  NutriRestaurantMenuIngredientSnapshot,
   NutriRestaurantMenuRecipeItem,
   NutriRestaurantMenuStatus,
 } from "../../domain/types";
@@ -153,10 +155,12 @@ export type NutriRestaurantMenuDraftItem = {
   recipeId: string;
   recipeName: string;
   recipeVersion: number;
+  recipeServings: number;
   servings: number;
   servingSizeG: number;
   costPerServingCents?: number;
   nutrientsPerServing: NutriNutrients;
+  ingredientsSnapshot: NutriRestaurantMenuIngredientSnapshot[];
 };
 
 export type NutriRestaurantMenuDraft = {
@@ -531,10 +535,12 @@ function restaurantMenuDraftItems(
     recipeId: item.recipeId,
     recipeNameSnapshot: item.recipeName,
     recipeVersionSnapshot: item.recipeVersion,
+    recipeServingsSnapshot: item.recipeServings,
     servings: item.servings,
     servingSizeGSnapshot: item.servingSizeG,
     costPerServingCentsSnapshot: item.costPerServingCents,
     nutrientsPerServingSnapshot: item.nutrientsPerServing,
+    ingredientsSnapshot: item.ingredientsSnapshot,
   }));
 }
 
@@ -750,6 +756,10 @@ export function useNutriPage() {
         expectedMeals: positiveNumber(restaurantMenuDraft.expectedMeals),
       }),
     [restaurantMenuDraft.expectedMeals, restaurantMenuPreviewItems],
+  );
+  const restaurantMenuShoppingListPreview = useMemo(
+    () => calculateRestaurantMenuShoppingList(restaurantMenuPreviewItems),
+    [restaurantMenuPreviewItems],
   );
   const canAddRestaurantMenuItem = Boolean(
     restaurantMenuDraft.mealName.trim() &&
@@ -1307,10 +1317,18 @@ export function useNutriPage() {
           recipeId: recipe.id,
           recipeName: recipe.name,
           recipeVersion: recipe.version,
+          recipeServings: recipe.servings,
           servings,
           servingSizeG: recipe.servingSizeG,
           costPerServingCents: recipe.costPerServingCents,
           nutrientsPerServing: recipe.nutrientsPerServing,
+          ingredientsSnapshot: recipe.ingredients.map((ingredient) => ({
+            foodId: ingredient.foodId,
+            foodNameSnapshot: ingredient.foodNameSnapshot,
+            netWeightGSnapshot: ingredient.netWeightG,
+            grossWeightGSnapshot: ingredient.grossWeightG,
+            unitCostCentsSnapshot: ingredient.unitCostCents,
+          })),
         },
       ],
     }));
@@ -1421,6 +1439,7 @@ export function useNutriPage() {
       recipePreview,
       recipePreviewCostCents,
       restaurantMenuPreview,
+      restaurantMenuShoppingListPreview,
       canCreatePatient,
       canUpdatePatient,
       canCreateAssessment,

@@ -35,10 +35,18 @@ async function parseRestaurantMenuInput(
       recipeId: string;
       recipeNameSnapshot: string;
       recipeVersionSnapshot: number;
+      recipeServingsSnapshot: number;
       servings: number;
       servingSizeGSnapshot: number;
       costPerServingCentsSnapshot?: number;
       nutrientsPerServingSnapshot: NutriNutrients;
+      ingredientsSnapshot: Array<{
+        foodId: string;
+        foodNameSnapshot: string;
+        netWeightGSnapshot: number;
+        grossWeightGSnapshot?: number;
+        unitCostCentsSnapshot?: number;
+      }>;
     }>;
   };
   error?: string;
@@ -75,10 +83,18 @@ async function parseRestaurantMenuInput(
         recipeId: recipe.id,
         recipeNameSnapshot: recipe.name,
         recipeVersionSnapshot: recipe.version,
+        recipeServingsSnapshot: recipe.servings,
         servings,
         servingSizeGSnapshot: recipe.servingSizeG,
         costPerServingCentsSnapshot: recipe.costPerServingCents,
         nutrientsPerServingSnapshot: recipe.nutrientsPerServing,
+        ingredientsSnapshot: recipe.ingredients.map((ingredient) => ({
+          foodId: ingredient.foodId,
+          foodNameSnapshot: ingredient.foodNameSnapshot,
+          netWeightGSnapshot: ingredient.netWeightG,
+          grossWeightGSnapshot: ingredient.grossWeightG,
+          unitCostCentsSnapshot: ingredient.unitCostCents,
+        })),
       };
     })
     .filter((item): item is NonNullable<typeof item> => Boolean(item));

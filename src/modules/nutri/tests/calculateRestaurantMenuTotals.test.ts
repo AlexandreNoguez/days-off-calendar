@@ -12,6 +12,7 @@ describe("calculateRestaurantMenuTotals", () => {
           recipeId: "recipe_1",
           recipeNameSnapshot: "Arroz com feijao",
           recipeVersionSnapshot: 1,
+          recipeServingsSnapshot: 5,
           servings: 10,
           servingSizeGSnapshot: 250,
           costPerServingCentsSnapshot: 450,
@@ -20,6 +21,7 @@ describe("calculateRestaurantMenuTotals", () => {
             carbohydrateG: 48,
             proteinG: 12,
           },
+          ingredientsSnapshot: [],
         },
         {
           id: "item_2",
@@ -27,6 +29,7 @@ describe("calculateRestaurantMenuTotals", () => {
           recipeId: "recipe_2",
           recipeNameSnapshot: "Fruta",
           recipeVersionSnapshot: 1,
+          recipeServingsSnapshot: 10,
           servings: 10,
           servingSizeGSnapshot: 120,
           costPerServingCentsSnapshot: 180,
@@ -35,6 +38,7 @@ describe("calculateRestaurantMenuTotals", () => {
             carbohydrateG: 22,
             proteinG: 1,
           },
+          ingredientsSnapshot: [],
         },
       ],
     });
