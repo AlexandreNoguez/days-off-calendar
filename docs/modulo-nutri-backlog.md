@@ -186,6 +186,37 @@ Ideias para depois do MVP:
 - Agenda de retornos.
 - Multi-nutricionista com pacientes por responsavel.
 
+## Fase Tecnica - Seeds De Demo
+
+**Status:** implementado em modo demo/desenvolvimento.
+
+**Objetivo:** permitir popular rapidamente cada aba do modulo em ambiente local
+ou demo, sem deixar ferramenta perigosa em producao.
+
+Tarefas:
+
+- [Implementado] Criar flag `NUTRI_DEMO_TOOLS_ENABLED`.
+- [Implementado] Criar geradores isolados em `src/modules/nutri/dev`.
+- [Implementado] Criar rotas protegidas em `app/api/nutri/dev/seed/*`.
+- [Implementado] Criar botao de seed por aba, renderizado apenas com a flag
+  ligada.
+- [Implementado] Criar 5 pacientes demo.
+- [Implementado] Criar 5 alimentos demo.
+- [Implementado] Criar 5 planos demo, com dependencias minimas.
+- [Implementado] Criar 5 receitas demo aprovadas, com alimentos de apoio se
+  necessario.
+- [Implementado] Criar 5 cardapios demo, usando receitas aprovadas.
+- [Implementado] Garantir auditoria e bloqueio server-side.
+
+Criterios de aceite:
+
+- Com a flag desligada, nenhum botao aparece.
+- Com a flag desligada, rotas de seed ficam bloqueadas.
+- Usuario sem perfil `NUTRI` nao executa seeds.
+- Dados demo ficam identificaveis por `[Demo]`.
+- Remover a ferramenta exige apagar apenas `src/modules/nutri/dev`,
+  `app/api/nutri/dev` e o componente/botoes de seed.
+
 ## Perguntas Para O Dono Do Produto
 
 - O foco comercial inicial e clinica individual, restaurante ou ambos?

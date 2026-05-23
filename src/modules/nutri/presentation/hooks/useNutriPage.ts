@@ -32,6 +32,10 @@ import type {
   NutriRestaurantMenuResponse,
   NutriRestaurantMenusResponse,
 } from "../../contracts/restaurantMenus";
+import type {
+  NutriDemoSeedEntityType,
+  NutriDemoSeedResponse,
+} from "../../dev/demoSeedData";
 import { calculateImc } from "../../application/calculateImc";
 import { calculateMealPlanTotals } from "../../application/calculateMealPlanTotals";
 import { calculateRecipeNutrition } from "../../application/calculateRecipeNutrition";
@@ -56,6 +60,8 @@ import type {
 } from "../../domain/types";
 
 export type NutriTab = "patients" | "foods" | "mealPlans" | "recipes" | "menus";
+
+export type NutriDemoSeedKind = NutriDemoSeedEntityType;
 
 export type NutriPatientDraft = {
   fullName: string;
@@ -624,6 +630,10 @@ export function useNutriPage() {
   const [savingRestaurantMenu, setSavingRestaurantMenu] = useState(false);
   const [restaurantMenuDraft, setRestaurantMenuDraft] =
     useState<NutriRestaurantMenuDraft>(createEmptyRestaurantMenuDraft());
+  const [demoSeedsEnabled, setDemoSeedsEnabled] = useState(false);
+  const [loadingDemoSeedStatus, setLoadingDemoSeedStatus] = useState(true);
+  const [seedingDemoKind, setSeedingDemoKind] =
+    useState<NutriDemoSeedKind | null>(null);
 
   const summary = useMemo(
     () =>
@@ -773,7 +783,13 @@ export function useNutriPage() {
   );
 
   useEffect(() => {
-    void Promise.all([loadPatients(), loadFoods(), loadRecipes(), loadRestaurantMenus()]);
+    void Promise.all([
+      loadPatients(),
+      loadFoods(),
+      loadRecipes(),
+      loadRestaurantMenus(),
+      loadDemoSeedStatus(),
+    ]);
     // Initial data load should run once.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -899,6 +915,22 @@ export function useNutriPage() {
       toast.error("Nao foi possivel carregar cardapios.");
     } finally {
       setLoadingRestaurantMenus(false);
+    }
+  }
+
+  async function loadDemoSeedStatus() {
+    setLoadingDemoSeedStatus(true);
+
+    try {
+      const data = await fetchJson<{ enabled: boolean }>(
+        "/api/nutri/dev/seed/status",
+      );
+      setDemoSeedsEnabled(data.enabled);
+    } catch (error) {
+      console.error("[useNutriPage] Failed to load demo seed status", error);
+      setDemoSeedsEnabled(false);
+    } finally {
+      setLoadingDemoSeedStatus(false);
     }
   }
 
@@ -1389,6 +1421,39 @@ export function useNutriPage() {
     }
   }
 
+  async function seedDemoData(kind: NutriDemoSeedKind) {
+    if (!demoSeedsEnabled || seedingDemoKind) return;
+    setSeedingDemoKind(kind);
+
+    const endpoints: Record<NutriDemoSeedKind, string> = {
+      patients: "/api/nutri/dev/seed/patients",
+      foods: "/api/nutri/dev/seed/foods",
+      mealPlans: "/api/nutri/dev/seed/meal-plans",
+      recipes: "/api/nutri/dev/seed/recipes",
+      restaurantMenus: "/api/nutri/dev/seed/restaurant-menus",
+    };
+
+    try {
+      const result = await fetchJson<NutriDemoSeedResponse>(endpoints[kind], {
+        method: "POST",
+      });
+
+      toast.success(`${result.created} itens demo criados.`);
+      await Promise.all([
+        loadPatients(),
+        loadFoods(),
+        loadRecipes(),
+        loadRestaurantMenus(),
+        selectedPatientId ? loadMealPlans(selectedPatientId) : Promise.resolve(),
+      ]);
+    } catch (error) {
+      console.error("[useNutriPage] Failed to seed demo data", error);
+      toast.error(error instanceof Error ? error.message : "Nao foi possivel criar seed.");
+    } finally {
+      setSeedingDemoKind(null);
+    }
+  }
+
   return {
     state: {
       tab,
@@ -1432,6 +1497,9 @@ export function useNutriPage() {
       loadingRestaurantMenus,
       savingRestaurantMenu,
       restaurantMenuDraft,
+      demoSeedsEnabled,
+      loadingDemoSeedStatus,
+      seedingDemoKind,
       activeFoods,
       approvedRecipes,
       mealPlanPreviewMeals,
@@ -1502,6 +1570,7 @@ export function useNutriPage() {
       removeRestaurantMenuItem,
       createRestaurantMenu,
       setRestaurantMenuStatus,
+      seedDemoData,
     },
   };
 }

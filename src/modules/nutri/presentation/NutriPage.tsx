@@ -45,6 +45,7 @@ import type {
 import {
   useNutriPage,
   type NutriAssessmentDraft,
+  type NutriDemoSeedKind,
   type NutriFoodDraft,
   type NutriPatientDraft,
   type NutriRecipeDraft,
@@ -216,6 +217,8 @@ export function NutriPage() {
   function renderPatients() {
     return (
       <Stack spacing={2}>
+        {renderSeedButton("patients", "Seed 5 pacientes")}
+
         <Paper variant="outlined" sx={{ p: 2 }}>
           <Stack spacing={2}>
             <Typography variant="subtitle1" fontWeight={700}>
@@ -788,6 +791,8 @@ export function NutriPage() {
   function renderFoods() {
     return (
       <Stack spacing={2}>
+        {renderSeedButton("foods", "Seed 5 alimentos")}
+
         <Paper variant="outlined" sx={{ p: 2 }}>
           <Stack spacing={2}>
             <Typography variant="subtitle1" fontWeight={700}>
@@ -1127,6 +1132,8 @@ export function NutriPage() {
   function renderMealPlans() {
     return (
       <Stack spacing={2}>
+        {renderSeedButton("mealPlans", "Seed 5 planos")}
+
         <Paper variant="outlined" sx={{ p: 2 }}>
           <Stack spacing={2}>
             <Box>
@@ -1559,6 +1566,8 @@ export function NutriPage() {
   function renderRecipes() {
     return (
       <Stack spacing={2}>
+        {renderSeedButton("recipes", "Seed 5 receitas")}
+
         <Paper variant="outlined" sx={{ p: 2 }}>
           <Stack spacing={2}>
             <Box>
@@ -1980,6 +1989,8 @@ export function NutriPage() {
   function renderMenus() {
     return (
       <Stack spacing={2}>
+        {renderSeedButton("restaurantMenus", "Seed 5 cardapios")}
+
         <Paper variant="outlined" sx={{ p: 2 }}>
           <Stack spacing={2}>
             <Box>
@@ -2376,6 +2387,23 @@ export function NutriPage() {
           ))}
         </List>
       </Paper>
+    );
+  }
+
+  function renderSeedButton(kind: NutriDemoSeedKind, label: string) {
+    if (!state.demoSeedsEnabled || state.loadingDemoSeedStatus) return null;
+
+    return (
+      <Box>
+        <Button
+          size="small"
+          variant="outlined"
+          disabled={Boolean(state.seedingDemoKind)}
+          onClick={() => void actions.seedDemoData(kind)}
+        >
+          {state.seedingDemoKind === kind ? "Criando demo..." : label}
+        </Button>
+      </Box>
     );
   }
 }

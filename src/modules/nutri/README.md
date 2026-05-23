@@ -39,6 +39,8 @@ src/modules/nutri/
   custo.
 - Cardapios para restaurantes com receitas aprovadas, custo per capita, totais
   nutricionais e lista de compras agregada.
+- Ferramenta de seed demo por aba, protegida por flag de ambiente e isolada em
+  `src/modules/nutri/dev`.
 
 ## Regra De Dependencias
 
