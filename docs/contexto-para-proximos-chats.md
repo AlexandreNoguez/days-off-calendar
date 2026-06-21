@@ -42,6 +42,8 @@ devem ser mantidos e a checklist viva do que ainda falta.
 - `docs/plano-migracao-nextjs-mongodb.md`: planejamento principal e checklist detalhado.
 - `docs/teste-manual-fluxo-completo.md`: roteiro manual de QA para validar
   fluxo completo, permissoes, auditoria, persistencia e exportacao.
+- `docs/release-v1.1.0-rc.md`: planejamento da release candidate do modulo
+  Nutri, com escopo, decisoes, etapas e commits sugeridos.
 - `docs/roadmap-funcionalidades-gestao-folgas.md`: roadmap de valor do produto
   com 20 funcionalidades planejadas.
 
@@ -308,6 +310,11 @@ A migracao tecnica principal esta fechada: Next.js, MongoDB Atlas, auth,
 permissoes, auditoria, modelo de dados e limpeza do legado frontend-only.
 O painel de justica/equilibrio ja tem uma primeira versao em `/fairness`,
 calculada a partir da escala do periodo atual.
+
+Para o modulo Nutri, a proxima entrega planejada e fechar a `v1.1.0-rc` seguindo
+`docs/release-v1.1.0-rc.md`. A RC estabiliza o MVP Nutri para perfil `NUTRI`,
+mantendo `ADMIN` fora de dados clinicos, exportacao HTML imprimivel e seeds demo
+protegidos por flag.
 
 A ordem recomendada de produto e:
 

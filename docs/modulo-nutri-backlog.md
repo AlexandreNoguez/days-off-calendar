@@ -4,15 +4,37 @@ Este backlog organiza a construcao do modulo `Nutri` em entregas pequenas. A
 ordem prioriza seguranca de acesso, base de dominio, calculos confiaveis e so
 depois telas mais ricas.
 
+## Proxima Entrega - v1.1.0-rc
+
+A proxima entrega planejada e a `v1.1.0-rc`, primeira release candidate do
+modulo `Nutri`.
+
+Fonte de verdade da RC:
+
+- `docs/release-v1.1.0-rc.md`
+
+Objetivo da RC:
+
+- estabilizar o MVP profissional do modulo para uso controlado por perfil
+  `NUTRI`;
+- manter `ADMIN` fora de dados clinicos por padrao;
+- preservar HTML imprimivel como formato inicial de exportacao;
+- manter alimentos com cadastro manual e metadados de fonte, deixando importacao
+  TACO/IBGE fora da RC;
+- fortalecer permissoes, privacidade, testes, QA manual e documentacao antes da
+  tag.
+
 ## Fase 0 - Decisoes Antes De Codar
 
-1. Confirmar se `ADMIN` pode ou nao acessar dados clinicos.
+1. [Decidido para RC] `ADMIN` nao acessa dados clinicos por padrao; apenas
+   `NUTRI` acessa prontuarios, planos e cardapios do modulo.
 2. Confirmar se o modulo sera para uma unica nutricionista ou multiplas
    nutricionistas.
-3. Confirmar se o primeiro uso sera pacientes, restaurantes ou ambos.
-4. Definir fonte inicial de alimentos: cadastro manual, TACO, IBGE ou importacao
-   posterior.
-5. Definir formato de exportacao inicial: HTML imprimivel, PDF ou XLSX.
+3. [Decidido para RC] O primeiro uso cobre pacientes e restaurantes em MVP
+   operacional, sem prometer produto clinico final.
+4. [Decidido para RC] Fonte inicial de alimentos: cadastro manual com metadados
+   de fonte; importacao estruturada fica para depois.
+5. [Decidido para RC] Formato de exportacao inicial: HTML imprimivel.
 
 Recomendacao: iniciar com pacientes + cadastro manual de alimentos e receitas
 simples. Restaurantes entram logo depois usando a mesma base de alimentos.
