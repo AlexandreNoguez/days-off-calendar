@@ -155,6 +155,8 @@ docs(nutri): define v1.1 release candidate plan
 
 ### Etapa 2 - Endurecimento De Permissao E Privacidade
 
+Status: cobertura automatizada inicial implementada.
+
 Objetivo: garantir que dados sensiveis do modulo fiquem isolados.
 
 Tarefas:
@@ -171,6 +173,11 @@ Criterios de aceite:
 - Rotas Nutri retornam 403 para `ADMIN`, `USER` e anonimo.
 - Logs Nutri guardam ids, status, contagens e formato, sem conteudo clinico.
 - Menu e redirecionamentos batem com as permissoes.
+
+Cobertura adicionada:
+
+- `src/modules/nutri/tests/nutriAccessControls.test.ts`
+- `src/modules/nutri/tests/demoSeedGuards.test.ts`
 
 Commit sugerido:
 
@@ -366,4 +373,3 @@ fortes para `v1.1.0` final ou `v1.2.0`:
   RC?
 - Havera mais de uma nutricionista usando o mesmo banco no futuro?
 - Qual politica de backup, retencao e exclusao de dados clinicos sera adotada?
-
