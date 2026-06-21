@@ -219,6 +219,8 @@ test(nutri): strengthen nutrition calculation coverage
 
 ### Etapa 4 - UX De Fluxo Profissional
 
+Status: melhoria inicial de fluxo e layout implementada.
+
 Objetivo: deixar a jornada da nutricionista mais clara para uma RC.
 
 Tarefas:
@@ -237,6 +239,19 @@ Criterios de aceite:
 - A tela comunica por que uma acao esta indisponivel.
 - Fluxos de paciente, alimento, plano, receita e cardapio tem estados vazios
   amigaveis.
+
+Implementado nesta etapa:
+
+- Header, metricas, secoes e carregamentos componentizados com MUI em
+  `src/modules/nutri/presentation/components`.
+- Avisos por aba quando faltam dependencias de fluxo: paciente ativo, alimento
+  ativo ou receita aprovada.
+- Comparacao de metas de planos preparada no hook, deixando a pagina apenas
+  renderizar linhas e chips ja derivados.
+- Status de planos exibidos com rotulos profissionais de rascunho, aprovado e
+  arquivado.
+- Primeira padronizacao visual das secoes principais de paciente, avaliacao,
+  plano alimentar e receita/ficha tecnica.
 
 Commit sugerido:
 

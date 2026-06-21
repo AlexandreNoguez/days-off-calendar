@@ -65,6 +65,15 @@ export type NutriTab = "patients" | "foods" | "mealPlans" | "recipes" | "menus";
 
 export type NutriDemoSeedKind = NutriDemoSeedEntityType;
 
+type NutriDiffColor = "success" | "warning" | "default";
+
+export type NutriWorkflowNotice = {
+  description: string;
+  id: string;
+  severity: "info" | "warning";
+  title: string;
+};
+
 export type NutriPatientDraft = {
   fullName: string;
   birthDate: string;
@@ -182,6 +191,21 @@ export type NutriRestaurantMenuDraft = {
   items: NutriRestaurantMenuDraftItem[];
 };
 
+export type NutriMealPlanComparisonViewRow = {
+  diffColor: NutriDiffColor;
+  diffLabel: string;
+  key: string;
+  label: string;
+  targetLabel: string;
+  totalLabel: string;
+};
+
+export type NutriMealPlanDiffChip = {
+  color: NutriDiffColor;
+  key: string;
+  label: string;
+};
+
 const INITIAL_SUMMARY = [
   {
     label: "Pacientes",
@@ -216,6 +240,81 @@ const FIRST_STEPS = [
   "Montar a base manual de alimentos mais usados.",
   "Criar o primeiro plano alimentar em rascunho.",
 ] as const;
+
+const MEAL_PLAN_COMPARISON_ROWS = [
+  {
+    label: "Energia",
+    targetKey: "targetEnergyKcal",
+    targetNutrientKey: "energyKcal",
+    totalKey: "energyKcal",
+    unit: "kcal",
+  },
+  {
+    label: "Carboidrato",
+    targetKey: "targetCarbohydrateG",
+    targetNutrientKey: "carbohydrateG",
+    totalKey: "carbohydrateG",
+    unit: "g",
+  },
+  {
+    label: "Proteina",
+    targetKey: "targetProteinG",
+    targetNutrientKey: "proteinG",
+    totalKey: "proteinG",
+    unit: "g",
+  },
+  {
+    label: "Gordura",
+    targetKey: "targetFatG",
+    targetNutrientKey: "fatG",
+    totalKey: "fatG",
+    unit: "g",
+  },
+  {
+    label: "Fibra",
+    targetKey: "targetFiberG",
+    targetNutrientKey: "fiberG",
+    totalKey: "fiberG",
+    unit: "g",
+  },
+  {
+    label: "Sodio",
+    targetKey: "targetSodiumMg",
+    targetNutrientKey: "sodiumMg",
+    totalKey: "sodiumMg",
+    unit: "mg",
+  },
+] as const satisfies readonly {
+  label: string;
+  targetKey: keyof Pick<
+    NutriMealPlanDraft,
+    | "targetEnergyKcal"
+    | "targetCarbohydrateG"
+    | "targetProteinG"
+    | "targetFatG"
+    | "targetFiberG"
+    | "targetSodiumMg"
+  >;
+  targetNutrientKey: keyof Pick<
+    NutriNutrients,
+    | "energyKcal"
+    | "carbohydrateG"
+    | "proteinG"
+    | "fatG"
+    | "fiberG"
+    | "sodiumMg"
+  >;
+  totalKey: keyof Pick<
+    NutriNutrients,
+    | "energyKcal"
+    | "carbohydrateG"
+    | "proteinG"
+    | "fatG"
+    | "fiberG"
+    | "sodiumMg"
+  >;
+  unit: string;
+}[];
 
 const EMPTY_PATIENT_DRAFT: NutriPatientDraft = {
   fullName: "",
@@ -372,6 +471,63 @@ function toPatientDraft(patient: NutriPatient): NutriPatientDraft {
 function positiveNumber(value: string): number | undefined {
   const parsed = Number(value.replace(",", "."));
   return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+}
+
+function formatOptionalNumber(value: number | undefined, unit: string): string {
+  return typeof value === "number" ? `${value} ${unit}` : "-";
+}
+
+function roundDiff(value: number): number {
+  return Math.round(value * 10) / 10;
+}
+
+function mealPlanDiffColor(diff: number | undefined): NutriDiffColor {
+  if (typeof diff !== "number") return "default";
+  return Math.abs(diff) <= 5 ? "success" : "warning";
+}
+
+function buildMealPlanComparisonRows(
+  draft: NutriMealPlanDraft,
+  totals: NutriNutrients,
+): NutriMealPlanComparisonViewRow[] {
+  return MEAL_PLAN_COMPARISON_ROWS.map((row) => {
+    const target = positiveNumber(draft[row.targetKey]);
+    const total = totals[row.totalKey];
+    const diff =
+      typeof target === "number" && typeof total === "number"
+        ? roundDiff(total - target)
+        : undefined;
+
+    return {
+      key: row.totalKey,
+      label: row.label,
+      targetLabel: formatOptionalNumber(target, row.unit),
+      totalLabel: formatOptionalNumber(total, row.unit),
+      diffLabel: formatOptionalNumber(diff, row.unit),
+      diffColor: mealPlanDiffColor(diff),
+    };
+  });
+}
+
+function buildMealPlanDiffChips(
+  mealPlan: NutriMealPlan,
+): NutriMealPlanDiffChip[] {
+  return MEAL_PLAN_COMPARISON_ROWS.flatMap((row) => {
+    const target = mealPlan.target[row.targetNutrientKey];
+    const total = mealPlan.totals[row.totalKey];
+    const diff =
+      typeof target === "number" && typeof total === "number"
+        ? roundDiff(total - target)
+        : undefined;
+
+    if (typeof diff !== "number") return [];
+
+    return {
+      key: row.totalKey,
+      label: `${row.label}: ${diff > 0 ? "+" : ""}${diff} ${row.unit}`,
+      color: mealPlanDiffColor(diff),
+    };
+  });
 }
 
 function moneyToCents(value: string): number | undefined {
@@ -707,6 +863,18 @@ export function useNutriPage() {
     () => calculateMealPlanTotals(mealPlanPreviewMeals),
     [mealPlanPreviewMeals],
   );
+  const mealPlanComparisonRows = useMemo(
+    () => buildMealPlanComparisonRows(mealPlanDraft, mealPlanPreviewTotals),
+    [mealPlanDraft, mealPlanPreviewTotals],
+  );
+  const mealPlanDiffChipsById = useMemo(
+    () =>
+      mealPlans.reduce<Record<string, NutriMealPlanDiffChip[]>>((acc, mealPlan) => {
+        acc[mealPlan.id] = buildMealPlanDiffChips(mealPlan);
+        return acc;
+      }, {}),
+    [mealPlans],
+  );
   const canAddMealPlanItem = Boolean(
     mealPlanDraft.mealName.trim() &&
       mealPlanDraft.foodId &&
@@ -794,6 +962,71 @@ export function useNutriPage() {
       restaurantMenuDraft.date &&
       restaurantMenuDraft.items.length > 0,
   );
+  const workflowNotices = useMemo<NutriWorkflowNotice[]>(() => {
+    const notices: NutriWorkflowNotice[] = [];
+
+    if (tab === "patients" && !loadingPatients && activePatients.length === 0) {
+      notices.push({
+        id: "patients-empty",
+        severity: "info",
+        title: "Base clinica vazia.",
+        description:
+          "Cadastre ou reative um paciente para liberar avaliacoes e planos alimentares.",
+      });
+    }
+
+    if (tab === "mealPlans") {
+      if (!loadingPatients && activePatients.length === 0) {
+        notices.push({
+          id: "meal-plans-missing-patient",
+          severity: "warning",
+          title: "Paciente necessario.",
+          description:
+            "Planos alimentares precisam de um paciente ativo antes do rascunho ser salvo.",
+        });
+      }
+
+      if (!loadingFoods && activeFoods.length === 0) {
+        notices.push({
+          id: "meal-plans-missing-food",
+          severity: "warning",
+          title: "Base de alimentos necessaria.",
+          description:
+            "Cadastre alimentos ativos para montar refeicoes e calcular nutrientes.",
+        });
+      }
+    }
+
+    if (tab === "recipes" && !loadingFoods && activeFoods.length === 0) {
+      notices.push({
+        id: "recipes-missing-food",
+        severity: "warning",
+        title: "Ingredientes ainda indisponiveis.",
+        description:
+          "Receitas e fichas tecnicas usam alimentos ativos como ingredientes.",
+      });
+    }
+
+    if (tab === "menus" && !loadingRecipes && approvedRecipes.length === 0) {
+      notices.push({
+        id: "menus-missing-approved-recipes",
+        severity: "warning",
+        title: "Receita aprovada necessaria.",
+        description:
+          "Cardapios operacionais devem usar receitas aprovadas para manter versao e ficha tecnica estaveis.",
+      });
+    }
+
+    return notices;
+  }, [
+    activeFoods.length,
+    activePatients.length,
+    approvedRecipes.length,
+    loadingFoods,
+    loadingPatients,
+    loadingRecipes,
+    tab,
+  ]);
 
   useEffect(() => {
     void Promise.all([
@@ -1545,6 +1778,8 @@ export function useNutriPage() {
       approvedRecipes,
       mealPlanPreviewMeals,
       mealPlanPreviewTotals,
+      mealPlanComparisonRows,
+      mealPlanDiffChipsById,
       recipePreview,
       recipePreviewCostCents,
       recipeTechnicalFactorsPreview,
@@ -1562,6 +1797,7 @@ export function useNutriPage() {
       canAddRestaurantMenuItem,
       canCreateRestaurantMenu,
       summary,
+      workflowNotices,
       firstSteps: FIRST_STEPS,
     },
     actions: {

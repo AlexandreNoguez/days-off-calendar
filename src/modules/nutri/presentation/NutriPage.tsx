@@ -5,7 +5,6 @@ import {
   Box,
   Button,
   Chip,
-  CircularProgress,
   Divider,
   FormControl,
   InputLabel,
@@ -31,17 +30,21 @@ import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import PrintIcon from "@mui/icons-material/Print";
-import RestaurantMenuIcon from "@mui/icons-material/RestaurantMenu";
 import SaveIcon from "@mui/icons-material/Save";
 import SearchIcon from "@mui/icons-material/Search";
 import type {
   NutriFoodSource,
   NutriImcClassification,
-  NutriMealPlan,
+  NutriMealPlanStatus,
   NutriPatientSex,
   NutriRecipeStatus,
   NutriRestaurantMenuStatus,
 } from "../domain/types";
+import { NutriLoadingState } from "./components/NutriLoadingState";
+import { NutriMetricGrid } from "./components/NutriMetricGrid";
+import { NutriPageHeader } from "./components/NutriPageHeader";
+import { NutriSectionCard } from "./components/NutriSectionCard";
+import { NutriWorkflowNotices } from "./components/NutriWorkflowNotices";
 import {
   useNutriPage,
   type NutriAssessmentDraft,
@@ -75,6 +78,12 @@ const FOOD_SOURCE_LABELS: Record<NutriFoodSource, string> = {
   IBGE: "IBGE",
 };
 
+const MEAL_PLAN_STATUS_LABELS: Record<NutriMealPlanStatus, string> = {
+  DRAFT: "Rascunho",
+  APPROVED: "Aprovado",
+  ARCHIVED: "Arquivado",
+};
+
 const RECIPE_STATUS_LABELS: Record<NutriRecipeStatus, string> = {
   DRAFT: "Rascunho",
   APPROVED: "Aprovada",
@@ -87,118 +96,35 @@ const RESTAURANT_MENU_STATUS_LABELS: Record<NutriRestaurantMenuStatus, string> =
   ARCHIVED: "Arquivado",
 };
 
-const MEAL_PLAN_COMPARISON_ROWS = [
-  {
-    label: "Energia",
-    targetKey: "targetEnergyKcal",
-    targetNutrientKey: "energyKcal",
-    totalKey: "energyKcal",
-    unit: "kcal",
-  },
-  {
-    label: "Carboidrato",
-    targetKey: "targetCarbohydrateG",
-    targetNutrientKey: "carbohydrateG",
-    totalKey: "carbohydrateG",
-    unit: "g",
-  },
-  {
-    label: "Proteina",
-    targetKey: "targetProteinG",
-    targetNutrientKey: "proteinG",
-    totalKey: "proteinG",
-    unit: "g",
-  },
-  {
-    label: "Gordura",
-    targetKey: "targetFatG",
-    targetNutrientKey: "fatG",
-    totalKey: "fatG",
-    unit: "g",
-  },
-  {
-    label: "Fibra",
-    targetKey: "targetFiberG",
-    targetNutrientKey: "fiberG",
-    totalKey: "fiberG",
-    unit: "g",
-  },
-  {
-    label: "Sodio",
-    targetKey: "targetSodiumMg",
-    targetNutrientKey: "sodiumMg",
-    totalKey: "sodiumMg",
-    unit: "mg",
-  },
-] as const;
-
-function parseOptionalNumber(value: string): number | undefined {
-  const parsed = Number(value.replace(",", "."));
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
-}
-
-function formatOptionalNumber(value: number | undefined, unit: string): string {
-  return typeof value === "number" ? `${value} ${unit}` : "-";
-}
-
-function diffColor(diff: number | undefined): "success" | "warning" | "default" {
-  if (typeof diff !== "number") return "default";
-  return Math.abs(diff) <= 5 ? "success" : "warning";
-}
-
 export function NutriPage() {
   const { state, actions } = useNutriPage();
 
   return (
     <Stack spacing={3}>
-      <Box>
-        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-          <RestaurantMenuIcon color="primary" />
-          <Typography variant="h5" fontWeight={700}>
-            Modulo Nutri
-          </Typography>
-          <Chip size="small" label="NUTRI" color="success" />
-        </Stack>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
-          Area dedicada a pacientes, planos alimentares, receitas, fichas tecnicas
-          e cardapios.
-        </Typography>
-      </Box>
+      <NutriPageHeader
+        title="Modulo Nutri"
+        badgeLabel="NUTRI"
+        description="Area dedicada a pacientes, planos alimentares, receitas, fichas tecnicas e cardapios."
+      />
 
-      <Box
-        sx={{
-          display: "grid",
-          gap: 2,
-          gridTemplateColumns: {
-            xs: "1fr",
-            md: "repeat(3, minmax(0, 1fr))",
-            lg: "repeat(4, minmax(0, 1fr))",
-            xl: "repeat(5, minmax(0, 1fr))",
-          },
-        }}
-      >
-        {state.summary.map((item) => (
-          <Paper key={item.label} variant="outlined" sx={{ p: 2 }}>
-            <Typography variant="body2" color="text.secondary">
-              {item.label}
-            </Typography>
-            <Typography variant="h4" fontWeight={700} sx={{ my: 0.5 }}>
-              {item.value}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {item.description}
-            </Typography>
-          </Paper>
-        ))}
-      </Box>
+      <NutriMetricGrid items={state.summary} />
 
-      <Tabs value={state.tab} onChange={(_, value: NutriTab) => actions.setTab(value)}>
-        <Tab value="patients" label="Pacientes" />
-        <Tab value="foods" label="Alimentos" />
-        <Tab value="mealPlans" label="Planos" />
-        <Tab value="recipes" label="Receitas" />
-        <Tab value="menus" label="Cardapios" />
-      </Tabs>
+      <Paper variant="outlined" sx={{ borderRadius: 2, px: 2, py: 0.5 }}>
+        <Tabs
+          value={state.tab}
+          onChange={(_, value: NutriTab) => actions.setTab(value)}
+          variant="scrollable"
+          scrollButtons="auto"
+        >
+          <Tab value="patients" label="Pacientes" />
+          <Tab value="foods" label="Alimentos" />
+          <Tab value="mealPlans" label="Planos" />
+          <Tab value="recipes" label="Receitas" />
+          <Tab value="menus" label="Cardapios" />
+        </Tabs>
+      </Paper>
+
+      <NutriWorkflowNotices notices={state.workflowNotices} />
 
       {state.tab === "patients" && renderPatients()}
       {state.tab === "foods" && renderFoods()}
@@ -219,28 +145,23 @@ export function NutriPage() {
       <Stack spacing={2}>
         {renderSeedButton("patients", "Seed 5 pacientes")}
 
-        <Paper variant="outlined" sx={{ p: 2 }}>
-          <Stack spacing={2}>
-            <Typography variant="subtitle1" fontWeight={700}>
-              Novo paciente
-            </Typography>
-            {renderPatientForm({
-              draft: state.draft,
-              onChange: actions.setDraft,
-              disabled: state.savingPatient,
-            })}
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              disabled={!state.canCreatePatient || state.savingPatient}
-              onClick={() => void actions.createPatient()}
-            >
-              Cadastrar paciente
-            </Button>
-          </Stack>
-        </Paper>
+        <NutriSectionCard title="Novo paciente">
+          {renderPatientForm({
+            draft: state.draft,
+            onChange: actions.setDraft,
+            disabled: state.savingPatient,
+          })}
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            disabled={!state.canCreatePatient || state.savingPatient}
+            onClick={() => void actions.createPatient()}
+          >
+            Cadastrar paciente
+          </Button>
+        </NutriSectionCard>
 
-        <Paper variant="outlined" sx={{ p: 2 }}>
+        <NutriSectionCard>
           <Stack spacing={2}>
             <Stack direction={{ xs: "column", md: "row" }} spacing={1}>
               <TextField
@@ -264,51 +185,39 @@ export function NutriPage() {
               <Chip label={`Total: ${state.patientSummary.total}`} />
             </Stack>
           </Stack>
-        </Paper>
+        </NutriSectionCard>
 
         {state.editingPatientId && (
-          <Paper variant="outlined" sx={{ p: 2 }}>
-            <Stack spacing={2}>
-              <Typography variant="subtitle1" fontWeight={700}>
-                Editar paciente
-              </Typography>
-              {renderPatientForm({
-                draft: state.editDraft,
-                onChange: actions.setEditDraft,
-                disabled: state.savingPatient,
-              })}
-              <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-                <Button
-                  variant="contained"
-                  startIcon={<SaveIcon />}
-                  disabled={!state.canUpdatePatient || state.savingPatient}
-                  onClick={() => void actions.updatePatient()}
-                >
-                  Salvar alteracoes
-                </Button>
-                <Button
-                  variant="outlined"
-                  disabled={state.savingPatient}
-                  onClick={actions.cancelEditingPatient}
-                >
-                  Cancelar
-                </Button>
-              </Stack>
+          <NutriSectionCard title="Editar paciente">
+            {renderPatientForm({
+              draft: state.editDraft,
+              onChange: actions.setEditDraft,
+              disabled: state.savingPatient,
+            })}
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+              <Button
+                variant="contained"
+                startIcon={<SaveIcon />}
+                disabled={!state.canUpdatePatient || state.savingPatient}
+                onClick={() => void actions.updatePatient()}
+              >
+                Salvar alteracoes
+              </Button>
+              <Button
+                variant="outlined"
+                disabled={state.savingPatient}
+                onClick={actions.cancelEditingPatient}
+              >
+                Cancelar
+              </Button>
             </Stack>
-          </Paper>
+          </NutriSectionCard>
         )}
 
-        <Paper variant="outlined" sx={{ p: 2 }}>
-          <Stack spacing={2}>
-            <Box>
-              <Typography variant="subtitle1" fontWeight={700}>
-                Avaliacao nutricional
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Registre medidas, rotina e restricoes para o paciente selecionado.
-              </Typography>
-            </Box>
-
+        <NutriSectionCard
+          title="Avaliacao nutricional"
+          description="Registre medidas, rotina e restricoes para o paciente selecionado."
+        >
             <FormControl fullWidth>
               <InputLabel>Paciente</InputLabel>
               <Select
@@ -363,15 +272,11 @@ export function NutriPage() {
                 </Button>
               </>
             )}
-          </Stack>
-        </Paper>
+        </NutriSectionCard>
 
         <Paper variant="outlined" sx={{ overflow: "auto" }}>
           {state.loadingAssessments ? (
-            <Stack alignItems="center" spacing={2} sx={{ py: 6 }}>
-              <CircularProgress />
-              <Typography color="text.secondary">Carregando avaliacoes...</Typography>
-            </Stack>
+            <NutriLoadingState message="Carregando avaliacoes..." />
           ) : (
             <Table size="small">
               <TableHead>
@@ -442,10 +347,7 @@ export function NutriPage() {
 
         <Paper variant="outlined" sx={{ overflow: "auto" }}>
           {state.loadingPatients ? (
-            <Stack alignItems="center" spacing={2} sx={{ py: 6 }}>
-              <CircularProgress />
-              <Typography color="text.secondary">Carregando pacientes...</Typography>
-            </Stack>
+            <NutriLoadingState message="Carregando pacientes..." />
           ) : (
             <Table size="small">
               <TableHead>
@@ -874,10 +776,7 @@ export function NutriPage() {
 
         <Paper variant="outlined" sx={{ overflow: "auto" }}>
           {state.loadingFoods ? (
-            <Stack alignItems="center" spacing={2} sx={{ py: 6 }}>
-              <CircularProgress />
-              <Typography color="text.secondary">Carregando alimentos...</Typography>
-            </Stack>
+            <NutriLoadingState message="Carregando alimentos..." />
           ) : (
             <Table size="small">
               <TableHead>
@@ -1134,17 +1033,10 @@ export function NutriPage() {
       <Stack spacing={2}>
         {renderSeedButton("mealPlans", "Seed 5 planos")}
 
-        <Paper variant="outlined" sx={{ p: 2 }}>
-          <Stack spacing={2}>
-            <Box>
-              <Typography variant="subtitle1" fontWeight={700}>
-                Novo plano alimentar
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Monte refeicoes com alimentos cadastrados e quantidades em gramas.
-              </Typography>
-            </Box>
-
+        <NutriSectionCard
+          title="Novo plano alimentar"
+          description="Monte refeicoes com alimentos cadastrados e quantidades em gramas."
+        >
             <Stack direction={{ xs: "column", md: "row" }} spacing={1}>
               <FormControl fullWidth>
                 <InputLabel>Paciente</InputLabel>
@@ -1264,15 +1156,9 @@ export function NutriPage() {
                 Salvar plano
               </Button>
             </Stack>
-          </Stack>
-        </Paper>
+        </NutriSectionCard>
 
-        <Paper variant="outlined" sx={{ p: 2 }}>
-          <Stack spacing={2}>
-            <Typography variant="subtitle1" fontWeight={700}>
-              Previa do plano
-            </Typography>
-
+        <NutriSectionCard title="Previa do plano">
             <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
               <Chip label={`Kcal: ${state.mealPlanPreviewTotals.energyKcal ?? 0}`} />
               <Chip label={`Carbo: ${state.mealPlanPreviewTotals.carbohydrateG ?? 0} g`} />
@@ -1361,15 +1247,11 @@ export function NutriPage() {
                 )}
               </TableBody>
             </Table>
-          </Stack>
-        </Paper>
+        </NutriSectionCard>
 
         <Paper variant="outlined" sx={{ overflow: "auto" }}>
           {state.loadingMealPlans ? (
-            <Stack alignItems="center" spacing={2} sx={{ py: 6 }}>
-              <CircularProgress />
-              <Typography color="text.secondary">Carregando planos...</Typography>
-            </Stack>
+            <NutriLoadingState message="Carregando planos..." />
           ) : (
             <Table size="small">
               <TableHead>
@@ -1393,14 +1275,24 @@ export function NutriPage() {
                       </Typography>
                     </TableCell>
                     <TableCell>
-                      <Chip size="small" label={mealPlan.status} />
+                      <Chip
+                        size="small"
+                        label={MEAL_PLAN_STATUS_LABELS[mealPlan.status]}
+                        color={
+                          mealPlan.status === "APPROVED"
+                            ? "success"
+                            : mealPlan.status === "ARCHIVED"
+                              ? "default"
+                              : "warning"
+                        }
+                      />
                     </TableCell>
                     <TableCell>
                       <Typography variant="caption">
                         {mealPlan.totals.energyKcal ?? 0} kcal /{" "}
                         {mealPlan.totals.proteinG ?? 0} g proteina
                       </Typography>
-                      {renderSavedMealPlanDiffs(mealPlan)}
+                      {renderSavedMealPlanDiffs(mealPlan.id)}
                     </TableCell>
                     <TableCell>{mealPlan.meals.length}</TableCell>
                     <TableCell>
@@ -1476,60 +1368,35 @@ export function NutriPage() {
           </TableRow>
         </TableHead>
         <TableBody>
-          {MEAL_PLAN_COMPARISON_ROWS.map((row) => {
-            const target = parseOptionalNumber(state.mealPlanDraft[row.targetKey]);
-            const total = state.mealPlanPreviewTotals[row.totalKey];
-            const diff =
-              typeof target === "number" && typeof total === "number"
-                ? Math.round((total - target) * 10) / 10
-                : undefined;
-
-            return (
-              <TableRow key={row.totalKey}>
-                <TableCell>{row.label}</TableCell>
-                <TableCell>{formatOptionalNumber(target, row.unit)}</TableCell>
-                <TableCell>{formatOptionalNumber(total, row.unit)}</TableCell>
-                <TableCell>
-                  <Chip
-                    size="small"
-                    label={formatOptionalNumber(diff, row.unit)}
-                    color={diffColor(diff)}
-                  />
-                </TableCell>
-              </TableRow>
-            );
-          })}
+          {state.mealPlanComparisonRows.map((row) => (
+            <TableRow key={row.key}>
+              <TableCell>{row.label}</TableCell>
+              <TableCell>{row.targetLabel}</TableCell>
+              <TableCell>{row.totalLabel}</TableCell>
+              <TableCell>
+                <Chip size="small" label={row.diffLabel} color={row.diffColor} />
+              </TableCell>
+            </TableRow>
+          ))}
         </TableBody>
       </Table>
     );
   }
 
-  function renderSavedMealPlanDiffs(mealPlan: NutriMealPlan) {
-    const chips = MEAL_PLAN_COMPARISON_ROWS.map((row) => {
-      const target = mealPlan.target[row.targetNutrientKey];
-      const total = mealPlan.totals[row.totalKey];
-      const diff =
-        typeof target === "number" && typeof total === "number"
-          ? Math.round((total - target) * 10) / 10
-          : undefined;
-
-      if (typeof diff !== "number") return null;
-
-      return (
-        <Chip
-          key={row.totalKey}
-          size="small"
-          label={`${row.label}: ${diff > 0 ? "+" : ""}${diff} ${row.unit}`}
-          color={diffColor(diff)}
-        />
-      );
-    }).filter(Boolean);
-
+  function renderSavedMealPlanDiffs(mealPlanId: string) {
+    const chips = state.mealPlanDiffChipsById[mealPlanId] ?? [];
     if (chips.length === 0) return null;
 
     return (
       <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mt: 1 }}>
-        {chips}
+        {chips.map((chip) => (
+          <Chip
+            key={chip.key}
+            size="small"
+            label={chip.label}
+            color={chip.color}
+          />
+        ))}
       </Stack>
     );
   }
@@ -1568,18 +1435,10 @@ export function NutriPage() {
       <Stack spacing={2}>
         {renderSeedButton("recipes", "Seed 5 receitas")}
 
-        <Paper variant="outlined" sx={{ p: 2 }}>
-          <Stack spacing={2}>
-            <Box>
-              <Typography variant="subtitle1" fontWeight={700}>
-                Nova receita / ficha tecnica
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Use alimentos cadastrados como ingredientes para calcular rendimento,
-                porcao, custo e nutrientes.
-              </Typography>
-            </Box>
-
+        <NutriSectionCard
+          title="Nova receita / ficha tecnica"
+          description="Use alimentos cadastrados como ingredientes para calcular rendimento, porcao, custo e nutrientes."
+        >
             {renderRecipeBaseForm({
               draft: state.recipeDraft,
               onChange: actions.setRecipeDraft,
@@ -1668,15 +1527,9 @@ export function NutriPage() {
                 Salvar receita
               </Button>
             </Stack>
-          </Stack>
-        </Paper>
+        </NutriSectionCard>
 
-        <Paper variant="outlined" sx={{ p: 2 }}>
-          <Stack spacing={2}>
-            <Typography variant="subtitle1" fontWeight={700}>
-              Previa da ficha tecnica
-            </Typography>
-
+        <NutriSectionCard title="Previa da ficha tecnica">
             <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
               <Chip label={`Porcoes: ${state.recipePreview.servings || 0}`} />
               <Chip
@@ -1755,8 +1608,7 @@ export function NutriPage() {
                 )}
               </TableBody>
             </Table>
-          </Stack>
-        </Paper>
+        </NutriSectionCard>
 
         <Paper variant="outlined" sx={{ p: 2 }}>
           <Stack spacing={2}>
@@ -1786,10 +1638,7 @@ export function NutriPage() {
 
         <Paper variant="outlined" sx={{ overflow: "auto" }}>
           {state.loadingRecipes ? (
-            <Stack alignItems="center" spacing={2} sx={{ py: 6 }}>
-              <CircularProgress />
-              <Typography color="text.secondary">Carregando receitas...</Typography>
-            </Stack>
+            <NutriLoadingState message="Carregando receitas..." />
           ) : (
             <Table size="small">
               <TableHead>
@@ -2258,10 +2107,7 @@ export function NutriPage() {
 
         <Paper variant="outlined" sx={{ overflow: "auto" }}>
           {state.loadingRestaurantMenus ? (
-            <Stack alignItems="center" spacing={2} sx={{ py: 6 }}>
-              <CircularProgress />
-              <Typography color="text.secondary">Carregando cardapios...</Typography>
-            </Stack>
+            <NutriLoadingState message="Carregando cardapios..." />
           ) : (
             <Table size="small">
               <TableHead>
