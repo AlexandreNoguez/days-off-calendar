@@ -187,6 +187,8 @@ test(nutri): cover module access controls
 
 ### Etapa 3 - Qualidade Dos Calculos E Versionamento
 
+Status: cobertura automatizada inicial implementada.
+
 Objetivo: reduzir risco tecnico nos calculos e preservar snapshots.
 
 Tarefas:
@@ -202,6 +204,12 @@ Criterios de aceite:
 
 - Testes unitarios cobrem calculos principais e casos de borda.
 - Versionamento/snapshot fica documentado e testado.
+
+Cobertura adicionada:
+
+- Bordas de nutrientes ausentes, arredondamento, zero e quantidades invalidas.
+- Cardapio calculado a partir de snapshots de receitas aprovadas.
+- Duplicacao de plano alimentar e receita retornando novo rascunho com auditoria.
 
 Commit sugerido:
 

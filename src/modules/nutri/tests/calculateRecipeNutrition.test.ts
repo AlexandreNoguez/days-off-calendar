@@ -45,4 +45,33 @@ describe("calculateRecipeNutrition", () => {
     });
     expect(result.nutrientsPerServing).toEqual(result.nutrientsPer100g);
   });
+
+  it("keeps recipe totals but avoids per-weight calculations with invalid yield", () => {
+    const result = calculateRecipeNutrition({
+      yieldTotalG: 0,
+      servingSizeG: 100,
+      ingredients: [
+        {
+          id: "ingredient_1",
+          foodId: "food_1",
+          foodNameSnapshot: "Aveia",
+          netWeightG: 40,
+          nutrientsPer100gSnapshot: {
+            energyKcal: 380,
+            carbohydrateG: 67,
+            proteinG: 13,
+          },
+        },
+      ],
+    });
+
+    expect(result.servings).toBe(0);
+    expect(result.totalNutrients).toMatchObject({
+      energyKcal: 152,
+      carbohydrateG: 26.8,
+      proteinG: 5.2,
+    });
+    expect(result.nutrientsPer100g).toEqual({});
+    expect(result.nutrientsPerServing).toEqual({});
+  });
 });

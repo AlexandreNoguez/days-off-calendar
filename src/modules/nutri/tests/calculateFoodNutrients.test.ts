@@ -40,4 +40,21 @@ describe("calculateFoodNutrients", () => {
       proteinG: 0,
     });
   });
+
+  it("rounds scaled nutrients to one decimal place and preserves missing values", () => {
+    expect(
+      calculateFoodNutrients({
+        amountG: 33.3,
+        nutrientsPer100g: {
+          energyKcal: 101,
+          carbohydrateG: 12.34,
+          fatG: undefined,
+        },
+      }),
+    ).toMatchObject({
+      energyKcal: 33.6,
+      carbohydrateG: 4.1,
+      fatG: undefined,
+    });
+  });
 });
