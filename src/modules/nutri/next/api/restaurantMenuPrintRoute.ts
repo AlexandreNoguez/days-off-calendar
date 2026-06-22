@@ -32,6 +32,7 @@ export async function GET(
     renderRestaurantMenuHtml({
       menu,
       exportedAt: new Date().toISOString(),
+      responsibleName: user.displayName || user.username,
     }),
     {
       headers: {

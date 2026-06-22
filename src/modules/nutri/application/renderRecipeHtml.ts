@@ -1,4 +1,11 @@
 import type { NutriNutrients, NutriRecipe } from "../domain/types";
+import {
+  escapeHtml,
+  formatDateTimeBR,
+  formatDocumentStatus,
+  renderProfessionalReviewFooter,
+  renderResponsibleMeta,
+} from "./printDocument";
 
 const NUTRIENT_ROWS: Array<{
   key: keyof NutriNutrients;
@@ -14,15 +21,6 @@ const NUTRIENT_ROWS: Array<{
   { key: "sodiumMg", label: "Sodio", unit: "mg" },
   { key: "addedSugarG", label: "Acucar adicionado", unit: "g" },
 ];
-
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
 
 function formatNutrient(value: number | undefined, unit: string): string {
   if (typeof value !== "number") return "-";
@@ -62,8 +60,9 @@ function renderIngredientRows(recipe: NutriRecipe): string {
 export function renderRecipeHtml(input: {
   recipe: NutriRecipe;
   exportedAt: string;
+  responsibleName?: string;
 }): string {
-  const { recipe, exportedAt } = input;
+  const { recipe, exportedAt, responsibleName } = input;
 
   return `<!doctype html>
 <html lang="pt-BR">
@@ -91,8 +90,9 @@ export function renderRecipeHtml(input: {
       <button onclick="window.print()">Imprimir</button>
       <h1>${escapeHtml(recipe.name)}</h1>
       <div class="meta">Categoria: ${recipe.category ? escapeHtml(recipe.category) : "-"}</div>
-      <div class="meta">Status: ${recipe.status} / Versao: ${recipe.version}</div>
-      <div class="meta">Exportado em: ${new Date(exportedAt).toLocaleString("pt-BR")}</div>
+      <div class="meta">Status: ${formatDocumentStatus(recipe.status)} / Versao: ${recipe.version}</div>
+      ${renderResponsibleMeta(responsibleName)}
+      <div class="meta">Exportado em: ${formatDateTimeBR(exportedAt)}</div>
     </header>
 
     <section class="grid">
@@ -147,10 +147,9 @@ export function renderRecipeHtml(input: {
       }</p>
     </section>
 
-    <footer>
-      Documento gerado como apoio tecnico. A ficha deve ser revisada pela
-      nutricionista responsavel antes do uso operacional.
-    </footer>
+    ${renderProfessionalReviewFooter(
+      "A ficha deve ser revisada pela nutricionista responsavel antes do uso operacional.",
+    )}
   </body>
 </html>`;
 }

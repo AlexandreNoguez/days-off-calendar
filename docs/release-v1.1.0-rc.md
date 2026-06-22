@@ -145,13 +145,7 @@ Tarefas:
 Criterios de aceite:
 
 - Escopo incluido e fora de escopo estao claros.
-- Proximas etapas tem ordem e mensagens de commit sugeridas.
-
-Commit sugerido:
-
-```text
-docs(nutri): define v1.1 release candidate plan
-```
+- Proximas etapas tem ordem e criterios de aceite claros.
 
 ### Etapa 2 - Endurecimento De Permissao E Privacidade
 
@@ -179,12 +173,6 @@ Cobertura adicionada:
 - `src/modules/nutri/tests/nutriAccessControls.test.ts`
 - `src/modules/nutri/tests/demoSeedGuards.test.ts`
 
-Commit sugerido:
-
-```text
-test(nutri): cover module access controls
-```
-
 ### Etapa 3 - Qualidade Dos Calculos E Versionamento
 
 Status: cobertura automatizada inicial implementada.
@@ -210,12 +198,6 @@ Cobertura adicionada:
 - Bordas de nutrientes ausentes, arredondamento, zero e quantidades invalidas.
 - Cardapio calculado a partir de snapshots de receitas aprovadas.
 - Duplicacao de plano alimentar e receita retornando novo rascunho com auditoria.
-
-Commit sugerido:
-
-```text
-test(nutri): strengthen nutrition calculation coverage
-```
 
 ### Etapa 4 - UX De Fluxo Profissional
 
@@ -253,13 +235,9 @@ Implementado nesta etapa:
 - Primeira padronizacao visual das secoes principais de paciente, avaliacao,
   plano alimentar e receita/ficha tecnica.
 
-Commit sugerido:
-
-```text
-feat(nutri): clarify professional workflow states
-```
-
 ### Etapa 5 - Documentos Imprimiveis Da RC
+
+Status: renderizacao imprimivel validada com cobertura automatizada inicial.
 
 Objetivo: tornar os HTMLs imprimiveis minimamente profissionais e auditaveis.
 
@@ -277,11 +255,16 @@ Criterios de aceite:
 - Exportacoes escapam texto livre.
 - Auditoria registra cada exportacao com ids e formato.
 
-Commit sugerido:
+Implementado nesta etapa:
 
-```text
-test(nutri): verify printable document exports
-```
+- Helper compartilhado para escaping, datas, status humanizado, responsavel
+  tecnico e aviso de revisao profissional.
+- Plano alimentar, ficha tecnica e cardapio imprimiveis exibem responsavel
+  tecnico quando disponivel.
+- Auditoria de exportacao de plano e receita registra status e, quando aplicavel,
+  versao.
+- Teste automatizado cobre HTML de plano, receita e cardapio com metadados,
+  escaping de texto livre e aviso profissional.
 
 ### Etapa 6 - Seeds Demo E Ambiente
 
@@ -301,12 +284,6 @@ Criterios de aceite:
 - Seeds nao aparecem nem executam por padrao.
 - Rotas demo so funcionam para `NUTRI` e com flag correta.
 - Limpeza remove apenas dados demo identificados.
-
-Commit sugerido:
-
-```text
-test(nutri): validate demo seed safeguards
-```
 
 ### Etapa 7 - QA Manual Da RC
 
@@ -328,12 +305,6 @@ Criterios de aceite:
 - `npm run build` passa.
 - Roteiro manual da RC aprovado ou aprovado com ressalvas registradas.
 
-Commit sugerido:
-
-```text
-docs(nutri): add release candidate qa checklist
-```
-
 ### Etapa 8 - Fechamento Da Tag RC
 
 Objetivo: preparar a tag `v1.1.0-rc`.
@@ -353,12 +324,6 @@ Criterios de aceite:
 - Changelog descreve Nutri como RC, nao como produto clinico final.
 - Docs indicam claramente riscos, fora de escopo e validacoes.
 - Working tree esta limpo antes da tag, exceto se houver decisao explicita.
-
-Commit sugerido:
-
-```text
-chore(release): prepare v1.1.0 release candidate
-```
 
 Tag sugerida:
 

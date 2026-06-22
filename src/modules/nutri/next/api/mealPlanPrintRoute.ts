@@ -30,7 +30,7 @@ export async function GET(
     action: "nutri.meal_plan.exported",
     entityType: "nutriMealPlan",
     entityId: mealPlan.id,
-    metadata: { patientId: mealPlan.patientId, format: "html" },
+    metadata: { patientId: mealPlan.patientId, format: "html", status: mealPlan.status },
     ...requestMeta(request),
   });
 
@@ -39,6 +39,7 @@ export async function GET(
       mealPlan,
       patient,
       exportedAt: new Date().toISOString(),
+      responsibleName: user.displayName || user.username,
     }),
     {
       headers: {

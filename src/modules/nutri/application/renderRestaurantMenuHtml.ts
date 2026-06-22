@@ -1,4 +1,12 @@
 import type { NutriNutrients, NutriRestaurantMenu } from "../domain/types";
+import {
+  escapeHtml,
+  formatDateBR,
+  formatDateTimeBR,
+  formatDocumentStatus,
+  renderProfessionalReviewFooter,
+  renderResponsibleMeta,
+} from "./printDocument";
 
 const NUTRIENT_ROWS: Array<{
   key: keyof NutriNutrients;
@@ -12,15 +20,6 @@ const NUTRIENT_ROWS: Array<{
   { key: "fiberG", label: "Fibra", unit: "g" },
   { key: "sodiumMg", label: "Sodio", unit: "mg" },
 ];
-
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
 
 function formatNutrient(value: number | undefined, unit: string): string {
   if (typeof value !== "number") return "-";
@@ -74,8 +73,9 @@ function renderProductionRows(menu: NutriRestaurantMenu): string {
 export function renderRestaurantMenuHtml(input: {
   menu: NutriRestaurantMenu;
   exportedAt: string;
+  responsibleName?: string;
 }): string {
-  const { menu, exportedAt } = input;
+  const { menu, exportedAt, responsibleName } = input;
 
   return `<!doctype html>
 <html lang="pt-BR">
@@ -102,9 +102,10 @@ export function renderRestaurantMenuHtml(input: {
     <header>
       <button onclick="window.print()">Imprimir</button>
       <h1>${escapeHtml(menu.title)}</h1>
-      <div class="meta">Data: ${new Date(`${menu.date}T00:00:00`).toLocaleDateString("pt-BR")}</div>
-      <div class="meta">Status: ${menu.status}</div>
-      <div class="meta">Exportado em: ${new Date(exportedAt).toLocaleString("pt-BR")}</div>
+      <div class="meta">Data: ${formatDateBR(menu.date)}</div>
+      <div class="meta">Status: ${formatDocumentStatus(menu.status)}</div>
+      ${renderResponsibleMeta(responsibleName)}
+      <div class="meta">Exportado em: ${formatDateTimeBR(exportedAt)}</div>
     </header>
 
     <section class="grid">
@@ -159,10 +160,9 @@ export function renderRestaurantMenuHtml(input: {
       </table>
     </section>
 
-    <footer>
-      Documento operacional para apoio de cozinha e compras. Revise quantidades,
-      rendimento e disponibilidade de ingredientes antes da producao.
-    </footer>
+    ${renderProfessionalReviewFooter(
+      "Revise quantidades, rendimento e disponibilidade de ingredientes antes da producao.",
+    )}
   </body>
 </html>`;
 }

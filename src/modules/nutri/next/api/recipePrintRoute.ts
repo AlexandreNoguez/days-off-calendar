@@ -24,7 +24,7 @@ export async function GET(
     action: "nutri.recipe.exported",
     entityType: "nutriRecipe",
     entityId: recipe.id,
-    metadata: { format: "html" },
+    metadata: { format: "html", status: recipe.status, version: recipe.version },
     ...requestMeta(request),
   });
 
@@ -32,6 +32,7 @@ export async function GET(
     renderRecipeHtml({
       recipe,
       exportedAt: new Date().toISOString(),
+      responsibleName: user.displayName || user.username,
     }),
     {
       headers: {

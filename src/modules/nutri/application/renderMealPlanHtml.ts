@@ -1,4 +1,11 @@
 import type { NutriMealPlan, NutriNutrients, NutriPatient } from "../domain/types";
+import {
+  escapeHtml,
+  formatDateTimeBR,
+  formatDocumentStatus,
+  renderProfessionalReviewFooter,
+  renderResponsibleMeta,
+} from "./printDocument";
 
 const NUTRIENT_ROWS: Array<{
   key: keyof NutriNutrients;
@@ -12,15 +19,6 @@ const NUTRIENT_ROWS: Array<{
   { key: "fiberG", label: "Fibra", unit: "g" },
   { key: "sodiumMg", label: "Sodio", unit: "mg" },
 ];
-
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
 
 function formatNutrient(value: number | undefined, unit: string): string {
   if (typeof value !== "number") return "-";
@@ -49,8 +47,9 @@ export function renderMealPlanHtml(input: {
   mealPlan: NutriMealPlan;
   patient: NutriPatient;
   exportedAt: string;
+  responsibleName?: string;
 }): string {
-  const { mealPlan, patient, exportedAt } = input;
+  const { mealPlan, patient, exportedAt, responsibleName } = input;
 
   const meals = mealPlan.meals
     .map(
@@ -104,8 +103,9 @@ export function renderMealPlanHtml(input: {
       <button onclick="window.print()">Imprimir</button>
       <h1>${escapeHtml(mealPlan.title)}</h1>
       <div class="meta">Paciente: ${escapeHtml(patient.fullName)}</div>
-      <div class="meta">Status: ${mealPlan.status}</div>
-      <div class="meta">Exportado em: ${new Date(exportedAt).toLocaleString("pt-BR")}</div>
+      <div class="meta">Status: ${formatDocumentStatus(mealPlan.status)}</div>
+      ${renderResponsibleMeta(responsibleName)}
+      <div class="meta">Exportado em: ${formatDateTimeBR(exportedAt)}</div>
     </header>
 
     <section>
@@ -125,10 +125,9 @@ export function renderMealPlanHtml(input: {
 
     ${meals}
 
-    <footer>
-      Documento gerado como apoio tecnico. A orientacao final deve ser revisada
-      pela nutricionista responsavel.
-    </footer>
+    ${renderProfessionalReviewFooter(
+      "A orientacao final deve ser revisada pela nutricionista responsavel.",
+    )}
   </body>
 </html>`;
 }
