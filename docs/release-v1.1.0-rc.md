@@ -268,6 +268,8 @@ Implementado nesta etapa:
 
 ### Etapa 6 - Seeds Demo E Ambiente
 
+Status: safeguards automatizados e flags documentadas.
+
 Objetivo: garantir que demo ajude sem criar risco em producao.
 
 Tarefas:
@@ -284,6 +286,16 @@ Criterios de aceite:
 - Seeds nao aparecem nem executam por padrao.
 - Rotas demo so funcionam para `NUTRI` e com flag correta.
 - Limpeza remove apenas dados demo identificados.
+
+Implementado nesta etapa:
+
+- Rotas de seed bloqueadas quando `NUTRI_DEMO_TOOLS_ENABLED` esta desligada.
+- Status da ferramenta demo validado para manter botoes ocultos por padrao.
+- Limpeza automatica validada para remover apenas registros com prefixo
+  `[Demo]`.
+- Flags `NUTRI_DEMO_TOOLS_ENABLED` e
+  `NUTRI_DEMO_TOOLS_ALLOW_PRODUCTION` documentadas em `.env.example` e no plano
+  de seeds.
 
 ### Etapa 7 - QA Manual Da RC
 

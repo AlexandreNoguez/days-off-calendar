@@ -23,10 +23,11 @@ adaptadores `app/api/nutri/dev`.
 
 ## Flags De Ambiente
 
-Adicionar futuramente ao `.env.example`:
+As flags ficam documentadas em `.env.example`:
 
 ```env
 NUTRI_DEMO_TOOLS_ENABLED=false
+NUTRI_DEMO_TOOLS_ALLOW_PRODUCTION=false
 ```
 
 Comportamento:
@@ -36,15 +37,9 @@ Comportamento:
 - Em `NODE_ENV=production`, a recomendacao e manter bloqueado mesmo que alguem
   esqueca a flag ligada.
 
-Se um dia for necessario rodar demo em ambiente publicado, criar uma segunda
-flag explicita:
-
-```env
-NUTRI_DEMO_TOOLS_ALLOW_PRODUCTION=false
-```
-
-Essa segunda flag deve existir apenas se houver uma necessidade real de demo
-publica.
+`NUTRI_DEMO_TOOLS_ALLOW_PRODUCTION=true` e um override explicito para demo em
+ambiente publicado. Use apenas com decisao operacional consciente e volte para
+`false` ao terminar a demonstracao.
 
 ## Estrutura Implementada
 
