@@ -299,6 +299,8 @@ Implementado nesta etapa:
 
 ### Etapa 7 - QA Manual Da RC
 
+Status: roteiro manual criado; execucao funcional pendente.
+
 Objetivo: criar e executar roteiro real de validacao da release candidate.
 
 Tarefas:
@@ -316,6 +318,16 @@ Criterios de aceite:
 - `npm test` passa.
 - `npm run build` passa.
 - Roteiro manual da RC aprovado ou aprovado com ressalvas registradas.
+
+Implementado nesta etapa:
+
+- Roteiro `docs/teste-manual-nutri-v1.1.0-rc.md` criado para validar login,
+  permissoes, pacientes, avaliacoes, alimentos, planos, receitas, cardapios,
+  exportacoes, auditoria e seeds.
+- Documento inclui registro de ambiente, responsavel, resultado final,
+  ressalvas aceitas e pendencias bloqueantes.
+- Checks automatizados da release foram executados durante a preparacao desta
+  etapa.
 
 ### Etapa 8 - Fechamento Da Tag RC
 
