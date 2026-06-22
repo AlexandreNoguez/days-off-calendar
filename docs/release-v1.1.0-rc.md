@@ -324,6 +324,10 @@ Implementado nesta etapa:
 - Roteiro `docs/teste-manual-nutri-v1.1.0-rc.md` criado para validar login,
   permissoes, pacientes, avaliacoes, alimentos, planos, receitas, cardapios,
   exportacoes, auditoria e seeds.
+- Playwright configurado para automatizar smoke E2E de permissoes, fluxo Nutri,
+  exportacoes e seeds demo.
+- Roteiro humano complementar criado para avaliar layout premium, revisao
+  profissional/nutricional, documentos impressos e aprovacao final da RC.
 - Documento inclui registro de ambiente, responsavel, resultado final,
   ressalvas aceitas e pendencias bloqueantes.
 - Checks automatizados da release foram executados durante a preparacao desta

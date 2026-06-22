@@ -8,6 +8,9 @@
     "build": "next build",
     "lint": "eslint .",
     "test": "vitest run",
+    "test:e2e": "playwright test",
+    "test:e2e:demo": "NUTRI_DEMO_TOOLS_ENABLED=true playwright test tests/e2e/nutri-demo-enabled.spec.ts",
+    "test:e2e:install": "playwright install",
     "start": "next start",
     "seed:admin": "node --env-file=.env scripts/seed-admin.mjs"
   },
@@ -26,6 +29,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@playwright/test": "^1.61.0",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",

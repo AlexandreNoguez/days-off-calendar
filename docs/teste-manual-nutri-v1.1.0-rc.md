@@ -48,6 +48,26 @@ npm run lint
 ./node_modules/.bin/tsc --noEmit
 npm test
 npm run build
+npm run test:e2e:install -- chromium
+npm run test:e2e
+```
+
+Observacoes para E2E:
+
+- A suite Playwright usa `MONGODB_DB_NAME=escala_folga_e2e` por padrao quando
+  ela mesma sobe o servidor.
+- Se ja existir um servidor Next rodando neste workspace, use uma URL explicita
+  para reutilizar o servidor desejado. Para o fluxo completo, o servidor deve
+  estar apontando para `MONGODB_DB_NAME=escala_folga_e2e`:
+
+```bash
+PLAYWRIGHT_BASE_URL=http://127.0.0.1:3100 npm run test:e2e
+```
+
+- Para validar os botoes demo de forma isolada:
+
+```bash
+npm run test:e2e:demo
 ```
 
 Resultados:
@@ -344,3 +364,8 @@ Pendencias bloqueantes:
 ```text
 
 ```
+
+## Avaliacao Humana Complementar
+
+Para julgamento visual, clinico/funcional e aprovacao final com ressalvas, use
+tambem `docs/roteiro-avaliacao-humana-nutri-v1.1.0-rc.md`.
